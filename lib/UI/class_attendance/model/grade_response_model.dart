@@ -1,0 +1,33 @@
+import 'dart:convert';
+
+import 'package:admin_app/UI/class_attendance/model/grade_data_model.dart';
+
+class GradeResponseModel {
+  final bool status;
+  final String message;
+  final GradeDataModel data;
+
+  GradeResponseModel({
+    required this.status,
+    required this.message,
+    required this.data,
+  });
+
+  factory GradeResponseModel.fromJson(String str) =>
+      GradeResponseModel.fromMap(json.decode(str));
+
+  String toJson() => json.encode(toMap());
+
+  factory GradeResponseModel.fromMap(Map<String, dynamic> json) =>
+      GradeResponseModel(
+        status: json["status"],
+        message: json["message"],
+        data: GradeDataModel.fromMap(json["data"]),
+      );
+
+  Map<String, dynamic> toMap() => {
+        "status": status,
+        "message": message,
+        "data": data.toMap(),
+      };
+}

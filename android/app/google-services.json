@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "95308077281",
+    "project_id": "smartpace-d0a03",
+    "storage_bucket": "smartpace-d0a03.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:95308077281:android:f3b1f2a21ac95d932fffa0",
+        "android_client_info": {
+          "package_name": "com.paceEducation.erp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAx0_h_DxWVSO4ixWoW0G8j0FQNuOvQecM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
