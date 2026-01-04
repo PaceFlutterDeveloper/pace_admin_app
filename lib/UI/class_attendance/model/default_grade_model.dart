@@ -16,8 +16,8 @@ class DefaultGradeModel {
 
   factory DefaultGradeModel.fromMap(Map<String, dynamic> json) =>
       DefaultGradeModel(
-        gr: json["gr"],
-        sec: json["sec"],
+        gr: json["gr"] ?? "",
+        sec: json["sec"] ?? "",
       );
 
   Map<String, dynamic> toMap() => {

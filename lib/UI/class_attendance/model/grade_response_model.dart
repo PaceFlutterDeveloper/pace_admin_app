@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:admin_app/UI/class_attendance/model/default_grade_model.dart';
 import 'package:admin_app/UI/class_attendance/model/grade_data_model.dart';
 
 class GradeResponseModel {
@@ -20,9 +21,14 @@ class GradeResponseModel {
 
   factory GradeResponseModel.fromMap(Map<String, dynamic> json) =>
       GradeResponseModel(
-        status: json["status"],
-        message: json["message"],
-        data: GradeDataModel.fromMap(json["data"]),
+        status: json["status"] ?? false,
+        message: json["message"] ?? "",
+        data: json["data"] != null
+            ? GradeDataModel.fromMap(json["data"])
+            : GradeDataModel(
+                grades: [],
+                dataDefault: DefaultGradeModel(gr: "", sec: ""),
+              ),
       );
 
   Map<String, dynamic> toMap() => {

@@ -24,14 +24,18 @@ class NotificationIconComponent extends StatelessWidget {
               box.values.where((login) => login.isActive).isNotEmpty
                   ? box.values.firstWhere((login) => login.isActive)
                   : null;
+          final notificationCount = activeUser?.notificationCount ?? 0;
+          
           return GestureDetector(
             onTap: () {
               log("Notification Page");
-              context.pushNamed(Routes.getNotifications.name);
+              if (activeUser != null) {
+                context.pushNamed(Routes.getNotifications.name);
+              }
             },
             child: Badge(
-                isLabelVisible: true,
-                label: activeUser!.notificationCount == 0
+                isLabelVisible: notificationCount > 0,
+                label: notificationCount == 0
                     ? const SizedBox()
                     : Container(
                         width: 25.h,
@@ -47,7 +51,7 @@ class NotificationIconComponent extends StatelessWidget {
                             )),
                         child: Center(
                           child: Text(
-                            activeUser.notificationCount.toString(),
+                            notificationCount.toString(),
                             style: const TextStyle(color: Color(0xFFB22222)),
                           ),
                         ),

@@ -16,7 +16,6 @@ class UserBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUri = GoRouterState.of(context).uri;
     return ValueListenableBuilder<Box<AuthModel>>(
       valueListenable: locator<Box<AuthModel>>().listenable(),
       builder: (context, box, _) {
@@ -81,56 +80,22 @@ class UserBottomNavBar extends StatelessWidget {
                     ), // Pass `MenuModel`
                   );
                 },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    user.profilePicture.isEmpty
-                        ? InitialAvatar(
-                            name: user.name,
-                            size: 47.w,
-                          )
-                        : Container(
-                            width: 47.w,
-                            height: 47.w,
-                            decoration: ShapeDecoration(
-                              image: DecorationImage(
-                                image: NetworkImage(user.profilePicture),
-                                fit: BoxFit.cover,
-                              ),
-                              shape: OvalBorder(),
-                            ),
+                child: user.profilePicture.isEmpty
+                    ? InitialAvatar(
+                        name: user.name,
+                        size: 47.w,
+                      )
+                    : Container(
+                        width: 47.w,
+                        height: 47.w,
+                        decoration: ShapeDecoration(
+                          image: DecorationImage(
+                            image: NetworkImage(user.profilePicture),
+                            fit: BoxFit.cover,
                           ),
-                    // SizedBox(
-                    //   width: 8.w,
-                    // ),
-                    // Column(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   crossAxisAlignment: CrossAxisAlignment.start,
-                    //   children: [
-                    //     Text(
-                    //       user.name,
-                    //       textAlign: TextAlign.center,
-                    //       style: TextStyle(
-                    //         color: const Color(0xFF2D2D2D),
-                    //         fontSize: 16.sp,
-                    //         fontWeight: FontWeight.w500,
-                    //       ),
-                    //     ),
-                    //     Text(
-                    //       user.schoolCode,
-                    //       textAlign: TextAlign.center,
-                    //       style: TextStyle(
-                    //         color: const Color(0xFF6E61FF),
-                    //         fontSize: 12.sp,
-                    //         fontWeight: FontWeight.w500,
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
-                  ],
-                ),
+                          shape: OvalBorder(),
+                        ),
+                      ),
               ),
             ],
           ),

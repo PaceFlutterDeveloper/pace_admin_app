@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:admin_app/UI/auth/data_source/auth_data.dart';
 import 'package:admin_app/UI/auth/repository/auth_repository.dart';
 import 'package:admin_app/UI/home/cubit/home_cubit.dart';
-import 'package:admin_app/dependancy_injection.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,8 +13,8 @@ part 'auth_cubit.freezed.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  final AuthRepository authRepository = locator<AuthRepository>();
-  AuthCubit() : super(const AuthState.initial());
+  final AuthRepository authRepository;
+  AuthCubit({required this.authRepository}) : super(const AuthState.initial());
 
   /// Logs in a user with the provided credentials and school code.
   ///

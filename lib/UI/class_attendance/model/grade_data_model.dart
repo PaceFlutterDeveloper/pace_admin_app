@@ -18,9 +18,13 @@ class GradeDataModel {
   String toJson() => json.encode(toMap());
 
   factory GradeDataModel.fromMap(Map<String, dynamic> json) => GradeDataModel(
-        grades: List<GradeModel>.from(
-            json["grades"].map((x) => GradeModel.fromMap(x))),
-        dataDefault: DefaultGradeModel.fromMap(json["default"]),
+        grades: json["grades"] != null
+            ? List<GradeModel>.from(
+                json["grades"].map((x) => GradeModel.fromMap(x)))
+            : <GradeModel>[],
+        dataDefault: json["default"] != null
+            ? DefaultGradeModel.fromMap(json["default"])
+            : DefaultGradeModel(gr: "", sec: ""),
       );
 
   Map<String, dynamic> toMap() => {

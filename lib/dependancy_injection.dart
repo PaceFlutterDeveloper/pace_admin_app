@@ -74,7 +74,7 @@ Future<void> serviceLocators() async {
     () => AuthRepository(apiService: locator<ApiService>()),
   );
   locator.registerLazySingleton<AuthCubit>(
-    () => AuthCubit(),
+    () => AuthCubit(authRepository: locator<AuthRepository>()),
   );
 
   // Register AuthRepository and AuthCubit

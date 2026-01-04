@@ -18,8 +18,10 @@ class GradeModel {
 
   factory GradeModel.fromMap(Map<String, dynamic> json) => GradeModel(
         classKey: json["class_key"],
-        className: json["class_value"],
-        sections: List<String>.from(json["sections"].map((x) => x)),
+        className: json["class_value"] ?? "",
+        sections: json["sections"] != null
+            ? List<String>.from(json["sections"].map((x) => x))
+            : <String>[],
       );
 
   Map<String, dynamic> toMap() => {

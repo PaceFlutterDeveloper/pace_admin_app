@@ -8,7 +8,7 @@ import 'package:admin_app/core/utils/utils.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_manager/nfc_manager.dart';
-import 'package:nfc_manager/platform_tags.dart';
+import 'package:nfc_manager/nfc_manager_android.dart';
 
 class NfcProvider with ChangeNotifier {
   final NfcMappRepository _repository = locator<NfcMappRepository>();
@@ -23,21 +23,21 @@ class NfcProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final availability = await NfcManager.instance.isAvailable();
+      final availability = await NfcManager.instance.checkAvailability();
       log("NFC availability: $availability");
 
-      if (availability) {
+      if (availability == NfcAvailability.enabled) {
         isNfcAvailable = true;
         log('NFC listener started, approach tag(s)...');
 
         await NfcManager.instance.startSession(
-          alertMessage: 'Hold your NFC tag near the device.',
+          alertMessageIos: 'Hold your NFC tag near the device.',
           onDiscovered: (NfcTag tag) async {
             log("Tag discovered: ${tag.data}");
 
-            final nfcA = NfcA.from(tag);
+            final nfcA = NfcAAndroid.from(tag);
             if (nfcA != null) {
-              final identifier = nfcA.identifier;
+              final identifier = (tag.data as Map)['nfc-a']['identifier'];
               final number = toDec(identifier);
               log("Card UID: $number");
               nfcCardNumber = number;

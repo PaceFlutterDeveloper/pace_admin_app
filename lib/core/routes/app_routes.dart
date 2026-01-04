@@ -96,10 +96,12 @@ class AppRoute {
               path: Routes.userProfile.path,
               name: Routes.userProfile.name,
               builder: (context, state) {
-                final menuModel = state.extra as MenuModel;
+                final menuModel = state.extra is MenuModel
+                    ? state.extra as MenuModel
+                    : null;
 
                 return ProfilePage(
-                  appTitle: menuModel.menuName,
+                  appTitle: menuModel?.menuName ?? 'My Profile',
                 );
               },
             ),
