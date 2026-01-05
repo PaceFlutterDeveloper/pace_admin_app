@@ -57,6 +57,44 @@ class _NfcAvailableState extends State<NfcAvailable> {
                               'Student NFC Mapping',
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
+                            // Show NFC availability status
+                            if (!nfcProvider.isNfcAvailable) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.orange.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 16,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        'NFC hardware not available. You can still enter the NFC tag number manually.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.orange.shade700,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 24),
 
                             // Student Code
@@ -93,19 +131,31 @@ class _NfcAvailableState extends State<NfcAvailable> {
                             ),
                             const SizedBox(height: 20),
 
+                            // Loading indicator
+                            if (nfcProvider.isSubmitting)
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 8.0),
+                                child: LinearProgressIndicator(),
+                              ),
+
                             // Submit
                             ButtonComponent(
-                              buttonText: "Update",
-                              onTap: () {
-                                if (_formKey.currentState?.validate() != true) {
-                                  return;
-                                }
-                                nfcProvider.upinsert(
-                                  _studCodeController.text.trim(),
-                                  nfcTagController.text.trim(),
-                                  context,
-                                );
-                              },
+                              buttonText: nfcProvider.isSubmitting
+                                  ? "Updating..."
+                                  : "Update",
+                              onTap: nfcProvider.isSubmitting
+                                  ? () {} // No-op when submitting
+                                  : () {
+                                      if (_formKey.currentState?.validate() !=
+                                          true) {
+                                        return;
+                                      }
+                                      nfcProvider.upinsert(
+                                        _studCodeController.text.trim(),
+                                        nfcTagController.text.trim(),
+                                        context,
+                                      );
+                                    },
                             ),
                           ],
                         ),

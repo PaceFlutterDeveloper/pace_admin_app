@@ -1,5 +1,6 @@
 // lib/UI/notification/pages/notification_page.dart
 
+import 'package:admin_app/UI/components/failure_widget.dart';
 import 'package:admin_app/UI/notification/components/notification_list.dart';
 import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
@@ -16,6 +17,7 @@ class NotificationPage extends StatefulWidget {
 class _NotificationPageState extends State<NotificationPage> {
   late final ScrollController _scrollController;
   late final NotificationCubit _cubit;
+  bool _hasLoadedNotifications = false;
 
   @override
   void initState() {
@@ -59,21 +61,64 @@ class _NotificationPageState extends State<NotificationPage> {
         ],
       ),
       body: SafeArea(
-        child: BlocBuilder<NotificationCubit, NotificationState>(
-          builder: (context, state) {
-            return state.when(
-              initial: () => const Center(child: CircularProgressIndicator()),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              failure: (err) => Center(child: Text(err)),
-              success: (list) => _buildList(list),
-              readLoader: (list) => _buildList(list),
-              readed: (list) => _buildList(list),
-              unreaded: (list) => _buildList(list),
-              readAllLoader: (list) => _buildList(list),
-              readAll: (list) => _buildList(list),
-              unreadAll: (list) => _buildList(list),
+        child: BlocListener<NotificationCubit, NotificationState>(
+          listener: (context, state) {
+            // Track when we successfully load notifications
+            state.whenOrNull(
+              success: (_) => _hasLoadedNotifications = true,
+            );
+
+            // Show snackbar for errors only if we already have loaded notifications
+            // (meaning it's an error during mark as read or load more, not initial load)
+            state.whenOrNull(
+              failure: (err) {
+                if (_hasLoadedNotifications) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(err),
+                      backgroundColor: Colors.red,
+                      action: SnackBarAction(
+                        label: 'Retry',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          // Retry loading more if available
+                          if (_cubit.hasMore) {
+                            _cubit.fetchNotifications(loadMore: true);
+                          } else {
+                            // Otherwise retry initial load
+                            _cubit.fetchNotifications(loadMore: false);
+                          }
+                        },
+                      ),
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+              },
             );
           },
+          child: BlocBuilder<NotificationCubit, NotificationState>(
+            builder: (context, state) {
+              return state.when(
+                initial: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                failure: (err) => Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: FailureWidget(
+                    message: err,
+                    onRetry: () => _cubit.fetchNotifications(loadMore: false),
+                  ),
+                ),
+                success: (list) => _buildList(list),
+                readLoader: (list) => _buildList(list),
+                readed: (list) => _buildList(list),
+                unreaded: (list) => _buildList(list),
+                readAllLoader: (list) => _buildList(list),
+                readAll: (list) => _buildList(list),
+                unreadAll: (list) => _buildList(list),
+              );
+            },
+          ),
         ),
       ),
     );

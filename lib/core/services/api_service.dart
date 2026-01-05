@@ -129,6 +129,85 @@ class ApiService {
     }
   }
 
+  // Helper method to extract text from HTML responses
+  String _extractTextFromHtml(String html) {
+    try {
+      // Remove HTML tags using regex
+      String text = html
+          .replaceAll(RegExp(r'<[^>]*>'), '') // Remove HTML tags
+          .replaceAll(RegExp(r'&nbsp;'), ' ') // Replace &nbsp; with space
+          .replaceAll(RegExp(r'&amp;'), '&') // Replace &amp; with &
+          .replaceAll(RegExp(r'&lt;'), '<') // Replace &lt; with <
+          .replaceAll(RegExp(r'&gt;'), '>') // Replace &gt; with >
+          .replaceAll(RegExp(r'&quot;'), '"') // Replace &quot; with "
+          .replaceAll(RegExp(r'&#39;'), "'") // Replace &#39; with '
+          .trim();
+
+      // Clean up multiple spaces/newlines
+      text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+      // If we extracted meaningful text, return it
+      if (text.isNotEmpty && text.length > 10) {
+        return text;
+      }
+    } catch (e) {
+      log('Error extracting text from HTML: $e');
+    }
+    return html; // Fallback to original if extraction fails
+  }
+
+  // Helper method to get user-friendly error message
+  String _getUserFriendlyMessage(AppError errorKey, String? rawMessage) {
+    // If we have a raw message, try to extract meaningful text
+    if (rawMessage != null && rawMessage.isNotEmpty) {
+      // Check if it's HTML
+      if (rawMessage.contains('<') && rawMessage.contains('>')) {
+        final extracted = _extractTextFromHtml(rawMessage);
+        // If extraction gave us something meaningful, use it
+        if (extracted.length > 10 && extracted != rawMessage) {
+          return extracted;
+        }
+      }
+      // If it's a long technical message, provide a user-friendly one
+      if (rawMessage.length > 100 || 
+          rawMessage.contains('Exception') ||
+          rawMessage.contains('status code')) {
+        // Use a friendly message based on error type
+        switch (errorKey) {
+          case AppError.internalServerError:
+            return 'Server error occurred. Please try again later or contact support if the problem persists.';
+          case AppError.badRequest:
+            return 'Invalid request. Please check your input and try again.';
+          case AppError.unauthorized:
+            return 'Your session has expired. Please log in again.';
+          case AppError.forbidden:
+            return 'You don\'t have permission to perform this action.';
+          case AppError.notFound:
+            return 'The requested resource was not found.';
+          default:
+            return 'Something went wrong. Please try again.';
+        }
+      }
+      return rawMessage;
+    }
+
+    // Default messages based on error type
+    switch (errorKey) {
+      case AppError.internalServerError:
+        return 'Server error occurred. Please try again later or contact support if the problem persists.';
+      case AppError.badRequest:
+        return 'Invalid request. Please check your input and try again.';
+      case AppError.unauthorized:
+        return 'Your session has expired. Please log in again.';
+      case AppError.forbidden:
+        return 'You don\'t have permission to perform this action.';
+      case AppError.notFound:
+        return 'The requested resource was not found.';
+      default:
+        return 'Something went wrong. Please try again.';
+    }
+  }
+
   // Error handling method
   MyError _handleError(DioException error) {
     log('--- Dio Error Handler ---');
@@ -137,40 +216,54 @@ class ApiService {
     log('Path: ${error.requestOptions.path}');
     log('Response Data: ${error.response?.data}');
 
-    String? errorMessage;
+    String? rawErrorMessage;
+    AppError errorKey = AppError.unknown;
 
     // ✅ Extract readable message from response
     final responseData = error.response?.data;
     if (responseData != null) {
       try {
         if (responseData is Map<String, dynamic>) {
-          errorMessage = responseData['message'] ??
+          rawErrorMessage = responseData['message'] ??
               responseData['error'] ??
               responseData['detail'] ??
               responseData.toString();
-          log('Extracted message from Map: $errorMessage');
+          log('Extracted message from Map: $rawErrorMessage');
         } else if (responseData is String) {
-          final decoded = jsonDecode(responseData);
-          if (decoded is Map<String, dynamic>) {
-            errorMessage = decoded['message'] ??
-                decoded['error'] ??
-                decoded['detail'] ??
-                decoded.toString();
-            log('Extracted message from JSON String: $errorMessage');
+          // Check if it's HTML
+          if (responseData.contains('<') && responseData.contains('>')) {
+            rawErrorMessage = responseData;
+            log('Detected HTML response');
           } else {
-            errorMessage = responseData;
+            // Try to parse as JSON
+            try {
+              final decoded = jsonDecode(responseData);
+              if (decoded is Map<String, dynamic>) {
+                rawErrorMessage = decoded['message'] ??
+                    decoded['error'] ??
+                    decoded['detail'] ??
+                    decoded.toString();
+                log('Extracted message from JSON String: $rawErrorMessage');
+              } else {
+                rawErrorMessage = responseData;
+              }
+            } catch (e) {
+              // Not JSON, use as-is
+              rawErrorMessage = responseData;
+            }
           }
         } else {
-          errorMessage = responseData.toString();
+          rawErrorMessage = responseData.toString();
         }
       } catch (e) {
         log('Error parsing response: $e');
+        rawErrorMessage = responseData.toString();
       }
     }
 
     // ✅ Fallback message
-    errorMessage ??= error.message ?? 'Unknown Error';
-    log('Final error message: $errorMessage');
+    rawErrorMessage ??= error.message ?? 'Unknown Error';
+    log('Raw error message: $rawErrorMessage');
 
     // ✅ Map DioExceptionType to custom error
     switch (error.type) {
@@ -179,68 +272,64 @@ class ApiService {
       case DioExceptionType.receiveTimeout:
         return const MyError(
           key: AppError.unknown,
-          message: 'Connection Timeout',
+          message: 'Connection timeout. Please check your internet connection and try again.',
         );
 
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode ?? 0;
         switch (statusCode) {
           case 400:
-            return MyError(
-              key: AppError.badRequest,
-              message: errorMessage ?? 'Bad Request',
-            );
+            errorKey = AppError.badRequest;
+            break;
           case 401:
-            return MyError(
-              key: AppError.unauthorized,
-              message: errorMessage ?? 'Unauthorized',
-            );
+            errorKey = AppError.unauthorized;
+            break;
           case 403:
-            return MyError(
-              key: AppError.forbidden,
-              message: errorMessage ?? 'Forbidden',
-            );
+            errorKey = AppError.forbidden;
+            break;
           case 404:
-            return MyError(
-              key: AppError.notFound,
-              message: errorMessage ?? 'Not Found',
-            );
+            errorKey = AppError.notFound;
+            break;
           case 500:
-            return MyError(
-              key: AppError.internalServerError,
-              message: errorMessage ?? 'Internal Server Error',
-            );
+            errorKey = AppError.internalServerError;
+            break;
           default:
-            return MyError(
-              key: AppError.unknown,
-              message: errorMessage ?? 'Unexpected Error ($statusCode)',
-            );
+            errorKey = AppError.unknown;
         }
+        final userFriendlyMessage = _getUserFriendlyMessage(errorKey, rawErrorMessage);
+        log('Final error message: $userFriendlyMessage');
+        return MyError(
+          key: errorKey,
+          message: userFriendlyMessage,
+        );
 
       case DioExceptionType.cancel:
         return const MyError(
           key: AppError.unknown,
-          message: 'Request Cancelled',
+          message: 'Request was cancelled. Please try again.',
         );
 
       case DioExceptionType.unknown:
         // Sometimes Dio throws unknown for socket or parsing issues
-        if (errorMessage.toLowerCase().contains('socket') ||
-            errorMessage.toLowerCase().contains('network')) {
+        if (rawErrorMessage.toLowerCase().contains('socket') ||
+            rawErrorMessage.toLowerCase().contains('network') ||
+            rawErrorMessage.toLowerCase().contains('connection')) {
           return const MyError(
             key: AppError.unknown,
-            message: 'No Internet Connection',
+            message: 'No internet connection. Please check your network and try again.',
           );
         }
+        final userFriendlyMessage = _getUserFriendlyMessage(AppError.unknown, rawErrorMessage);
         return MyError(
           key: AppError.unknown,
-          message: errorMessage,
+          message: userFriendlyMessage,
         );
 
       default:
+        final userFriendlyMessage = _getUserFriendlyMessage(AppError.unknown, rawErrorMessage);
         return MyError(
           key: AppError.unknown,
-          message: errorMessage,
+          message: userFriendlyMessage,
         );
     }
   }

@@ -48,7 +48,13 @@ class NotificationCubit extends Cubit<NotificationState> {
     res.fold(
       (err) {
         _isFetching = false;
-        emit(NotificationState.failure(err.message));
+        // If we're loading more and have existing data, preserve it
+        if (loadMore && _all.isNotEmpty) {
+          emit(NotificationState.success(List.unmodifiable(_all)));
+        } else {
+          // Only show failure state if we don't have any data
+          emit(NotificationState.failure(err.message));
+        }
       },
       (resp) async {
         final fetched = resp.data;

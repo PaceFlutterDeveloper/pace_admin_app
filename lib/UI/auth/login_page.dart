@@ -227,12 +227,12 @@ class _LoginPageState extends State<LoginPage> {
 
                       SizedBox(height: gapMedium),
 
-                      // Careers button
-                      const CareersButton(
-                        title: 'Explore Careers',
-                        subtitle: 'View available job opportunities',
-                        icon: Icons.work_outline,
-                      ),
+                      // // Careers button
+                      // const CareersButton(
+                      //   title: 'Explore Careers',
+                      //   subtitle: 'View available job opportunities',
+                      //   icon: Icons.work_outline,
+                      // ),
                     ],
                   ),
                 ),

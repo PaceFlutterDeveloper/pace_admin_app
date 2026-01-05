@@ -12,6 +12,15 @@ class NfcMapyScreen extends StatefulWidget {
 }
 
 class _NfcMapyScreenState extends State<NfcMapyScreen> {
+  NfcProvider? _nfcProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Store provider reference while widget is active
+    _nfcProvider ??= Provider.of<NfcProvider>(context, listen: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,17 +40,12 @@ class _NfcMapyScreenState extends State<NfcMapyScreen> {
                       child: CircularProgressIndicator(),
                     );
                   case Status.loaded:
-                    if (nfcProvider.isNfcAvailable) {
-                      return NfcAvailable();
-                    } else {
-                      return const Center(
-                        child: Text("No NFC available in your device"),
-                      );
-                    }
+                    // Always show the form, even if NFC hardware isn't available
+                    // This allows manual entry for testing or when using external NFC readers
+                    return NfcAvailable();
                   case Status.error:
-                    return const Center(
-                      child: Text("No NFC available in your device"),
-                    );
+                    // Show form even on error - allows manual entry
+                    return NfcAvailable();
                 }
               },
             )));
@@ -49,9 +53,20 @@ class _NfcMapyScreenState extends State<NfcMapyScreen> {
 
   @override
   void initState() {
-    Future(() => Provider.of<NfcProvider>(context, listen: false)
-        .checkNfcAvailability());
-    // TODO: implement initState
     super.initState();
+    Future(() {
+      if (mounted) {
+        _nfcProvider ??= Provider.of<NfcProvider>(context, listen: false);
+        _nfcProvider?.checkNfcAvailability();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Stop NFC session when navigating away
+    // Use stored reference instead of accessing context
+    _nfcProvider?.stopNfcSession();
+    super.dispose();
   }
 }

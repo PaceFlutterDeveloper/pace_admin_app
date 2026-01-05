@@ -45,6 +45,8 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We need access to Face ID for account security.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>This app needs NFC access to read student NFC cards for attendance and mapping.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
