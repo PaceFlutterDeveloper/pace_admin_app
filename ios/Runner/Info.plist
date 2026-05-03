@@ -22,7 +22,11 @@
 
 <!-- If you ever capture new photos/videos -->
 <key>NSCameraUsageDescription</key>
-<string>This app needs access to your camera to take photos for tickets.</string>
+<string>This app uses the camera for attendance face verification and for attaching ticket photos.</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Location access is required to verify that attendance is marked within school premises.</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>Background location access helps keep attendance geofence status ready before face scan.</string>
 
 <!-- If you record audio -->
 <key>NSMicrophoneUsageDescription</key>

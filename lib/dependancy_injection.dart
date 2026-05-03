@@ -4,7 +4,8 @@ import 'package:admin_app/UI/auth/repository/auth_repository.dart';
 import 'package:admin_app/UI/class_attendance/cubit/grade_attendance_cubit.dart';
 import 'package:admin_app/UI/class_attendance/repository/class_attendance_repository.dart';
 import 'package:admin_app/UI/employee/attendance/cubit/attendance_cubit.dart';
-import 'package:admin_app/UI/employee/attendance/repository/attendance_repository.dart';
+import 'package:admin_app/UI/employee/attendance/repository/attendance_repository.dart'
+    as legacy_attendance;
 import 'package:admin_app/UI/employee/profile/cubit/profile_cubit.dart';
 import 'package:admin_app/UI/employee/profile/repository/profile_repository.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/detail/manage_ticket_detail_bloc.dart';
@@ -27,6 +28,15 @@ import 'package:admin_app/UI/students/repository/students_repository.dart';
 import 'package:admin_app/core/const/db_names.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/services/authentication_service.dart';
+import 'package:admin_app/features/attendance/data/datasources/attendance_remote_datasource.dart';
+import 'package:admin_app/features/attendance/data/datasources/geofence_local_datasource.dart';
+import 'package:admin_app/features/attendance/data/repositories/attendance_repository_impl.dart';
+import 'package:admin_app/features/attendance/domain/repositories/attendance_repository.dart'
+    as attendance_domain;
+import 'package:admin_app/features/attendance/domain/usecases/capture_and_verify_face_usecase.dart';
+import 'package:admin_app/features/attendance/domain/usecases/check_geofence_usecase.dart';
+import 'package:admin_app/features/attendance/domain/usecases/submit_attendance_usecase.dart';
+import 'package:admin_app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -84,13 +94,43 @@ Future<void> serviceLocators() async {
   locator.registerLazySingleton<NotificationCubit>(
     () => NotificationCubit(),
   );
-  locator.registerLazySingleton<AttendanceRepository>(
-    () => AttendanceRepository(
+  locator.registerLazySingleton<legacy_attendance.AttendanceRepository>(
+    () => legacy_attendance.AttendanceRepository(
       apiService: locator<ApiService>(),
     ),
   );
   locator.registerLazySingleton<AttendanceCubit>(
     () => AttendanceCubit(),
+  );
+  locator.registerLazySingleton<GeofenceLocalDataSource>(
+    () => GeofenceLocalDataSource(),
+  );
+  locator.registerLazySingleton<AttendanceRemoteDataSource>(
+    () => AttendanceRemoteDataSource(dio: locator<Dio>()),
+  );
+  locator.registerLazySingleton<attendance_domain.AttendanceRepository>(
+    () => AttendanceRepositoryImpl(
+      remoteDataSource: locator<AttendanceRemoteDataSource>(),
+      localDataSource: locator<GeofenceLocalDataSource>(),
+    ),
+  );
+  locator.registerLazySingleton<CheckGeofenceUseCase>(
+    () =>
+        CheckGeofenceUseCase(locator<attendance_domain.AttendanceRepository>()),
+  );
+  locator.registerLazySingleton<CaptureAndVerifyFaceUseCase>(
+    () => CaptureAndVerifyFaceUseCase(),
+  );
+  locator.registerLazySingleton<SubmitAttendanceUseCase>(
+    () => SubmitAttendanceUseCase(
+        locator<attendance_domain.AttendanceRepository>()),
+  );
+  locator.registerFactory<AttendanceBloc>(
+    () => AttendanceBloc(
+      checkGeofenceUseCase: locator<CheckGeofenceUseCase>(),
+      captureAndVerifyFaceUseCase: locator<CaptureAndVerifyFaceUseCase>(),
+      submitAttendanceUseCase: locator<SubmitAttendanceUseCase>(),
+    ),
   );
 // Register HomeRepository and HomeCubit
   locator.registerLazySingleton<HomeRepository>(

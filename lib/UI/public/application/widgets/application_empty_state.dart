@@ -19,7 +19,7 @@ class ApplicationEmptyState extends StatelessWidget {
                 color: Colors.grey[100],
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: FaIcon(
                 FontAwesomeIcons.fileLines,
                 size: 48.w,
                 color: Colors.grey[400],

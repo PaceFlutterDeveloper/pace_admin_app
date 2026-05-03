@@ -30,10 +30,8 @@ class AuthenticationService {
 
       return await _auth.authenticate(
         localizedReason: 'Please authenticate to access this feature',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: false, // Allows passcode fallback
-        ),
+        biometricOnly: false,
+        persistAcrossBackgrounding: true,
       );
     } on PlatformException catch (e) {
       log("❌ Authentication error: ${e.message}");

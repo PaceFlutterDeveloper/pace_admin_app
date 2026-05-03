@@ -14,6 +14,7 @@ import 'package:admin_app/UI/students/cubit/students_cubit.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -87,6 +88,7 @@ class _MyAppState extends State<MyApp> {
           BlocProvider(create: (_) => locator<AuthCubit>()),
           BlocProvider(create: (_) => locator<NotificationCubit>()),
           BlocProvider(create: (_) => locator<AttendanceCubit>()),
+          BlocProvider(create: (_) => locator<AttendanceBloc>()),
           BlocProvider(create: (_) => locator<HomeCubit>()),
           BlocProvider(create: (_) => locator<ProfileCubit>()),
           BlocProvider(create: (_) => locator<GradeAttendanceCubit>()),

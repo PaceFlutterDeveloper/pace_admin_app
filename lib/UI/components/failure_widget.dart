@@ -13,7 +13,7 @@ class FailureWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(FontAwesomeIcons.exclamationTriangle,
+          const FaIcon(FontAwesomeIcons.triangleExclamation,
               size: 50, color: Colors.red),
           const SizedBox(height: 10),
           Text(

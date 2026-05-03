@@ -50,13 +50,24 @@ class MenuComponent extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icon
-                Image.network(
-                  item.iconUrl,
-                  width: iconSize,
-                  height: iconSize,
-                  fit: BoxFit.contain,
-                ),
+                // Icon (API tiles use network image; local tiles may omit URL)
+                if (item.iconUrl.isEmpty)
+                  Icon(
+                    item.page == 'faceAttendance'
+                        ? Icons.face_retouching_natural
+                        : item.page == 'userAttendance'
+                            ? Icons.calendar_month_rounded
+                            : Icons.menu_book_outlined,
+                    size: iconSize,
+                    color: ConstColors.textDark,
+                  )
+                else
+                  Image.network(
+                    item.iconUrl,
+                    width: iconSize,
+                    height: iconSize,
+                    fit: BoxFit.contain,
+                  ),
 
                 SizedBox(height: spacing),
 

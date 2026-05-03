@@ -87,6 +87,10 @@ This document lists the API integrations that are **missing** from the Flutter a
   - Add BLoC state management for countries
 - **Note**: Should be used for nationality/location dropdowns in profile
 
+## 4. Attendance / geofence / face verification (contract TBD)
+
+Geofence config, attendance submission, and face-verification endpoints are **not finalized**. Product/managers will define paths, payloads, and auth (e.g. `GET .../school-geofence`, `POST .../attendance/mark`). The Flutter layer under `lib/features/attendance/` uses placeholder or provisional URLs in `ApiConstants` / `AttendanceRemoteDataSource` — **update request/response models and repository mapping when the backend contract is ready.**
+
 ## Implementation Priority
 
 ### High Priority (Required for core functionality)

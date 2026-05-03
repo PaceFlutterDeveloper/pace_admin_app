@@ -261,7 +261,7 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
   }
 
   Future<void> _pickAttachment() async {
-    final result = await FilePicker.platform.pickFiles();
+    final result = await FilePicker.pickFiles();
     if (result != null && result.files.single.path != null) {
       setState(() {
         _attachment = File(result.files.single.path!);

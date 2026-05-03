@@ -34,8 +34,8 @@ class _GradeAttendanceScreenState extends State<GradeAttendanceScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              FontAwesomeIcons.chalkboardTeacher,
+            const FaIcon(
+              FontAwesomeIcons.chalkboardUser,
             ),
             SizedBox(width: screenWidth * 0.02),
             Text(
@@ -83,7 +83,7 @@ class _GradeAttendanceScreenState extends State<GradeAttendanceScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(FontAwesomeIcons.userGraduate,
+                            const FaIcon(FontAwesomeIcons.userGraduate,
                                 color: Colors.black54),
                             SizedBox(width: screenWidth * 0.02),
                             Text(
@@ -126,7 +126,7 @@ class _GradeAttendanceScreenState extends State<GradeAttendanceScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(FontAwesomeIcons.bookOpen,
+                                const FaIcon(FontAwesomeIcons.bookOpen,
                                     color: Colors.white),
                                 SizedBox(width: screenWidth * 0.02),
                                 Text(
@@ -146,7 +146,7 @@ class _GradeAttendanceScreenState extends State<GradeAttendanceScreen> {
                     ),
                   Row(
                     children: [
-                      const Icon(FontAwesomeIcons.school,
+                      const FaIcon(FontAwesomeIcons.school,
                           color: Colors.black54),
                       SizedBox(width: screenWidth * 0.02),
                       Text(
@@ -203,7 +203,7 @@ class _GradeAttendanceScreenState extends State<GradeAttendanceScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(FontAwesomeIcons.chalkboard,
+                                const FaIcon(FontAwesomeIcons.chalkboard,
                                     color: Colors.blueAccent),
                                 SizedBox(height: screenHeight * 0.01),
                                 Text(

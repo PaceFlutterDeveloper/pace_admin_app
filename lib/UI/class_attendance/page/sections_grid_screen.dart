@@ -75,7 +75,7 @@ class SectionsGridScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(FontAwesomeIcons.chalkboard,
+                    const FaIcon(FontAwesomeIcons.chalkboard,
                         color: Colors.blueAccent),
                     SizedBox(height: screenHeight * 0.01),
                     Center(

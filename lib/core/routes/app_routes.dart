@@ -31,6 +31,7 @@ import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/core/utils/go_router_refresh_stream.dart';
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/features/attendance/presentation/pages/attendance_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -96,9 +97,8 @@ class AppRoute {
               path: Routes.userProfile.path,
               name: Routes.userProfile.name,
               builder: (context, state) {
-                final menuModel = state.extra is MenuModel
-                    ? state.extra as MenuModel
-                    : null;
+                final menuModel =
+                    state.extra is MenuModel ? state.extra as MenuModel : null;
 
                 return ProfilePage(
                   appTitle: menuModel?.menuName ?? 'My Profile',
@@ -186,9 +186,15 @@ class AppRoute {
               name: Routes.userAttendance.name,
               builder: (context, state) {
                 final menuModel = state.extra as MenuModel;
-                return EmpAttendancePage(
-                  menuModel: menuModel,
-                );
+                return EmpAttendancePage(menuModel: menuModel);
+              },
+            ),
+            GoRoute(
+              path: Routes.faceAttendance.path,
+              name: Routes.faceAttendance.name,
+              builder: (context, state) {
+                final menuModel = state.extra as MenuModel;
+                return AttendancePage(title: menuModel.menuName);
               },
             ),
           ]),
@@ -196,7 +202,6 @@ class AppRoute {
       ShellRoute(
         navigatorKey: GlobalKey<NavigatorState>(),
         builder: (context, state, child) {
-          return child;
           return Scaffold(
             appBar: AppBar(
               title: Text(
@@ -352,7 +357,9 @@ enum Routes {
   careers('/careers'),
   jobDetail('/job-detail'),
 // employee pages
-  userAttendance('/userAttendance');
+  userAttendance('/userAttendance'),
+  /// Face + geofence check-in (new). Legacy calendar stays on [userAttendance].
+  faceAttendance('/faceAttendance');
 
   final String path;
 
