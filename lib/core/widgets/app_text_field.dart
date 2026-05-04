@@ -147,7 +147,6 @@ class _AppTextFieldState extends State<AppTextField> {
 
     final grayColor = isDark ? AppColors.iosSystemGrayDark : AppColors.iosSystemGray;
     final gray3Color = isDark ? AppColors.iosSystemGray3Dark : AppColors.iosSystemGray3;
-    final errorColor = isDark ? AppColors.iosRedDark : AppColors.iosRed;
 
     Widget? suffixWidget;
     if (widget.suffix != null) {
@@ -193,7 +192,7 @@ class _AppTextFieldState extends State<AppTextField> {
               fontWeight: FontWeight.w500,
               color: hasError
                   ? adaptiveErrorColor
-                  : theme.colorScheme.onSurface.withOpacity(0.8),
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.8),
             ),
           ),
           AppSpacing.vGapSm,
@@ -202,7 +201,7 @@ class _AppTextFieldState extends State<AppTextField> {
           duration: AppDurations.fast,
           curve: AppCurves.standard,
           decoration: BoxDecoration(
-            color: widget.enabled ? fillColor : fillColor.withOpacity(0.5),
+            color: widget.enabled ? fillColor : fillColor.withValues(alpha: 0.5),
             borderRadius: AppRadius.borderRadiusMd,
             border: Border.all(
               color: borderColor,
@@ -300,7 +299,7 @@ class _AppTextFieldState extends State<AppTextField> {
               fontWeight: FontWeight.w500,
               color: hasError
                   ? adaptiveErrorColor
-                  : theme.colorScheme.onSurface.withOpacity(0.5),
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],

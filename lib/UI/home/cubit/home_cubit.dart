@@ -1,8 +1,10 @@
 import 'package:admin_app/UI/auth/data_source/auth_data.dart';
 import 'package:admin_app/UI/auth/models/auth_model.dart';
+import 'package:admin_app/UI/home/data/dummy_home_menu.dart';
 import 'package:admin_app/UI/home/models/menu_model.dart';
 import 'package:admin_app/UI/home/repository/home_repository.dart';
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -104,7 +106,20 @@ class HomeCubit extends Cubit<HomeState> {
           }
         }
 
-        emit(HomeState.success(homeMenuTilesForGrid(menuData.data)));
+        var tiles = homeMenuTilesForGrid(menuData.data);
+        if (kDebugMode) {
+          final usedPages =
+              tiles.map((t) => t.page).whereType<String>().toSet();
+          final dummyTiles = homeMenuTilesForGrid(kDebugDummyHomeMenu());
+          final extras = dummyTiles
+              .where(
+                (d) => d.page != null && !usedPages.contains(d.page),
+              )
+              .toList();
+          tiles = [...tiles, ...extras];
+        }
+
+        emit(HomeState.success(tiles));
       },
     );
   }

@@ -8,11 +8,10 @@ import 'package:glass_liquid_navbar/glass_liquid_navbar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-/// Default [LiquidGlassTheme.pillHeight] + typical [LiquidGlassNavbar.floatingOffset].
 const double _kLiquidNavPillHeight = 64;
 const double _kLiquidNavFloatingOffset = 16;
 
-/// Bottom inset for scaffold body when using [LiquidGlassNavbar] with [Scaffold.extendBody].
+/// Bottom padding for scaffold body with [LiquidGlassNavbar] + [extendBody].
 double liquidGlassNavbarBodyOverlap(BuildContext context) =>
     _kLiquidNavPillHeight +
     _kLiquidNavFloatingOffset +
@@ -46,21 +45,17 @@ LiquidGlassTheme _liquidGlassNavTheme(BuildContext context) {
         );
 }
 
-/// Shell bottom navigation: glass / liquid transitions, synced with [GoRouter].
+/// Glass-style bottom navigation for the main authenticated shell route.
 class LiquidGlassUserBottomNav extends StatelessWidget {
   const LiquidGlassUserBottomNav({super.key});
 
   static void _onTabTap(BuildContext context, int index) {
-    switch (index) {
-      case 1:
-        context.go(Routes.getNotifications.path);
-        break;
-      case 2:
-        context.go(Routes.userProfile.path);
-        break;
-      case 0:
-      default:
-        context.go(Routes.home.path);
+    if (index == 1) {
+      context.go(Routes.getNotifications.path);
+    } else if (index == 2) {
+      context.go(Routes.userProfile.path);
+    } else {
+      context.go(Routes.home.path);
     }
   }
 
@@ -77,16 +72,13 @@ class LiquidGlassUserBottomNav extends StatelessWidget {
           orElse: () => AuthModel.empty(),
         );
 
-        final notificationCount =
-            user.notificationCount > 0 ? user.notificationCount : 0;
-
         final items = [
           const LiquidNavItem(
             icon: CupertinoIcons.house_fill,
             label: 'Home',
           ),
           LiquidNavItem(
-            customIcon: _BellWithBadge(count: notificationCount),
+            customIcon: _BellWithBadge(count: user.notificationCount),
             label: 'Notifications',
           ),
           LiquidNavItem(
@@ -111,12 +103,11 @@ class LiquidGlassUserBottomNav extends StatelessWidget {
   }
 }
 
-/// Bell + count badge (`LiquidNavItem.badge` is not painted by glass_liquid_navbar 0.2.x).
+/// Package 0.2.x ignores [LiquidNavItem.badge]; draw count badge here.
 class _BellWithBadge extends StatelessWidget {
   const _BellWithBadge({required this.count});
 
   final int count;
-
   static const double _slot = 26;
 
   @override
@@ -148,10 +139,7 @@ class _BellWithBadge extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(100),
-                  border: Border.all(
-                    color: const Color(0xFFB22222),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: scheme.error, width: 1.5),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -170,32 +158,28 @@ class _BellWithBadge extends StatelessWidget {
   }
 }
 
-/// Small avatar for the Profile tab slot (liquid bar uses fixed [iconSize]).
 class _ProfileShellNavAvatar extends StatelessWidget {
   const _ProfileShellNavAvatar({required this.user});
 
   final AuthModel user;
-
   static const double _size = 26;
 
   @override
   Widget build(BuildContext context) {
+    final nameLabel = user.name.isNotEmpty ? user.name : '?';
+
     if (user.profilePicture.isEmpty) {
-      return InitialAvatar(
-        name: user.name.isNotEmpty ? user.name : '?',
-        size: _size,
-      );
+      return InitialAvatar(name: nameLabel, size: _size);
     }
+
     return ClipOval(
       child: Image.network(
         user.profilePicture,
         width: _size,
         height: _size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => InitialAvatar(
-          name: user.name.isNotEmpty ? user.name : '?',
-          size: _size,
-        ),
+        errorBuilder: (_, __, ___) =>
+            InitialAvatar(name: nameLabel, size: _size),
       ),
     );
   }

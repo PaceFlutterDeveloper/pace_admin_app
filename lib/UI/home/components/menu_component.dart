@@ -21,6 +21,16 @@ class MenuComponent extends StatelessWidget {
         return CupertinoIcons.person_crop_circle_badge_checkmark;
       case 'userAttendance':
         return CupertinoIcons.calendar;
+      case 'manageTickets':
+        return CupertinoIcons.wrench_fill;
+      case 'tickets':
+        return CupertinoIcons.tickets_fill;
+      case 'classAttendance':
+        return CupertinoIcons.person_3_fill;
+      case 'userProfile':
+        return CupertinoIcons.person_crop_circle_fill;
+      case 'nfcMapping':
+        return CupertinoIcons.radiowaves_right;
       default:
         return CupertinoIcons.square_grid_2x2;
     }
