@@ -44,7 +44,16 @@ class AttendanceRepository {
       return Left(response.left);
     } else {
       log("Notification response \n${(response.right)}");
-      return Right(AttendanceResponseModel.fromJson((response.right)));
+      final model = AttendanceResponseModel.fromJson((response.right));
+      if (!model.status) {
+        return Left(
+          MyError(
+            key: AppError.apiError,
+            message: model.message.isNotEmpty ? model.message : 'Request failed',
+          ),
+        );
+      }
+      return Right(model);
     }
   }
 }

@@ -27,6 +27,7 @@ import 'package:admin_app/UI/public/jobs/pages/job_detail_page.dart';
 import 'package:admin_app/UI/public/jobs/pages/jobs_page.dart';
 import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
 import 'package:admin_app/UI/students/pages/students_page.dart';
+import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/core/utils/go_router_refresh_stream.dart';
@@ -65,6 +66,7 @@ class AppRoute {
       ),
       ShellRoute(
           navigatorKey: _shellNavigatorKey,
+          observers: [shellRouteObserver],
           builder: (context, state, child) {
             return ScaffoldWithNavBar(child: child);
           },
@@ -72,7 +74,7 @@ class AppRoute {
             GoRoute(
               path: Routes.home.path,
               name: Routes.home.name,
-              builder: (_, __) => HomeScreen(),
+              builder: (_, __) => const HomeScreen(),
             ),
             GoRoute(
               path: Routes.getNotifications.path,

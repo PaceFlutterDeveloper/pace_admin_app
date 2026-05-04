@@ -18,13 +18,26 @@ class AttendanceResponseModel {
 
   String toJson() => json.encode(toMap());
 
-  factory AttendanceResponseModel.fromMap(Map<String, dynamic> json) =>
-      AttendanceResponseModel(
-        status: json["status"],
-        message: json["message"],
-        data: List<AttendanceModel>.from(
-            json["data"].map((x) => AttendanceModel.fromMap(x))),
-      );
+  factory AttendanceResponseModel.fromMap(Map<String, dynamic> json) {
+    final dataRaw = json['data'];
+    final List<AttendanceModel> rows;
+    if (dataRaw is List) {
+      rows = dataRaw
+          .map(
+            (x) => AttendanceModel.fromMap(
+              Map<String, dynamic>.from(x as Map),
+            ),
+          )
+          .toList();
+    } else {
+      rows = [];
+    }
+    return AttendanceResponseModel(
+      status: json['status'] == true,
+      message: json['message']?.toString() ?? '',
+      data: rows,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         "status": status,

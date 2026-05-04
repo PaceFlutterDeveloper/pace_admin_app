@@ -87,7 +87,7 @@ dependencies:
   # UI/UX Design System packages
   flutter_animate: ^4.5.0
   gap: ^3.0.1
-  glass_liquid_navbar: ^0.2.0
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

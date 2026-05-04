@@ -1,5 +1,6 @@
 import 'package:admin_app/UI/employee/attendance/cubit/attendance_cubit.dart';
 import 'package:admin_app/UI/employee/attendance/models/attendance_model.dart';
+import 'package:admin_app/UI/employee/attendance/utils/attendance_record_status.dart';
 import 'package:admin_app/UI/home/models/menu_model.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:flutter/material.dart';
@@ -32,44 +33,12 @@ class EmpAttendancePageState extends State<EmpAttendancePage> {
         );
   }
 
-  /// Derives a status string from an [AttendanceModel].
-  String _getAttendanceStatusFromModel(AttendanceModel attendance) {
-    return attendance.status == "P"
-        ? "Present"
-        : attendance.status == "CL"
-            ? "Casual Leave"
-            : attendance.status == "SL"
-                ? "Sick Leave"
-                : attendance.status == "HL"
-                    ? "Holiday"
-                    : attendance.status == "AL"
-                        ? "Annual Leave"
-                        : "Absent";
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case "Present":
-        return Colors.green;
-      case "Absent":
-        return Colors.red;
-      case "Casual Leave":
-      case "Sick Leave":
-      case "Annual Leave":
-        return Colors.brown;
-      case "Holiday":
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
   /// Build a marked dates map from the attendance list.
   EventList<Event> _buildMarkedDatesMap(List<AttendanceModel> attendanceList) {
     final markers = EventList<Event>(events: {});
     for (final attendance in attendanceList) {
       final normalizedDate = DateUtils.dateOnly(attendance.attDate);
-      final status = _getAttendanceStatusFromModel(attendance);
+      final status = attendanceRecordStatusLabel(attendance);
       markers.add(
         normalizedDate,
         Event(
@@ -81,7 +50,7 @@ class EmpAttendancePageState extends State<EmpAttendancePage> {
             width: 5.0,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _getStatusColor(status),
+              color: attendanceRecordStatusColor(status),
             ),
           ),
         ),
@@ -133,7 +102,7 @@ class EmpAttendancePageState extends State<EmpAttendancePage> {
       );
     }
 
-    final status = _getAttendanceStatusFromModel(attendanceRecord);
+    final status = attendanceRecordStatusLabel(attendanceRecord);
 
     return Container(
       decoration: BoxDecoration(
@@ -169,7 +138,7 @@ class EmpAttendancePageState extends State<EmpAttendancePage> {
                   status,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: _getStatusColor(status),
+                    color: attendanceRecordStatusColor(status),
                   ),
                 ),
               ],

@@ -16,6 +16,7 @@ export 'app_bottom_nav_bar.dart';
 export 'app_button.dart';
 export 'app_card.dart';
 export 'app_dialogs.dart';
+export 'app_glass_nav_bar.dart';
 export 'app_empty_state.dart';
 export 'app_error_state.dart';
 export 'app_list_tile.dart';
