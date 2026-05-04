@@ -1,90 +1,97 @@
 import 'package:admin_app/UI/auth/models/auth_model.dart';
-import 'package:admin_app/UI/components/button_component.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/core/widgets/app_avatar.dart';
+import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class UserTile extends StatelessWidget {
-  final void Function() onTap;
+  final VoidCallback onTap;
 
   const UserTile({
-    Key? key,
+    super.key,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Accessing the loginBox from dependency injection
+    final theme = Theme.of(context);
     final Box<AuthModel> loginBox = locator<Box<AuthModel>>();
 
     return ValueListenableBuilder(
       valueListenable: loginBox.listenable(),
       builder: (context, Box<AuthModel> box, child) {
-        // Retrieve the active login model
-        AuthModel? activeUser =
-            box.values.where((login) => login.isActive).isNotEmpty
-                ? box.values.firstWhere((login) => login.isActive)
-                : null;
+        final AuthModel? activeUser = box.values
+            .where((login) => login.isActive)
+            .isNotEmpty
+            ? box.values.firstWhere((login) => login.isActive)
+            : null;
 
-        // Display a default user or the active user's data if available
-        return activeUser == null
-            ? ButtonComponent(buttonText: "LOGIN", onTap: onTap)
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: onTap,
-                    child: Container(
-                      width: 45.w,
-                      height: 45.w,
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFF2080B2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+        if (activeUser == null) {
+          return AppButton.primary(
+            label: 'Sign In',
+            onPressed: onTap,
+            isFullWidth: false,
+          );
+        }
+
+        return GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              // Avatar with primary color border
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: AppAvatar(
+                  imageUrl: activeUser.profilePicture,
+                  name: activeUser.name.isNotEmpty ? activeUser.name : 'User',
+                  size: AppAvatarSize.md,
+                ),
+              ),
+
+              const SizedBox(width: AppSpacing.md),
+
+              // User info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      activeUser.name.isNotEmpty ? activeUser.name : 'Guest User',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                        letterSpacing: -0.2,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Container(
-                          decoration: ShapeDecoration(
-                            image: DecorationImage(
-                              image: activeUser.profilePicture != null
-                                  ? NetworkImage(activeUser.profilePicture)
-                                  : const AssetImage("assets/image/user.png")
-                                      as ImageProvider,
-                              fit: BoxFit.fill,
-                            ),
-                            shape: const OvalBorder(),
-                          ),
-                        ),
-                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        activeUser.name ?? 'Guest User',
-                        style: TextStyle(
-                          color: const Color(0xFF191A2C),
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const SizedBox(height: 2),
+                    Text(
+                      activeUser.schoolCode,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
-                      Text(
-                        activeUser.schoolCode ?? '',
-                        style: TextStyle(
-                          color: const Color(0xFF535662),
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
       },
     );
   }

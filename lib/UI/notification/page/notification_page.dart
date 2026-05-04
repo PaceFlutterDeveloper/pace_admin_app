@@ -1,14 +1,19 @@
-// lib/UI/notification/pages/notification_page.dart
-
-import 'package:admin_app/UI/components/failure_widget.dart';
 import 'package:admin_app/UI/notification/components/notification_list.dart';
 import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/core/widgets/app_app_bar.dart';
+import 'package:admin_app/core/widgets/app_empty_state.dart';
+import 'package:admin_app/core/widgets/app_error_state.dart';
+import 'package:admin_app/core/widgets/app_refresh_indicator.dart';
+import 'package:admin_app/core/widgets/app_shimmer.dart';
+import 'package:admin_app/core/widgets/app_toast.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class NotificationPage extends StatefulWidget {
-  const NotificationPage({Key? key}) : super(key: key);
+  const NotificationPage({super.key});
 
   @override
   State<NotificationPage> createState() => _NotificationPageState();
@@ -46,53 +51,45 @@ class _NotificationPageState extends State<NotificationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: ConstColors.backgroundColor,
-      appBar: AppBar(
-        elevation: 1,
-        title: const Text("Notifications"),
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.surfaceContainerLight,
+      appBar: AppAppBar(
+        title: 'Notifications',
         actions: [
           TextButton.icon(
             onPressed: () => _cubit.markAllAsRead(),
-            icon: const Icon(Icons.mark_email_read, color: Colors.black),
-            label:
-                const Text('Read All', style: TextStyle(color: Colors.black)),
+            icon: Icon(
+              CupertinoIcons.checkmark_circle,
+              color: theme.colorScheme.primary,
+              size: 18,
+            ),
+            label: Text(
+              'Read All',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),
       body: SafeArea(
         child: BlocListener<NotificationCubit, NotificationState>(
           listener: (context, state) {
-            // Track when we successfully load notifications
             state.whenOrNull(
               success: (_) => _hasLoadedNotifications = true,
             );
 
-            // Show snackbar for errors only if we already have loaded notifications
-            // (meaning it's an error during mark as read or load more, not initial load)
             state.whenOrNull(
               failure: (err) {
                 if (_hasLoadedNotifications) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(err),
-                      backgroundColor: Colors.red,
-                      action: SnackBarAction(
-                        label: 'Retry',
-                        textColor: Colors.white,
-                        onPressed: () {
-                          // Retry loading more if available
-                          if (_cubit.hasMore) {
-                            _cubit.fetchNotifications(loadMore: true);
-                          } else {
-                            // Otherwise retry initial load
-                            _cubit.fetchNotifications(loadMore: false);
-                          }
-                        },
-                      ),
-                      duration: const Duration(seconds: 4),
-                    ),
-                  );
+                  AppToast.error(context, err);
                 }
               },
             );
@@ -100,13 +97,15 @@ class _NotificationPageState extends State<NotificationPage> {
           child: BlocBuilder<NotificationCubit, NotificationState>(
             builder: (context, state) {
               return state.when(
-                initial: () => const Center(child: CircularProgressIndicator()),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                failure: (err) => Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FailureWidget(
-                    message: err,
-                    onRetry: () => _cubit.fetchNotifications(loadMore: false),
+                initial: () => _buildLoadingState(),
+                loading: () => _buildLoadingState(),
+                failure: (err) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: AppErrorState.generic(
+                      message: err,
+                      onRetry: () => _cubit.fetchNotifications(loadMore: false),
+                    ),
                   ),
                 ),
                 success: (list) => _buildList(list),
@@ -124,12 +123,34 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
+  Widget _buildLoadingState() {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: ShimmerList(
+        itemCount: 8,
+        showAvatar: true,
+        showSubtitle: true,
+      ),
+    );
+  }
+
   Widget _buildList(List notifications) {
-    return NotificationList(
-      notificationsList: notifications.cast(),
-      controller: _scrollController,
-      isLoadingMore: _cubit.isFetching,
-      hasMore: _cubit.hasMore,
+    if (notifications.isEmpty) {
+      return Center(
+        child: AppEmptyState.noNotifications(),
+      );
+    }
+
+    return AppRefreshIndicator(
+      onRefresh: () async {
+        await _cubit.fetchNotifications(loadMore: false);
+      },
+      child: NotificationList(
+        notificationsList: notifications.cast(),
+        controller: _scrollController,
+        isLoadingMore: _cubit.isFetching,
+        hasMore: _cubit.hasMore,
+      ),
     );
   }
 }

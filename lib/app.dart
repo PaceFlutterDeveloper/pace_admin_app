@@ -11,6 +11,7 @@ import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/students/bloc/student_attendance_bloc.dart';
 import 'package:admin_app/UI/students/cubit/students_cubit.dart';
+import 'package:admin_app/config/themes/app_theme.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/dependancy_injection.dart';
@@ -19,7 +20,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class MyApp extends StatefulWidget {
@@ -105,38 +105,24 @@ class _MyAppState extends State<MyApp> {
           splitScreenMode: true,
           // Now `AppRoute.setStream(context)` is called inside the `builder` when context is correctly available
           builder: (context, child) {
-            // Ensure the context contains the correct provider before calling setStream
-            AppRoute.setStream(context); // Call it after context is available
+            AppRoute.setStream(context);
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
               title: "Smart PACE",
-              theme: ThemeData(
-                textTheme: GoogleFonts.poppinsTextTheme(),
-                primarySwatch: Colors.blue,
-                scaffoldBackgroundColor: ConstColors.backgroundColor,
-                appBarTheme: AppBarTheme(
-                  centerTitle: false,
-                  foregroundColor: ConstColors.backgroundColor,
-                  surfaceTintColor: ConstColors.backgroundColor,
-                  shadowColor: ConstColors.backgroundColor,
-                  backgroundColor: Colors.white,
-                  // elevation: 2,
-                  iconTheme: const IconThemeData(
-                    color: Colors.black,
-                  ),
-                  actionsIconTheme: const IconThemeData(
-                    color: Colors.black,
-                  ),
-                  titleTextStyle: GoogleFonts.nunitoSans(
-                    textStyle: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
+              theme: AppTheme.light(ConstColors.primary),
+              darkTheme: AppTheme.dark(ConstColors.primary),
+              themeMode: ThemeMode.light,
               routerConfig: AppRoute.router,
+              builder: (context, child) {
+                final mediaQuery = MediaQuery.of(context);
+                final clampedTextScaler = TextScaler.linear(
+                  mediaQuery.textScaler.scale(1.0).clamp(0.8, 1.2),
+                );
+                return MediaQuery(
+                  data: mediaQuery.copyWith(textScaler: clampedTextScaler),
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
             );
           },
         ),

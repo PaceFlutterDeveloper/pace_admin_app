@@ -84,6 +84,11 @@ dependencies:
   upgrader: ^13.1.0
   logger: ^2.5.0
 
+  # UI/UX Design System packages
+  flutter_animate: ^4.5.0
+  gap: ^3.0.1
+  glass_liquid_navbar: ^0.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

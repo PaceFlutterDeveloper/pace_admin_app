@@ -90,6 +90,7 @@ class GeofenceStatusWidget extends StatelessWidget {
               OutlinedButton(
                 onPressed: onRetry,
                 style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 48),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

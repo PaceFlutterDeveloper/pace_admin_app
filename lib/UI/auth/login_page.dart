@@ -2,24 +2,22 @@ import 'dart:convert';
 
 import 'package:admin_app/UI/auth/cubit/auth_cubit.dart';
 import 'package:admin_app/UI/auth/models/startup_school.dart';
-import 'package:admin_app/UI/components/button_component.dart';
-import 'package:admin_app/UI/components/careers_button.dart';
-import 'package:admin_app/UI/components/drop_down_with_label.dart';
-import 'package:admin_app/UI/components/form_field_with_label.dart';
 import 'package:admin_app/UI/home/cubit/home_cubit.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
-import 'package:admin_app/core/utils/utils.dart';
+import 'package:admin_app/core/widgets/app_button.dart';
+import 'package:admin_app/core/widgets/app_text_field.dart';
+import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -27,8 +25,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final userNameController = TextEditingController();
-  final passwordController = TextEditingController();
+  final _userNameController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   List<StartupSchool> _schools = [];
   String? _selectedSchool;
@@ -39,6 +37,13 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _fetchSchools();
+  }
+
+  @override
+  void dispose() {
+    _userNameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchSchools() async {
@@ -56,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
         });
       } else {
         setState(() {
-          _schoolLoadError = 'Failed to load schools (${res.statusCode})';
+          _schoolLoadError = 'Failed to load schools';
           _loadingSchools = false;
         });
       }
@@ -68,179 +73,300 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _handleLogin() {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedSchool == null) {
+        AppToast.warning(context, 'Please select a school');
+        return;
+      }
+      locator<AuthCubit>().login(
+        userName: _userNameController.text.trim(),
+        password: _passwordController.text,
+        schoolCode: _selectedSchool!.toLowerCase(),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
-    final h = size.height;
-
-    // tweak these ratios as needed
-    final sidePadding = w * 0.04; // ~16px on 400px width
-    final verticalPadding = h * 0.02; // ~16px on 800px height
-    final logoWidth = w * 0.6; // ~250px on 420px width
-    final titleFont = w * 0.06; // ~24px
-    final subtitleFont = w * 0.035; // ~14px
-    final fieldIconPadding = w * 0.02; // ~8px
-    final gapSmall = h * 0.015; // ~12px
-    final gapMedium = h * 0.02; // ~16px
-    final loaderSize = w * 0.12; // ~48px
-    final loaderLarge = w * 0.18; // ~70px
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(backgroundColor: Colors.white, elevation: 0),
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: sidePadding,
-            vertical: verticalPadding,
-          ),
-          child: BlocConsumer<AuthCubit, AuthState>(
-            listener: (context, state) {
-              state.maybeWhen(
-                loginFailure: (msg) => showToast(msg),
-                loginSuccess: () {
-                  context.read<HomeCubit>().getMenu();
-                  context.goNamed(Routes.root.name);
-                },
-                orElse: () {},
-              );
-            },
-            builder: (context, state) {
-              return Form(
-                key: _formKey,
-                child: SingleChildScrollView(
+        child: BlocConsumer<AuthCubit, AuthState>(
+          listener: (context, state) {
+            state.maybeWhen(
+              loginFailure: (msg) => AppToast.error(context, msg),
+              loginSuccess: () {
+                context.read<HomeCubit>().getMenu();
+                context.goNamed(Routes.root.name);
+              },
+              orElse: () {},
+            );
+          },
+          builder: (context, state) {
+            final isLoading = state.maybeWhen(
+              loading: () => true,
+              orElse: () => false,
+            );
+
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom,
+                ),
+                child: Form(
+                  key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const SizedBox(height: AppSpacing.xxl),
+
                       // Logo
                       Center(
                         child: Image.asset(
                           "assets/logo/group.png",
-                          width: logoWidth,
+                          width: 220,
                         ),
                       ),
-                      SizedBox(height: gapMedium),
 
-                      // Title
+                      const SizedBox(height: AppSpacing.xxl),
+
+                      // Welcome text
                       Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: const Color(0xFF101828),
-                          fontSize: titleFont,
-                          fontWeight: FontWeight.w600,
+                        'Welcome back',
+                        style: GoogleFonts.inter(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      SizedBox(height: gapSmall),
-
-                      // Subtitle
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Sign in to my account',
-                        style: TextStyle(
-                          color: const Color(0xFF475467),
-                          fontSize: subtitleFont,
-                          fontWeight: FontWeight.w500,
+                        'Sign in to continue to your account',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
-                      SizedBox(height: gapMedium),
 
-                      // School dropdown / loader / error
-                      if (_loadingSchools)
-                        Center(
-                          child: LoadingAnimationWidget.waveDots(
-                            color: ConstColors.primary,
-                            size: loaderSize,
-                          ),
-                        )
-                      else if (_schoolLoadError != null)
-                        Text(
-                          _schoolLoadError!,
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: subtitleFont,
-                          ),
-                        )
-                      else
-                        DropdownWithLabel(
-                          labelText: 'School',
-                          hintText: 'Select School',
-                          items: _schools.map((s) => s.schoolCode).toList(),
-                          selectedValue: _selectedSchool,
-                          onChanged: (val) =>
-                              setState(() => _selectedSchool = val),
-                          validator: (v) =>
-                              v == null ? 'Please select a school' : null,
-                        ),
+                      const SizedBox(height: AppSpacing.xl),
 
-                      SizedBox(height: gapSmall),
+                      // School dropdown
+                      _buildSchoolDropdown(theme, isDark),
 
-                      // Username
-                      FormFeildWithLabel(
-                        icon: Padding(
-                          padding: EdgeInsets.all(fieldIconPadding),
-                          child: SvgPicture.asset('assets/icons/employee.svg'),
-                        ),
-                        labelText: "User Name",
-                        controller: userNameController,
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Username field
+                      AppTextField(
+                        label: 'Username',
+                        hint: 'Enter your username',
+                        controller: _userNameController,
+                        prefixIcon: CupertinoIcons.person,
+                        textInputAction: TextInputAction.next,
                         validator: (v) => (v == null || v.isEmpty)
-                            ? 'Please enter a valid user name'
+                            ? 'Please enter your username'
                             : null,
                       ),
-                      SizedBox(height: gapSmall),
 
-                      // Password
-                      FormFeildWithLabel(
-                        icon: Padding(
-                          padding: EdgeInsets.all(fieldIconPadding),
-                          child: SvgPicture.asset('assets/icons/password.svg'),
-                        ),
-                        labelText: "Password",
-                        controller: passwordController,
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Password field
+                      AppTextField(
+                        label: 'Password',
+                        hint: 'Enter your password',
+                        controller: _passwordController,
+                        prefixIcon: CupertinoIcons.lock,
                         obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _handleLogin(),
                         validator: (v) => (v == null || v.isEmpty)
-                            ? 'Please enter a valid password'
+                            ? 'Please enter your password'
                             : null,
                       ),
-                      SizedBox(height: gapMedium),
 
-                      // Login button or loader
-                      state.maybeWhen(
-                        loading: () => Center(
-                          child: LoadingAnimationWidget.waveDots(
-                            color: ConstColors.primary,
-                            size: loaderLarge,
-                          ),
-                        ),
-                        orElse: () => ButtonComponent(
-                          buttonText: "LOGIN",
-                          onTap: () {
-                            if (_formKey.currentState!.validate()) {
-                              locator<AuthCubit>().login(
-                                userName: userNameController.text,
-                                password: passwordController.text,
-                                schoolCode: _selectedSchool!.toLowerCase(),
-                              );
-                            }
-                          },
-                        ),
+                      const SizedBox(height: AppSpacing.xl),
+
+                      // Login button
+                      AppButton.primary(
+                        label: 'Sign In',
+                        onPressed: isLoading ? null : _handleLogin,
+                        isLoading: isLoading,
                       ),
 
-                      SizedBox(height: gapMedium),
-
-                      // // Careers button
-                      // const CareersButton(
-                      //   title: 'Explore Careers',
-                      //   subtitle: 'View available job opportunities',
-                      //   icon: Icons.work_outline,
-                      // ),
+                      const SizedBox(height: AppSpacing.xl),
                     ],
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _buildSchoolDropdown(ThemeData theme, bool isDark) {
+    if (_loadingSchools) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.surfaceContainerDark
+              : AppColors.surfaceContainerLight,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              'Loading schools...',
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_schoolLoadError != null) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.iosRed.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.iosRed.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              CupertinoIcons.exclamationmark_circle,
+              color: AppColors.iosRed,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                _schoolLoadError!,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppColors.iosRed,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _loadingSchools = true;
+                  _schoolLoadError = null;
+                });
+                _fetchSchools();
+              },
+              child: Text(
+                'Retry',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'School',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface.withOpacity(0.8),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.surfaceContainerDark
+                : AppColors.surfaceContainerLight,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: _selectedSchool == null
+                ? null
+                : Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                  ),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: _selectedSchool,
+            decoration: InputDecoration(
+              hintText: 'Select your school',
+              hintStyle: GoogleFonts.inter(
+                fontSize: 15,
+                color: theme.colorScheme.onSurface.withOpacity(0.4),
+              ),
+              prefixIcon: Icon(
+                CupertinoIcons.building_2_fill,
+                color: isDark
+                    ? AppColors.iosSystemGrayDark
+                    : AppColors.iosSystemGray,
+                size: 20,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 14,
+              ),
+            ),
+            icon: Icon(
+              CupertinoIcons.chevron_down,
+              size: 18,
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
+            ),
+            dropdownColor: isDark
+                ? AppColors.surfaceElevatedDark
+                : AppColors.surfaceElevatedLight,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            items: _schools.map((s) {
+              return DropdownMenuItem(
+                value: s.schoolCode,
+                child: Text(
+                  s.schoolCode,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: (val) => setState(() => _selectedSchool = val),
+            validator: (v) => v == null ? 'Please select a school' : null,
+          ),
+        ),
+      ],
     );
   }
 }

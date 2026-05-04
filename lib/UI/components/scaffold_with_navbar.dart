@@ -1,16 +1,22 @@
-import 'package:admin_app/UI/components/user_bottom_navigation_bar.dart';
+import 'package:admin_app/UI/components/liquid_glass_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {
   final Widget child;
 
-  const ScaffoldWithNavBar({Key? key, required this.child}) : super(key: key);
+  const ScaffoldWithNavBar({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final bottomOverlap = liquidGlassNavbarBodyOverlap(context);
+
     return Scaffold(
-      body: child,
-      bottomNavigationBar: UserBottomNavBar(),
+      extendBody: true,
+      body: Padding(
+        padding: EdgeInsets.only(bottom: bottomOverlap),
+        child: child,
+      ),
+      bottomNavigationBar: const LiquidGlassUserBottomNav(),
     );
   }
 }
