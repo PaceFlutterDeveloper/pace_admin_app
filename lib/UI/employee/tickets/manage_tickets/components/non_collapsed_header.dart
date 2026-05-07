@@ -1,6 +1,8 @@
 import 'package:admin_app/UI/employee/tickets/manage_tickets/components/build_status_tile.dart';
+import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class NonCollapsedHeader extends StatelessWidget {
   final int all;
@@ -58,7 +60,13 @@ class NonCollapsedHeader extends StatelessWidget {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
+                onTap: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(Routes.tickets.path);
+                  }
+                },
                 child: Icon(
                   Icons.arrow_back,
                   color: ConstColors.white,

@@ -263,8 +263,8 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
                       Expanded(
                         child: ModuleCard(
                           iconBg: const Color(0xFFE8F5E9),
-                          iconData:
-                              CupertinoIcons.person_crop_circle_badge_checkmark,
+                          iconData: CupertinoIcons
+                              .person_crop_circle_badge_checkmark,
                           iconColor: const Color(0xFF2E7D32),
                           title: 'Mark Attendance',
                           subtitle: 'Face + location',

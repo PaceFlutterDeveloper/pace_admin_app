@@ -77,6 +77,42 @@ class AppRoute {
               builder: (_, __) => const HomeScreen(),
             ),
             GoRoute(
+              path: Routes.navAttendance.path,
+              name: Routes.navAttendance.name,
+              builder: (context, _) => Scaffold(
+                body: Center(
+                  child: Text(
+                    'Attendance',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ),
+            ),
+            GoRoute(
+              path: Routes.navReports.path,
+              name: Routes.navReports.name,
+              builder: (context, _) => Scaffold(
+                body: Center(
+                  child: Text(
+                    'Reports',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ),
+            ),
+            GoRoute(
+              path: Routes.navSchedule.path,
+              name: Routes.navSchedule.name,
+              builder: (context, _) => Scaffold(
+                body: Center(
+                  child: Text(
+                    'Schedule',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ),
+            ),
+            GoRoute(
               path: Routes.getNotifications.path,
               name: Routes.getNotifications.name,
               builder: (_, __) => BlocProvider.value(
@@ -361,7 +397,11 @@ enum Routes {
 // employee pages
   userAttendance('/userAttendance'),
   /// Face + geofence check-in (new). Legacy calendar stays on [userAttendance].
-  faceAttendance('/faceAttendance');
+  faceAttendance('/faceAttendance'),
+  /// Bottom-nav placeholders (scrollable shell tabs).
+  navAttendance('/navAttendance'),
+  navReports('/navReports'),
+  navSchedule('/navSchedule');
 
   final String path;
 

@@ -32,7 +32,6 @@ class ApiService {
       _dio.options = BaseOptions(headers: headers);
       final response =
           await _dio.get(endpoint, queryParameters: queryParameters);
-      log(endpoint);
       return Right(json.encode(response.data));
     } on DioException catch (e) {
       return Left(_handleError(e));
@@ -47,9 +46,6 @@ class ApiService {
     bool useSessionToken = false,
   }) async {
     try {
-      log('Making POST request to: $url');
-      log('Request body: $body');
-      log('Authorization token: ${authorization.isNotEmpty ? 'provided' : 'empty'}');
       final headers = <String, dynamic>{
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -63,24 +59,11 @@ class ApiService {
       }
       _dio.options = BaseOptions(headers: headers);
       final response = await _dio.post(url, data: body);
-      log('Response: ${response.statusCode}');
-      log('Response data: ${response.data}');
-      log(url);
       return Right(json.encode(response.data));
     } on DioException catch (e) {
-      log('Caught DioException in postAPI');
-      log('Exception type: ${e.type}');
-      log('Exception message: ${e.message}');
-      log('Exception response: ${e.response?.data}');
-      log('Exception status code: ${e.response?.statusCode}');
-      log('Request URL: ${e.requestOptions.uri}');
-      log('Request method: ${e.requestOptions.method}');
-      log('Request data: ${e.requestOptions.data}');
-      log('Stack trace: ${e.stackTrace}');
       return Left(_handleError(e));
     } catch (e) {
-      log('Caught non-DioException in postAPI: ${e.toString()}');
-      log('Exception type: ${e.runtimeType}');
+      log('postAPI non-Dio error: $e (${e.runtimeType})');
       return Left(MyError(
         key: AppError.unknown,
         message: e.toString(),
@@ -210,12 +193,6 @@ class ApiService {
 
   // Error handling method
   MyError _handleError(DioException error) {
-    log('--- Dio Error Handler ---');
-    log('Type: ${error.type}');
-    log('Status Code: ${error.response?.statusCode}');
-    log('Path: ${error.requestOptions.path}');
-    log('Response Data: ${error.response?.data}');
-
     String? rawErrorMessage;
     AppError errorKey = AppError.unknown;
 
@@ -228,12 +205,10 @@ class ApiService {
               responseData['error'] ??
               responseData['detail'] ??
               responseData.toString();
-          log('Extracted message from Map: $rawErrorMessage');
         } else if (responseData is String) {
           // Check if it's HTML
           if (responseData.contains('<') && responseData.contains('>')) {
             rawErrorMessage = responseData;
-            log('Detected HTML response');
           } else {
             // Try to parse as JSON
             try {
@@ -243,7 +218,6 @@ class ApiService {
                     decoded['error'] ??
                     decoded['detail'] ??
                     decoded.toString();
-                log('Extracted message from JSON String: $rawErrorMessage');
               } else {
                 rawErrorMessage = responseData;
               }
@@ -256,14 +230,12 @@ class ApiService {
           rawErrorMessage = responseData.toString();
         }
       } catch (e) {
-        log('Error parsing response: $e');
         rawErrorMessage = responseData.toString();
       }
     }
 
     // ✅ Fallback message
     rawErrorMessage ??= error.message ?? 'Unknown Error';
-    log('Raw error message: $rawErrorMessage');
 
     // ✅ Map DioExceptionType to custom error
     switch (error.type) {
@@ -297,7 +269,6 @@ class ApiService {
             errorKey = AppError.unknown;
         }
         final userFriendlyMessage = _getUserFriendlyMessage(errorKey, rawErrorMessage);
-        log('Final error message: $userFriendlyMessage');
         return MyError(
           key: errorKey,
           message: userFriendlyMessage,

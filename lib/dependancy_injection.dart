@@ -26,6 +26,7 @@ import 'package:admin_app/UI/students/bloc/student_attendance_bloc.dart';
 import 'package:admin_app/UI/students/cubit/students_cubit.dart';
 import 'package:admin_app/UI/students/repository/students_repository.dart';
 import 'package:admin_app/core/const/db_names.dart';
+import 'package:admin_app/core/services/api_log_interceptor.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/services/authentication_service.dart';
 import 'package:admin_app/features/attendance/data/datasources/attendance_remote_datasource.dart';
@@ -38,6 +39,7 @@ import 'package:admin_app/features/attendance/domain/usecases/check_geofence_use
 import 'package:admin_app/features/attendance/domain/usecases/submit_attendance_usecase.dart';
 import 'package:admin_app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -52,6 +54,9 @@ Future<void> serviceLocators() async {
 
   // Register Dio instance
   final dio = Dio();
+  if (kDebugMode) {
+    dio.interceptors.add(ApiLogInterceptor());
+  }
   locator.registerSingleton<Dio>(dio);
 
   // Register ApiService
