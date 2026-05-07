@@ -1185,13 +1185,14 @@ packages:
     source: hosted
     version: "4.2.1"
   objective_c:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: objective_c
-      sha256: "100a1c87616ab6ed41ec263b083c0ef3261ee6cd1dc3b0f35f8ddfa4f996fe52"
-      url: "https://pub.dev"
-    source: hosted
-    version: "9.3.0"
+      path: "pkgs/objective_c"
+      ref: "2d70b2bd4da2f2c720286083f1dfe1b6af3f6fb6"
+      resolved-ref: "2d70b2bd4da2f2c720286083f1dfe1b6af3f6fb6"
+      url: "https://github.com/dart-lang/native.git"
+    source: git
+    version: "9.4.0-wip"
   octo_image:
     dependency: transitive
     description:

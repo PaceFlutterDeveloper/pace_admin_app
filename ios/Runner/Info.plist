@@ -25,6 +25,8 @@
 <string>This app uses the camera for attendance face verification and for attaching ticket photos.</string>
 <key>NSLocationWhenInUseUsageDescription</key>
 <string>Location access is required to verify that attendance is marked within school premises.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>Smart PACE uses your location while you use the app and, if you allow always access, to confirm attendance geofence status on school premises.</string>
 <key>NSLocationAlwaysUsageDescription</key>
 <string>Background location access helps keep attendance geofence status ready before face scan.</string>
 
