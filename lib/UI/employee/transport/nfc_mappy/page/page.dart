@@ -64,9 +64,9 @@ class _NfcMapyScreenState extends State<NfcMapyScreen> {
 
   @override
   void dispose() {
-    // Stop NFC session when navigating away
-    // Use stored reference instead of accessing context
-    _nfcProvider?.stopNfcSession();
+    // Leaving the page clears all data and stops any active NFC session.
+    // Mapping is a continuous process, so re-entering must start fresh.
+    _nfcProvider?.resetOnExit();
     super.dispose();
   }
 }

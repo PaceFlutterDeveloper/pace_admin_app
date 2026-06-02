@@ -20,66 +20,28 @@ class NfcProvider with ChangeNotifier {
   Status nfcStatus = Status.unInitialised;
   int nfcCardNumber = 0;
   bool isSubmitting = false;
+  bool isScanning = false;
   DateTime? _lastTagScanTime;
   TextEditingController nfcTagController = TextEditingController();
+  TextEditingController studCodeController = TextEditingController();
 
+  /// Checks whether NFC hardware is available/enabled. This no longer starts
+  /// a scan session; scanning is triggered explicitly via [startNfcScan].
   Future<void> checkNfcAvailability() async {
     nfcStatus = Status.loading;
     notifyListeners();
 
     try {
-      // Stop any existing session before starting a new one
-      try {
-        await NfcManager.instance.stopSession();
-        log("Stopped existing NFC session");
-      } catch (e) {
-        // Ignore errors if no session exists
-        log("No existing session to stop: $e");
-      }
+      // Make sure no leftover session is running.
+      await _safeStopSession();
 
       final availability = await NfcManager.instance.checkAvailability();
       log("NFC availability: $availability");
 
-      // Handle different NFC availability states
       if (availability == NfcAvailability.enabled) {
         isNfcAvailable = true;
-        log('NFC listener started, approach tag(s)...');
-
-        await NfcManager.instance.startSession(
-          alertMessageIos: 'Hold your NFC tag near the device.',
-          onDiscovered: (NfcTag tag) async {
-            // Debounce: ignore scans within 1 second of each other.
-            final now = DateTime.now();
-            if (_lastTagScanTime != null &&
-                now.difference(_lastTagScanTime!).inMilliseconds < 1000) {
-              log("Ignoring rapid tag scan");
-              return;
-            }
-            _lastTagScanTime = now;
-
-            try {
-              final tagId = _extractTagId(tag);
-              if (tagId != null && tagId.isNotEmpty) {
-                log("Card UID: $tagId");
-                nfcTagController.text = tagId;
-                notifyListeners();
-              } else {
-                // ignore: invalid_use_of_protected_member
-                log("Could not extract tag identifier from: ${tag.data}");
-              }
-            } catch (e, st) {
-              log("Error parsing NFC tag: $e\n$st");
-            }
-          },
-          pollingOptions: const {
-            NfcPollingOption.iso14443,
-            NfcPollingOption.iso15693,
-            NfcPollingOption.iso18092,
-          },
-        );
       } else {
         isNfcAvailable = false;
-        // Log the specific reason NFC is not available
         if (availability == NfcAvailability.disabled) {
           log("NFC is disabled in device settings");
         } else if (availability == NfcAvailability.unsupported) {
@@ -87,7 +49,6 @@ class NfcProvider with ChangeNotifier {
         } else {
           log("NFC availability: $availability");
         }
-        listenForNFCEvents();
       }
 
       nfcStatus = Status.loaded;
@@ -99,9 +60,100 @@ class NfcProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void listenForNFCEvents() {
-    log("NFC not available on this device.");
+  /// Starts a single-shot NFC scan. The session is automatically dismissed
+  /// once a tag is captured (or an error occurs) so the iOS scan sheet does
+  /// not stay on screen.
+  Future<void> startNfcScan(BuildContext context) async {
+    if (isScanning) {
+      log("Scan already in progress");
+      return;
+    }
+
+    if (!isNfcAvailable) {
+      showSnackbar(
+        context,
+        "NFC is not available. Enter the tag number manually.",
+      );
+      return;
+    }
+
+    isScanning = true;
+    _lastTagScanTime = null;
     notifyListeners();
+
+    try {
+      await NfcManager.instance.startSession(
+        alertMessageIos: 'Hold your NFC tag near the device.',
+        onDiscovered: (NfcTag tag) async {
+          // Debounce: ignore duplicate reads of the same tap.
+          final now = DateTime.now();
+          if (_lastTagScanTime != null &&
+              now.difference(_lastTagScanTime!).inMilliseconds < 1000) {
+            return;
+          }
+          _lastTagScanTime = now;
+
+          try {
+            final tagId = _extractTagId(tag);
+            if (tagId != null && tagId.isNotEmpty) {
+              log("Card UID: $tagId");
+              nfcTagController.text = tagId;
+              await _stopSession(
+                successMessageIos: 'Tag captured successfully.',
+              );
+            } else {
+              // ignore: invalid_use_of_protected_member
+              log("Could not extract tag identifier from: ${tag.data}");
+              await _stopSession(
+                errorMessageIos: 'Could not read this tag. Try again.',
+              );
+            }
+          } catch (e, st) {
+            log("Error parsing NFC tag: $e\n$st");
+            await _stopSession(
+              errorMessageIos: 'Error reading tag. Try again.',
+            );
+          }
+        },
+        pollingOptions: const {
+          NfcPollingOption.iso14443,
+          NfcPollingOption.iso15693,
+        },
+      );
+    } catch (e, st) {
+      log("Error starting NFC session: $e\n$st");
+      isScanning = false;
+      notifyListeners();
+      if (context.mounted) {
+        showSnackbar(context, "Could not start NFC scan. Try again.");
+      }
+    }
+  }
+
+  /// Stops the active session and dismisses the iOS scan sheet, optionally
+  /// showing a success or error message on the popup.
+  Future<void> _stopSession({
+    String? successMessageIos,
+    String? errorMessageIos,
+  }) async {
+    try {
+      await NfcManager.instance.stopSession(
+        alertMessageIos: successMessageIos,
+        errorMessageIos: errorMessageIos,
+      );
+    } catch (e) {
+      log("Error stopping NFC session: $e");
+    }
+    isScanning = false;
+    notifyListeners();
+  }
+
+  Future<void> _safeStopSession() async {
+    try {
+      await NfcManager.instance.stopSession();
+    } catch (e) {
+      log("No existing session to stop: $e");
+    }
   }
 
   /// Extracts the unique tag identifier (UID) for both Android and iOS.
@@ -201,25 +253,37 @@ class NfcProvider with ChangeNotifier {
     }
   }
 
+  /// Clears all entered/scanned data so the next student can be mapped
+  /// immediately. Called after a successful mapping.
   void clearForm() {
+    studCodeController.clear();
     nfcTagController.clear();
     nfcCardNumber = 0;
     notifyListeners();
   }
 
   Future<void> stopNfcSession() async {
-    try {
-      await NfcManager.instance.stopSession();
-      log("NFC session stopped");
-    } catch (e) {
-      // Ignore errors if no session exists or already stopped
-      log("Error stopping NFC session (may not exist): $e");
-    }
+    await _safeStopSession();
+    isScanning = false;
+    log("NFC session stopped");
+  }
+
+  /// Resets everything when leaving the page: stops any active session and
+  /// clears all data. Mapping is a continuous process, so re-entering the
+  /// page must start with a clean form. Does not notify, since the UI is
+  /// being torn down.
+  Future<void> resetOnExit() async {
+    await _safeStopSession();
+    isScanning = false;
+    studCodeController.clear();
+    nfcTagController.clear();
+    nfcCardNumber = 0;
   }
 
   Future<void> disposeProvider() async {
     await stopNfcSession();
     nfcTagController.dispose();
+    studCodeController.dispose();
     log("NfcProvider disposed");
   }
 }

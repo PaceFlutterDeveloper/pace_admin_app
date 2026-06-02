@@ -1,6 +1,9 @@
 import 'package:admin_app/UI/components/button_component.dart';
 import 'package:admin_app/UI/employee/transport/nfc_mappy/provider/nfc_provider.dart';
+import 'package:admin_app/UI/employee/transport/nfc_mappy/widgets/barcode_scanner_page.dart';
+import 'package:admin_app/core/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class NfcAvailable extends StatefulWidget {
@@ -12,12 +15,43 @@ class NfcAvailable extends StatefulWidget {
 
 class _NfcAvailableState extends State<NfcAvailable> {
   final _formKey = GlobalKey<FormState>();
-  final _studCodeController = TextEditingController();
 
-  @override
-  void dispose() {
-    _studCodeController.dispose();
-    super.dispose();
+  Future<void> _scanStudentCode() async {
+    // Ensure camera permission before opening the scanner.
+    var status = await Permission.camera.status;
+    if (!status.isGranted) {
+      status = await Permission.camera.request();
+    }
+    if (!status.isGranted) {
+      if (!mounted) return;
+      showSnackbar(
+        context,
+        status.isPermanentlyDenied
+            ? 'Camera permission is required. Enable it in Settings.'
+            : 'Camera permission is required to scan barcodes.',
+      );
+      if (status.isPermanentlyDenied) {
+        await openAppSettings();
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    final raw = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const BarcodeScannerPage()),
+    );
+    if (raw == null) return;
+
+    // Digits-only transform: strip every non-numeric character.
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (!mounted) return;
+    if (digits.isEmpty) {
+      showSnackbar(context, 'No numeric value found in the scanned barcode.');
+      return;
+    }
+    context.read<NfcProvider>().studCodeController.text = digits;
+    showSnackbar(context, 'Student code captured.');
   }
 
   @override
@@ -25,6 +59,7 @@ class _NfcAvailableState extends State<NfcAvailable> {
     return Consumer<NfcProvider>(
       builder: (context, nfcProvider, _) {
         final nfcTagController = nfcProvider.nfcTagController;
+        final studCodeController = nfcProvider.studCodeController;
 
         return SafeArea(
           child: Scaffold(
@@ -99,13 +134,18 @@ class _NfcAvailableState extends State<NfcAvailable> {
 
                             // Student Code
                             TextFormField(
-                              controller: _studCodeController,
+                              controller: studCodeController,
                               textInputAction: TextInputAction.next,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Student Code',
-                                hintText: 'Enter student code',
-                                prefixIcon: Icon(Icons.badge_outlined),
-                                border: OutlineInputBorder(),
+                                hintText: 'Enter or scan student code',
+                                prefixIcon: const Icon(Icons.badge_outlined),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.qr_code_scanner),
+                                  tooltip: 'Scan barcode',
+                                  onPressed: _scanStudentCode,
+                                ),
+                                border: const OutlineInputBorder(),
                                 isDense: true,
                               ),
                               validator: (v) => (v == null || v.trim().isEmpty)
@@ -129,6 +169,38 @@ class _NfcAvailableState extends State<NfcAvailable> {
                                   ? 'NFC tag number is required'
                                   : null,
                             ),
+                            const SizedBox(height: 14),
+
+                            // Scan NFC card
+                            if (nfcProvider.isNfcAvailable)
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: nfcProvider.isScanning
+                                      ? null
+                                      : () =>
+                                          nfcProvider.startNfcScan(context),
+                                  icon: nfcProvider.isScanning
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.nfc),
+                                  label: Text(
+                                    nfcProvider.isScanning
+                                        ? 'Scanning... Tap your card'
+                                        : 'Scan NFC Card',
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             const SizedBox(height: 20),
 
                             // Loading indicator
@@ -151,7 +223,7 @@ class _NfcAvailableState extends State<NfcAvailable> {
                                         return;
                                       }
                                       nfcProvider.upinsert(
-                                        _studCodeController.text.trim(),
+                                        studCodeController.text.trim(),
                                         nfcTagController.text.trim(),
                                         context,
                                       );
