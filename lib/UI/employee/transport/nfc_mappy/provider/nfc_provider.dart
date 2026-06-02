@@ -2,6 +2,7 @@
 
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:admin_app/UI/employee/transport/nfc_mappy/model/transport/nfc_res_model.dart';
 import 'package:admin_app/UI/employee/transport/nfc_mappy/repository/repository.dart';
@@ -10,6 +11,7 @@ import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/nfc_manager_android.dart';
+import 'package:nfc_manager/nfc_manager_ios.dart';
 
 class NfcProvider with ChangeNotifier {
   final NfcMappRepository _repository = locator<NfcMappRepository>();
@@ -46,83 +48,33 @@ class NfcProvider with ChangeNotifier {
         await NfcManager.instance.startSession(
           alertMessageIos: 'Hold your NFC tag near the device.',
           onDiscovered: (NfcTag tag) async {
-            // Debounce: ignore scans within 1 second of each other
+            // Debounce: ignore scans within 1 second of each other.
             final now = DateTime.now();
             if (_lastTagScanTime != null &&
-                now.difference(_lastTagScanTime!).inSeconds < 1) {
+                now.difference(_lastTagScanTime!).inMilliseconds < 1000) {
               log("Ignoring rapid tag scan");
               return;
             }
             _lastTagScanTime = now;
 
-            // ignore: invalid_use_of_protected_member
-            log("Tag discovered: ${tag.data}");
-
             try {
-              String? tagId;
-              
-              // Handle Android NFC tags
-              if (Platform.isAndroid) {
-                final nfcA = NfcAAndroid.from(tag);
-                if (nfcA != null) {
-                  try {
-                    // ignore: invalid_use_of_protected_member
-                    final tagData = tag.data;
-                    if (tagData is Map) {
-                      final nfcAData = tagData['nfc-a'];
-                      if (nfcAData is Map) {
-                        final identifier = nfcAData['identifier'];
-                        if (identifier != null && identifier is List<int>) {
-                          final number = toDec(identifier);
-                          log("Card UID: $number");
-                          nfcCardNumber = number;
-                          tagId = number.toString();
-                        }
-                      }
-                    }
-                  } catch (e) {
-                    log("Error extracting Android NFC identifier: $e");
-                  }
-                }
-              } else if (Platform.isIOS) {
-                // iOS NFC tag handling - try to extract identifier from tag data
-                try {
-                  // ignore: invalid_use_of_protected_member
-                  final tagData = tag.data;
-                  if (tagData is Map) {
-                    // Try common iOS NFC tag identifier keys
-                    final identifier = tagData['identifier'] ?? 
-                                     tagData['ID'] ?? 
-                                     tagData['id'];
-                    if (identifier != null) {
-                      if (identifier is List<int>) {
-                        final number = toDec(identifier);
-                        tagId = number.toString();
-                        nfcCardNumber = number;
-                      } else if (identifier is String) {
-                        tagId = identifier;
-                        nfcCardNumber = int.tryParse(identifier) ?? 0;
-                      }
-                    }
-                  }
-                } catch (e) {
-                  log("Error extracting iOS NFC identifier: $e");
-                }
-              }
-
+              final tagId = _extractTagId(tag);
               if (tagId != null && tagId.isNotEmpty) {
+                log("Card UID: $tagId");
                 nfcTagController.text = tagId;
                 notifyListeners();
               } else {
-                log("Could not extract tag identifier");
+                // ignore: invalid_use_of_protected_member
+                log("Could not extract tag identifier from: ${tag.data}");
               }
             } catch (e, st) {
               log("Error parsing NFC tag: $e\n$st");
             }
           },
-          pollingOptions: {
+          pollingOptions: const {
             NfcPollingOption.iso14443,
-            NfcPollingOption.iso15693
+            NfcPollingOption.iso15693,
+            NfcPollingOption.iso18092,
           },
         );
       } else {
@@ -150,6 +102,30 @@ class NfcProvider with ChangeNotifier {
   void listenForNFCEvents() {
     log("NFC not available on this device.");
     notifyListeners();
+  }
+
+  /// Extracts the unique tag identifier (UID) for both Android and iOS.
+  ///
+  /// In nfc_manager 4.x `tag.data` is no longer a `Map`, so the UID must be
+  /// read through the platform-specific typed helpers. This covers the common
+  /// tag technologies (NfcA/B/F/V, ISO-DEP, MIFARE, ISO 15693, FeliCa, ...).
+  String? _extractTagId(NfcTag tag) {
+    Uint8List? identifier;
+
+    if (Platform.isAndroid) {
+      // NfcTagAndroid.id is the raw UID and is present for every Android tech.
+      identifier = NfcTagAndroid.from(tag)?.id;
+    } else if (Platform.isIOS) {
+      identifier = MiFareIos.from(tag)?.identifier ??
+          Iso7816Ios.from(tag)?.identifier ??
+          Iso15693Ios.from(tag)?.identifier ??
+          FeliCaIos.from(tag)?.currentIDm;
+    }
+
+    if (identifier == null || identifier.isEmpty) return null;
+
+    nfcCardNumber = toDec(identifier);
+    return nfcCardNumber.toString();
   }
 
   Future<void> upinsert(
