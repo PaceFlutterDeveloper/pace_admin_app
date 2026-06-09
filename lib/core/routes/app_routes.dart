@@ -29,7 +29,6 @@ import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
 import 'package:admin_app/UI/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/core/utils/go_router_refresh_stream.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/features/attendance/presentation/pages/attendance_page.dart';
@@ -236,32 +235,10 @@ class AppRoute {
               },
             ),
           ]),
-      // Jobs Shell Route - for job-related pages
+      // Jobs Shell Route - child pages own their Scaffold/AppBar
       ShellRoute(
         navigatorKey: GlobalKey<NavigatorState>(),
-        builder: (context, state, child) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(
-                'Careers',
-                style: TextStyle(
-                  fontSize: MediaQuery.of(context).size.width * 0.05,
-                  fontWeight: FontWeight.w700,
-                  color: ConstColors.textDark,
-                ),
-              ),
-              backgroundColor: ConstColors.whiteColor,
-              elevation: 0,
-              centerTitle: true,
-              iconTheme: IconThemeData(
-                color: ConstColors.textDark,
-                size: MediaQuery.of(context).size.width * 0.06,
-              ),
-            ),
-            backgroundColor: ConstColors.backgroundColor,
-            body: child,
-          );
-        },
+        builder: (context, state, child) => child,
         routes: [
           GoRoute(
             path: Routes.careers.path,

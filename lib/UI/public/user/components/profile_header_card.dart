@@ -1,94 +1,103 @@
 import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
 import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
   final VoidCallback? onCompleteProfile;
 
   const ProfileHeaderCard({
-    Key? key,
+    super.key,
     this.onCompleteProfile,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return ProfileCard(
       child: Column(
         children: [
-          _buildAvatar(),
-          const SizedBox(height: 16),
-          _buildUserInfo(),
-          const SizedBox(height: 16),
-          _buildProfileStatus(),
+          _buildAvatar(context),
+          const SizedBox(height: AppSpacing.md),
+          _buildUserInfo(context),
+          const SizedBox(height: AppSpacing.md),
+          _buildProfileStatus(context),
         ],
       ),
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
+    final theme = Theme.of(context);
+
     return CircleAvatar(
-      radius: 50,
-      backgroundColor: ConstColors.primary.withValues(alpha: 0.1),
+      radius: 44,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
       child: Icon(
-        Icons.person,
-        size: 50,
-        color: ConstColors.primary,
+        CupertinoIcons.person_fill,
+        size: 44,
+        color: theme.colorScheme.primary,
       ),
     );
   }
 
-  Widget _buildUserInfo() {
+  Widget _buildUserInfo(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Column(
       children: [
         Text(
           CareersUserManager.getDisplayName(),
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           CareersUserManager.getEmail(),
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildProfileStatus() {
+  Widget _buildProfileStatus(BuildContext context) {
     final isComplete = CareersUserManager.isProfileComplete();
+    final color = isComplete ? AppColors.success : AppColors.warning;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
-        color: isComplete
-            ? Colors.green.withValues(alpha: 0.1)
-            : Colors.orange.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isComplete ? Colors.green : Colors.orange,
-          width: 1,
-        ),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isComplete ? Icons.check_circle : Icons.warning,
-            color: isComplete ? Colors.green : Colors.orange,
+            isComplete
+                ? CupertinoIcons.checkmark_circle_fill
+                : CupertinoIcons.exclamationmark_triangle_fill,
+            color: color,
             size: 16,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             isComplete ? 'Profile Complete' : 'Profile Incomplete',
-            style: TextStyle(
-              color: isComplete ? Colors.green : Colors.orange,
+            style: GoogleFonts.inter(
+              color: color,
               fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 
 class ProfileCard extends StatelessWidget {
@@ -5,26 +6,26 @@ class ProfileCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   const ProfileCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
-      padding: padding ?? const EdgeInsets.all(24),
+      padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: isDark ? AppColors.surfaceElevatedDark : AppColors.cardBg,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.cardBorder,
+        ),
+        boxShadow: isDark ? AppShadows.none : AppShadows.soft,
       ),
       child: child,
     );

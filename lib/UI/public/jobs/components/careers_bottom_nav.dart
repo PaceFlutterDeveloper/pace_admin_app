@@ -1,120 +1,125 @@
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CareersBottomNav extends StatelessWidget {
   final int currentIndex;
-  final Function(int) onTap;
+  final ValueChanged<int> onTap;
 
   const CareersBottomNav({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
-    final h = size.height;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      height: h * 0.08,
       decoration: BoxDecoration(
-        color: ConstColors.whiteColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+        color: isDark ? AppColors.surfaceContainerDark : AppColors.cardBg,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
           ),
-        ],
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            context,
-            Icons.home,
-            'Home',
-            0,
-            w,
-            h,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: AppSizes.bottomNavHeight,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon: CupertinoIcons.house,
+                label: 'Home',
+                index: 0,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+              _NavItem(
+                icon: CupertinoIcons.bookmark,
+                label: 'My Jobs',
+                index: 1,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+              _NavItem(
+                icon: CupertinoIcons.chat_bubble,
+                label: 'Messages',
+                index: 2,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+              _NavItem(
+                icon: CupertinoIcons.person,
+                label: 'Profile',
+                index: 3,
+                currentIndex: currentIndex,
+                onTap: onTap,
+              ),
+            ],
           ),
-          _buildNavItem(
-            context,
-            Icons.bookmark,
-            'My jobs',
-            1,
-            w,
-            h,
-          ),
-          _buildNavItem(
-            context,
-            Icons.message,
-            'Messages',
-            2,
-            w,
-            h,
-          ),
-          _buildNavItem(
-            context,
-            Icons.person,
-            'Profile',
-            3,
-            w,
-            h,
-          ),
-        ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildNavItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    int index,
-    double w,
-    double h,
-  ) {
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isSelected = currentIndex == index;
+    final color = isSelected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurface.withOpacity(0.45);
 
-    return GestureDetector(
-      onTap: () => onTap(index),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: w * 0.04,
-          vertical: h * 0.01,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? ConstColors.blueColor : ConstColors.textLight,
-              size: w * 0.06,
-            ),
-            SizedBox(height: h * 0.005),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: w * 0.032,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color:
-                    isSelected ? ConstColors.blueColor : ConstColors.textLight,
-              ),
-            ),
-            if (isSelected)
-              Container(
-                margin: EdgeInsets.only(top: h * 0.002),
-                height: 2,
-                width: w * 0.08,
-                decoration: BoxDecoration(
-                  color: ConstColors.blueColor,
-                  borderRadius: BorderRadius.circular(1),
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTap(index),
+          child: SizedBox(
+            height: AppSizes.bottomNavHeight,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 22),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    height: 1.0,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: color,
+                  ),
                 ),
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );

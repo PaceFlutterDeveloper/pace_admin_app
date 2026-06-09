@@ -204,6 +204,14 @@ class _LoginPageState extends State<LoginPage> {
                         isLoading: isLoading,
                       ),
 
+                      const SizedBox(height: AppSpacing.lg),
+
+                      _buildOrDivider(theme),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      _buildCareersEntry(theme, isDark),
+
                       const SizedBox(height: AppSpacing.xl),
                     ],
                   ),
@@ -211,6 +219,98 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrDivider(ThemeData theme) {
+    final dividerColor = theme.colorScheme.onSurface.withOpacity(0.15);
+    final labelColor = theme.colorScheme.onSurface.withOpacity(0.5);
+
+    return Row(
+      children: [
+        Expanded(child: Divider(color: dividerColor, height: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Text(
+            'or',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: labelColor,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: dividerColor, height: 1)),
+      ],
+    );
+  }
+
+  Widget _buildCareersEntry(ThemeData theme, bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => context.pushNamed(Routes.careers.name),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.surfaceContainerDark
+                : AppColors.surfaceContainerLight,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.25),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(
+                  CupertinoIcons.briefcase,
+                  color: theme.colorScheme.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Explore Careers',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'View available job opportunities',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 18,
+                color: theme.colorScheme.onSurface.withOpacity(0.4),
+              ),
+            ],
+          ),
         ),
       ),
     );

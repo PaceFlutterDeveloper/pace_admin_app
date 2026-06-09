@@ -1,22 +1,18 @@
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 
 class CardDecoration {
-  static BoxDecoration build(double w) {
+  static BoxDecoration build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return BoxDecoration(
-      color: ConstColors.whiteColor,
-      borderRadius: BorderRadius.circular(w * 0.03),
+      color: isDark ? AppColors.surfaceElevatedDark : AppColors.cardBg,
+      borderRadius: BorderRadius.circular(AppRadius.card),
       border: Border.all(
-        color: ConstColors.borderColor,
-        width: 1,
+        color: isDark ? AppColors.dividerDark : AppColors.cardBorder,
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
+      boxShadow: isDark ? AppShadows.none : AppShadows.soft,
     );
   }
 }

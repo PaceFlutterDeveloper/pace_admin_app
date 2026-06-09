@@ -1,91 +1,65 @@
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ApplyDialog extends StatelessWidget {
   final JobModel job;
   final VoidCallback? onApply;
 
   const ApplyDialog({
-    Key? key,
+    super.key,
     required this.job,
     this.onApply,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
+    final theme = Theme.of(context);
 
     return AlertDialog(
-      title: _buildDialogTitle(w),
-      content: _buildDialogContent(w),
-      actions: _buildDialogActions(w, context),
-    );
-  }
-
-  Widget _buildDialogTitle(double w) {
-    return Text(
-      'Apply for ${job.title}',
-      style: TextStyle(
-        fontSize: w * 0.045,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-
-  Widget _buildDialogContent(double w) {
-    return Text(
-      'Application functionality will be implemented here. This could include:\n\n• Resume upload\n• Cover letter\n• Contact information\n• Application form',
-      style: TextStyle(
-        fontSize: w * 0.04,
-        height: 1.5,
-      ),
-    );
-  }
-
-  List<Widget> _buildDialogActions(double w, BuildContext context) {
-    return [
-      _buildCloseButton(w, context),
-      _buildApplyButton(w, context),
-    ];
-  }
-
-  Widget _buildCloseButton(double w, BuildContext context) {
-    return TextButton(
-      onPressed: () => Navigator.of(context).pop(),
-      child: Text(
-        'Close',
-        style: TextStyle(
-          fontSize: w * 0.04,
-          color: ConstColors.primary,
+      title: Text(
+        'Apply for ${job.title}',
+        style: GoogleFonts.inter(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: theme.colorScheme.onSurface,
         ),
       ),
-    );
-  }
-
-  Widget _buildApplyButton(double w, BuildContext context) {
-    return ElevatedButton(
-      onPressed: () {
-        Navigator.of(context).pop();
-        onApply?.call();
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: ConstColors.primary,
-      ),
-      child: Text(
-        'Apply',
-        style: TextStyle(
-          fontSize: w * 0.04,
-          color: ConstColors.whiteColor,
+      content: Text(
+        'Application functionality will be implemented here. This could include:\n\n• Resume upload\n• Cover letter\n• Contact information\n• Application form',
+        style: GoogleFonts.inter(
+          fontSize: 14,
+          height: 1.5,
+          color: theme.colorScheme.onSurface.withOpacity(0.75),
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Close',
+            style: GoogleFonts.inter(color: theme.colorScheme.primary),
+          ),
+        ),
+        AppButton.primary(
+          label: 'Apply',
+          isFullWidth: false,
+          onPressed: () {
+            Navigator.of(context).pop();
+            onApply?.call();
+          },
+        ),
+      ],
     );
   }
 
-  static void show(BuildContext context, JobModel job,
-      {VoidCallback? onApply}) {
-    showDialog(
+  static void show(
+    BuildContext context,
+    JobModel job, {
+    VoidCallback? onApply,
+  }) {
+    showDialog<void>(
       context: context,
       builder: (context) => ApplyDialog(
         job: job,

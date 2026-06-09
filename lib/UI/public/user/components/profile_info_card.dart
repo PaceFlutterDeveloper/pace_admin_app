@@ -1,10 +1,12 @@
 import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
 import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ProfileInfoCard extends StatelessWidget {
-  const ProfileInfoCard({Key? key}) : super(key: key);
+  const ProfileInfoCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,72 +16,86 @@ class ProfileInfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(),
-          const SizedBox(height: 24),
-          _buildInfoFields(user),
+          Text(
+            'Personal Information',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _buildInfoRow(
+            context,
+            CupertinoIcons.person,
+            'Full Name',
+            user?.name ?? '',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _buildInfoRow(
+            context,
+            CupertinoIcons.mail,
+            'Email',
+            user?.email ?? '',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _buildInfoRow(
+            context,
+            CupertinoIcons.phone,
+            'Phone Number',
+            user?.phone ?? 'Not provided',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _buildInfoRow(
+            context,
+            CupertinoIcons.location,
+            'Preferred Location',
+            user?.preferredLocation ?? 'Not specified',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _buildInfoRow(
+            context,
+            CupertinoIcons.briefcase,
+            'Experience Level',
+            user?.experienceLevel ?? 'Not specified',
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle() {
-    return const Text(
-      'Personal Information',
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    final theme = Theme.of(context);
 
-  Widget _buildInfoFields(user) {
-    return Column(
-      children: [
-        _buildInfoRow(Icons.person_outlined, 'Full Name', user?.name ?? ''),
-        const SizedBox(height: 16),
-        _buildInfoRow(Icons.email_outlined, 'Email', user?.email ?? ''),
-        const SizedBox(height: 16),
-        _buildInfoRow(Icons.phone_outlined, 'Phone Number',
-            user?.phone ?? 'Not provided'),
-        const SizedBox(height: 16),
-        _buildInfoRow(Icons.location_on_outlined, 'Preferred Location',
-            user?.preferredLocation ?? 'Not specified'),
-        const SizedBox(height: 16),
-        _buildInfoRow(Icons.work_outlined, 'Experience Level',
-            user?.experienceLevel ?? 'Not specified'),
-      ],
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: ConstColors.primary,
-        ),
-        const SizedBox(width: 12),
+        Icon(icon, size: 18, color: theme.colorScheme.primary),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],

@@ -21,7 +21,7 @@ class CompanyCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(w * 0.04),
-      decoration: CardDecoration.build(w),
+      decoration: CardDecoration.build(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

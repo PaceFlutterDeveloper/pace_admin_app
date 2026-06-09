@@ -2,12 +2,17 @@ import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_events.dart';
 import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/UI/public/user/pages/signup_page.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/core/widgets/app_button.dart';
+import 'package:admin_app/core/widgets/app_text_field.dart';
+import 'package:admin_app/core/widgets/app_toast.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -28,106 +33,78 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            CupertinoIcons.back,
+            color: theme.colorScheme.onSurface,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: BlocListener<UserBloc, UserState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Welcome back, ${state.user.name}!'),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            // Navigate back to jobs page since user is now authenticated
+            AppToast.success(context, 'Welcome back, ${state.user.name}!');
             Navigator.of(context).popUntil((route) => route.isFirst);
           } else if (state is LoginError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppToast.error(context, state.message);
           } else if (state is ForgotPasswordSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.of(context).pop(); // Close dialog
+            AppToast.success(context, state.message);
+            Navigator.of(context).pop();
           } else if (state is ForgotPasswordError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppToast.error(context, state.message);
           }
         },
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Form(
               key: _formKey,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo and Title
-                  Column(
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: ConstColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.work,
-                          color: Colors.white,
-                          size: 40,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Welcome Back',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Sign in to continue your job search',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // Email Field
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: ConstColors.primary),
-                      ),
+                  Center(
+                    child: Image.asset(
+                      'assets/logo/group.png',
+                      width: 180,
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Text(
+                    'Welcome Back',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Sign in to continue your job search',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppTextField(
+                    label: 'Email',
+                    hint: 'Enter your email',
+                    controller: _emailController,
+                    prefixIcon: CupertinoIcons.mail,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
@@ -138,35 +115,26 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Password Field
-                  TextFormField(
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    label: 'Password',
+                    hint: 'Enter your password',
                     controller: _passwordController,
+                    prefixIcon: CupertinoIcons.lock,
                     obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outlined),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _handleLogin(),
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? CupertinoIcons.eye
+                            : CupertinoIcons.eye_slash,
+                        size: 20,
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: ConstColors.primary),
-                      ),
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -178,100 +146,66 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Forgot Password Link
+                  const SizedBox(height: AppSpacing.sm),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: _showForgotPasswordDialog,
                       child: Text(
                         'Forgot Password?',
-                        style: TextStyle(
-                          color: ConstColors.primary,
+                        style: GoogleFonts.inter(
+                          color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Login Button
+                  const SizedBox(height: AppSpacing.lg),
                   BlocBuilder<UserBloc, UserState>(
                     builder: (context, state) {
-                      return ElevatedButton(
+                      return AppButton.primary(
+                        label: 'Sign In',
+                        isLoading: state is LoginLoading,
                         onPressed: state is LoginLoading ? null : _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ConstColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: state is LoginLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Sign In',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
                       );
                     },
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Sign Up Link
+                  const SizedBox(height: AppSpacing.lg),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         "Don't have an account? ",
-                        style: TextStyle(color: Colors.grey),
+                        style: GoogleFonts.inter(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
                       ),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                               builder: (context) => const SignupPage(),
                             ),
                           );
                         },
                         child: Text(
                           'Sign Up',
-                          style: TextStyle(
-                            color: ConstColors.primary,
+                          style: GoogleFonts.inter(
+                            color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 32),
-
-                  // Guest Access
+                  const SizedBox(height: AppSpacing.lg),
                   TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
+                    onPressed: () => Navigator.of(context).pop(),
                     child: Text(
                       'Continue as Guest',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
+                      style: GoogleFonts.inter(
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        fontSize: 15,
                       ),
                     ),
                   ),
@@ -299,28 +233,29 @@ class _LoginPageState extends State<LoginPage> {
     final emailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Forgot Password'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Forgot Password',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
         content: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Enter your email address and we\'ll send you a link to reset your password.',
-                style: TextStyle(fontSize: 14),
+              Text(
+                "Enter your email address and we'll send you a link to reset your password.",
+                style: GoogleFonts.inter(fontSize: 14),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: 'Email',
+                hint: 'Enter your email',
                 controller: emailController,
+                prefixIcon: CupertinoIcons.mail,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
-                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
@@ -336,7 +271,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           BlocBuilder<UserBloc, UserState>(
@@ -361,7 +296,9 @@ class _LoginPageState extends State<LoginPage> {
                       )
                     : Text(
                         'Send Reset Link',
-                        style: TextStyle(color: ConstColors.primary),
+                        style: GoogleFonts.inter(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
               );
             },

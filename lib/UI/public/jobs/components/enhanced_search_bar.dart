@@ -1,8 +1,8 @@
-import 'dart:developer';
-
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/UI/public/jobs/models/school_model.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class EnhancedSearchBar extends StatefulWidget {
   final String searchQuery;
@@ -17,7 +17,7 @@ class EnhancedSearchBar extends StatefulWidget {
   final VoidCallback? onRetrySchools;
 
   const EnhancedSearchBar({
-    Key? key,
+    super.key,
     required this.searchQuery,
     required this.location,
     this.selectedSchool,
@@ -28,7 +28,7 @@ class EnhancedSearchBar extends StatefulWidget {
     required this.onLocationChanged,
     required this.onSchoolChanged,
     this.onRetrySchools,
-  }) : super(key: key);
+  });
 
   @override
   State<EnhancedSearchBar> createState() => _EnhancedSearchBarState();
@@ -54,208 +54,127 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
-    final h = size.height;
-
-    // Debug: Check for duplicate schools
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final fieldBg = isDark
+        ? AppColors.surfaceContainerDark
+        : AppColors.surfaceContainerLight;
     final uniqueSchools = widget.schools.toSet().toList();
-    if (uniqueSchools.length != widget.schools.length) {
-      print(
-          'Warning: Duplicate schools detected. Original: ${widget.schools.length}, Unique: ${uniqueSchools.length}');
-    }
 
-    // Debug: Check selected school
-    if (widget.selectedSchool != null) {
-      print(
-          'Selected school: ${widget.selectedSchool!.name} (ID: ${widget.selectedSchool!.id})');
-      print(
-          'Is selected school in unique schools: ${uniqueSchools.contains(widget.selectedSchool)}');
-    }
-
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.01),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
       child: Column(
         children: [
-          // Main Search Bar
-          Container(
-            height: h * 0.05,
-            decoration: BoxDecoration(
-              color: ConstColors.whiteColor,
-              borderRadius: BorderRadius.circular(w * 0.025),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Search Field
-                Expanded(
-                  flex: 2,
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: _SearchFieldContainer(
+                  backgroundColor: fieldBg,
                   child: TextField(
                     controller: _searchController,
                     onChanged: widget.onSearchChanged,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: theme.colorScheme.onSurface,
+                    ),
                     decoration: InputDecoration(
-                      isDense: false,
-                      hintText: 'Search',
-                      hintStyle: TextStyle(
-                        color: ConstColors.textLight,
-                        fontSize: w * 0.04,
-                        fontWeight: FontWeight.w400,
+                      hintText: 'Search jobs',
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 15,
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
                       ),
                       prefixIcon: widget.isSearching
-                          ? SizedBox(
-                              width: w * 0.05,
-                              height: w * 0.05,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  ConstColors.primary,
+                          ? Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: theme.colorScheme.primary,
                                 ),
                               ),
                             )
                           : Icon(
-                              Icons.search,
-                              color: ConstColors.textLight,
-                              size: w * 0.05,
+                              CupertinoIcons.search,
+                              size: 20,
+                              color: theme.colorScheme.onSurface.withOpacity(0.4),
                             ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: w * 0.04,
-                        vertical: h * 0.01,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: 14,
                       ),
-                    ),
-                    style: TextStyle(
-                      fontSize: w * 0.04,
-                      color: ConstColors.textDark,
-                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
-
-                // Vertical Divider
-                Container(
-                  height: h * 0.03,
-                  width: 1,
-                  color: ConstColors.borderColor,
-                ),
-
-                // Location Field
-                Expanded(
-                  flex: 1,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _SearchFieldContainer(
+                  backgroundColor: fieldBg,
                   child: TextField(
                     controller: _locationController,
                     onChanged: widget.onLocationChanged,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: theme.colorScheme.onSurface,
+                    ),
                     decoration: InputDecoration(
-                      isDense: false,
                       hintText: 'Location',
-                      hintStyle: TextStyle(
-                        color: ConstColors.textLight,
-                        fontSize: w * 0.04,
-                        fontWeight: FontWeight.w400,
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
                       ),
                       prefixIcon: Icon(
-                        Icons.location_on,
-                        color: ConstColors.textLight,
-                        size: w * 0.05,
+                        CupertinoIcons.location,
+                        size: 18,
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
                       ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: w * 0.04,
-                        vertical: h * 0.01,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 14,
                       ),
                     ),
-                    style: TextStyle(
-                      fontSize: w * 0.04,
-                      color: ConstColors.textDark,
-                      fontWeight: FontWeight.w400,
-                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-
-          SizedBox(height: h * 0.01),
-
-          // School Dropdown
-          Container(
-            height: h * 0.05,
-            decoration: BoxDecoration(
-              color: ConstColors.whiteColor,
-              borderRadius: BorderRadius.circular(w * 0.025),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          const SizedBox(height: AppSpacing.sm),
+          _SearchFieldContainer(
+            backgroundColor: fieldBg,
             child: Row(
               children: [
-                // School Icon
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: w * 0.04),
+                  padding: const EdgeInsets.only(left: AppSpacing.md),
                   child: Icon(
-                    Icons.school,
-                    color: ConstColors.textLight,
-                    size: w * 0.05,
+                    CupertinoIcons.building_2_fill,
+                    size: 20,
+                    color: theme.colorScheme.onSurface.withOpacity(0.4),
                   ),
                 ),
-
-                // Vertical Divider
-                Container(
-                  height: h * 0.03,
-                  width: 1,
-                  color: ConstColors.borderColor,
-                ),
-
-                // School Dropdown
                 Expanded(
                   child: widget.isLoadingSchools
                       ? Center(
                           child: SizedBox(
-                            width: w * 0.04,
-                            height: w * 0.04,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                ConstColors.primary,
-                              ),
+                              color: theme.colorScheme.primary,
                             ),
                           ),
                         )
                       : widget.schools.isEmpty
-                          ? Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'No schools available',
-                                    style: TextStyle(
-                                      color: ConstColors.textLight,
-                                      fontSize: w * 0.035,
-                                    ),
-                                  ),
-                                  if (widget.onRetrySchools != null) ...[
-                                    SizedBox(width: w * 0.02),
-                                    GestureDetector(
-                                      onTap: widget.onRetrySchools,
-                                      child: Icon(
-                                        Icons.refresh,
-                                        color: ConstColors.primary,
-                                        size: w * 0.04,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            )
+                          ? _EmptySchoolsRow(onRetry: widget.onRetrySchools)
                           : DropdownButtonHideUnderline(
                               child: DropdownButton<SchoolModel?>(
                                 value: uniqueSchools
@@ -263,26 +182,36 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                                     ? widget.selectedSchool
                                     : null,
                                 isExpanded: true,
-                                hint: Text(
-                                  'Select School',
-                                  style: TextStyle(
-                                    color: ConstColors.textLight,
-                                    fontSize: w * 0.04,
-                                    fontWeight: FontWeight.w400,
+                                hint: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.sm,
+                                  ),
+                                  child: Text(
+                                    'All Schools',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.4),
+                                    ),
                                   ),
                                 ),
-                                style: TextStyle(
-                                  fontSize: w * 0.04,
-                                  color: ConstColors.textDark,
-                                  fontWeight: FontWeight.w400,
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  color: theme.colorScheme.onSurface,
                                 ),
+                                dropdownColor: isDark
+                                    ? AppColors.surfaceElevatedDark
+                                    : AppColors.surfaceElevatedLight,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
                                 items: [
-                                  // All Schools option
                                   DropdownMenuItem<SchoolModel?>(
                                     value: null,
-                                    child: Text('All Schools'),
+                                    child: Text(
+                                      'All Schools',
+                                      style: GoogleFonts.inter(fontSize: 15),
+                                    ),
                                   ),
-                                  // School options - ensure no duplicates
                                   ...uniqueSchools.map((school) {
                                     return DropdownMenuItem<SchoolModel?>(
                                       value: school,
@@ -291,33 +220,34 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                                           Expanded(
                                             child: Text(
                                               school.name,
-                                              style: TextStyle(
-                                                fontSize: w * 0.04,
-                                                color: ConstColors.textDark,
-                                              ),
                                               overflow: TextOverflow.ellipsis,
+                                              style:
+                                                  GoogleFonts.inter(fontSize: 15),
                                             ),
                                           ),
                                           if (school.jobCount > 0) ...[
-                                            SizedBox(width: w * 0.02),
+                                            const SizedBox(width: AppSpacing.sm),
                                             Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: w * 0.02,
-                                                vertical: h * 0.003,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: AppSpacing.sm,
+                                                vertical: 2,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: ConstColors.primary
-                                                    .withValues(alpha: 0.1),
+                                                color: theme.colorScheme.primary
+                                                    .withOpacity(0.12),
                                                 borderRadius:
                                                     BorderRadius.circular(
-                                                        w * 0.01),
+                                                  AppRadius.xs,
+                                                ),
                                               ),
                                               child: Text(
                                                 '${school.jobCount}',
-                                                style: TextStyle(
-                                                  fontSize: w * 0.03,
-                                                  color: ConstColors.primary,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 11,
                                                   fontWeight: FontWeight.w600,
+                                                  color:
+                                                      theme.colorScheme.primary,
                                                 ),
                                               ),
                                             ),
@@ -325,18 +255,76 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                                         ],
                                       ),
                                     );
-                                  }).toList(),
+                                  }),
                                 ],
-                                onChanged: (SchoolModel? newValue) {
-                                  log('Dropdown onChanged called with: ${newValue?.name} (ID: ${newValue?.id})');
-                                  widget.onSchoolChanged(newValue);
-                                },
+                                onChanged: widget.onSchoolChanged,
                               ),
                             ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchFieldContainer extends StatelessWidget {
+  final Color backgroundColor;
+  final Widget child;
+
+  const _SearchFieldContainer({
+    required this.backgroundColor,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.06),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _EmptySchoolsRow extends StatelessWidget {
+  final VoidCallback? onRetry;
+
+  const _EmptySchoolsRow({this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'No schools available',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(width: AppSpacing.sm),
+            GestureDetector(
+              onTap: onRetry,
+              child: Icon(
+                CupertinoIcons.refresh,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
         ],
       ),
     );
