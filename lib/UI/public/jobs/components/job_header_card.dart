@@ -8,11 +8,8 @@ class JobHeaderCard extends StatelessWidget {
   final JobModel job;
   final VoidCallback? onShare;
 
-  const JobHeaderCard({
-    Key? key,
-    required this.job,
-    this.onShare,
-  }) : super(key: key);
+  const JobHeaderCard({Key? key, required this.job, this.onShare})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -76,28 +73,18 @@ class JobHeaderCard extends StatelessWidget {
           color: ConstColors.backgroundColor,
           borderRadius: BorderRadius.circular(w * 0.015),
         ),
-        child: Icon(
-          Icons.share,
-          size: w * 0.04,
-          color: ConstColors.textDark,
-        ),
+        child: Icon(Icons.share, size: w * 0.04, color: ConstColors.textDark),
       ),
     );
   }
 
   Widget _buildStatusBadge(double w, double h) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: w * 0.025,
-        vertical: h * 0.006,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: w * 0.025, vertical: h * 0.006),
       decoration: BoxDecoration(
         color: _getStatusColor(job.status).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(w * 0.015),
-        border: Border.all(
-          color: _getStatusColor(job.status),
-          width: 1,
-        ),
+        border: Border.all(color: _getStatusColor(job.status), width: 1),
       ),
       child: Text(
         job.status,
@@ -113,11 +100,7 @@ class JobHeaderCard extends StatelessWidget {
   Widget _buildCompanyInfo(double w, double h) {
     return Row(
       children: [
-        Icon(
-          Icons.business,
-          size: w * 0.035,
-          color: ConstColors.textLight,
-        ),
+        Icon(Icons.business, size: w * 0.035, color: ConstColors.textLight),
         SizedBox(width: w * 0.015),
         Expanded(
           child: Text(
@@ -136,11 +119,7 @@ class JobHeaderCard extends StatelessWidget {
   Widget _buildLocationInfo(double w, double h) {
     return Row(
       children: [
-        Icon(
-          Icons.location_on,
-          size: w * 0.035,
-          color: ConstColors.textLight,
-        ),
+        Icon(Icons.location_on, size: w * 0.035, color: ConstColors.textLight),
         SizedBox(width: w * 0.015),
         Expanded(
           child: Text(
@@ -159,11 +138,7 @@ class JobHeaderCard extends StatelessWidget {
   Widget _buildPostedDateInfo(double w, double h) {
     return Row(
       children: [
-        Icon(
-          Icons.schedule,
-          size: w * 0.04,
-          color: ConstColors.textLight,
-        ),
+        Icon(Icons.schedule, size: w * 0.04, color: ConstColors.textLight),
         SizedBox(width: w * 0.02),
         Text(
           'Posted ${_formatDate(job.postedDate)}',
@@ -180,11 +155,7 @@ class JobHeaderCard extends StatelessWidget {
   Widget _buildDeadlineInfo(double w, double h) {
     return Row(
       children: [
-        Icon(
-          Icons.event,
-          size: w * 0.04,
-          color: Colors.red,
-        ),
+        Icon(Icons.event, size: w * 0.04, color: Colors.red),
         SizedBox(width: w * 0.02),
         Text(
           'Deadline: ${_formatDeadline(job.deadline)}',
@@ -252,7 +223,8 @@ class JobHeaderCard extends StatelessWidget {
   }
 
   void _shareJob(BuildContext context) {
-    final shareText = '''
+    final shareText =
+        '''
 ${job.title} at ${job.schoolName}
 Location: ${job.location}
 Employment Type: ${job.employmentType}

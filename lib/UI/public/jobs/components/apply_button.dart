@@ -8,11 +8,7 @@ class ApplyButton extends StatelessWidget {
   final JobModel job;
   final VoidCallback? onApply;
 
-  const ApplyButton({
-    super.key,
-    required this.job,
-    this.onApply,
-  });
+  const ApplyButton({super.key, required this.job, this.onApply});
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +16,12 @@ class ApplyButton extends StatelessWidget {
       label: 'Apply for this Position',
       leadingIcon: CupertinoIcons.paperplane_fill,
       onPressed: () {
-        AuthGuard.requireAuth(context, onAuthenticated: () {
-          onApply?.call();
-        });
+        AuthGuard.requireAuth(
+          context,
+          onAuthenticated: () {
+            onApply?.call();
+          },
+        );
       },
     );
   }

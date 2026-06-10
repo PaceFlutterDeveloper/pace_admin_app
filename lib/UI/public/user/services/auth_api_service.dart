@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
 
-import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/core/error/error_exception.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/utils/constants/api_constant.dart';
@@ -23,10 +22,7 @@ class AuthApiService {
 
       final result = await _apiService.postAPI(
         url: ApiConstants.authLoginUrl,
-        body: {
-          'email': email,
-          'password': password,
-        },
+        body: {'email': email, 'password': password},
       );
 
       return result.fold(
@@ -41,20 +37,28 @@ class AuthApiService {
             return Right(response['data']);
           } else {
             log('AuthApiService: Login failed - ${response['message']}');
-            return Left(MyError(
+            return Left(
+              MyError(
                 key: AppError.apiError,
-                message: response['message'] ?? 'Login failed'));
+                message: response['message'] ?? 'Login failed',
+              ),
+            );
           }
         },
       );
     } on DioException catch (e) {
       log('AuthApiService: DioException during login - ${e.message}');
-      return Left(MyError(
-          key: AppError.apiError, message: 'Network error: ${e.message}'));
+      return Left(
+        MyError(key: AppError.apiError, message: 'Network error: ${e.message}'),
+      );
     } catch (e) {
       log('AuthApiService: Unexpected error during login - $e');
-      return Left(MyError(
-          key: AppError.unknown, message: 'Unexpected error: ${e.toString()}'));
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -92,20 +96,28 @@ class AuthApiService {
             return Right(response['data']);
           } else {
             log('AuthApiService: Signup failed - ${response['message']}');
-            return Left(MyError(
+            return Left(
+              MyError(
                 key: AppError.apiError,
-                message: response['message'] ?? 'Signup failed'));
+                message: response['message'] ?? 'Signup failed',
+              ),
+            );
           }
         },
       );
     } on DioException catch (e) {
       log('AuthApiService: DioException during signup - ${e.message}');
-      return Left(MyError(
-          key: AppError.apiError, message: 'Network error: ${e.message}'));
+      return Left(
+        MyError(key: AppError.apiError, message: 'Network error: ${e.message}'),
+      );
     } catch (e) {
       log('AuthApiService: Unexpected error during signup - $e');
-      return Left(MyError(
-          key: AppError.unknown, message: 'Unexpected error: ${e.toString()}'));
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -118,9 +130,7 @@ class AuthApiService {
 
       final result = await _apiService.postAPI(
         url: ApiConstants.authForgotPasswordUrl,
-        body: {
-          'email': email,
-        },
+        body: {'email': email},
       );
 
       return result.fold(
@@ -134,21 +144,31 @@ class AuthApiService {
             log('AuthApiService: Forgot password request successful');
             return Right(response['data']);
           } else {
-            log('AuthApiService: Forgot password failed - ${response['message']}');
-            return Left(MyError(
+            log(
+              'AuthApiService: Forgot password failed - ${response['message']}',
+            );
+            return Left(
+              MyError(
                 key: AppError.apiError,
-                message: response['message'] ?? 'Forgot password failed'));
+                message: response['message'] ?? 'Forgot password failed',
+              ),
+            );
           }
         },
       );
     } on DioException catch (e) {
       log('AuthApiService: DioException during forgot password - ${e.message}');
-      return Left(MyError(
-          key: AppError.apiError, message: 'Network error: ${e.message}'));
+      return Left(
+        MyError(key: AppError.apiError, message: 'Network error: ${e.message}'),
+      );
     } catch (e) {
       log('AuthApiService: Unexpected error during forgot password - $e');
-      return Left(MyError(
-          key: AppError.unknown, message: 'Unexpected error: ${e.toString()}'));
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -181,21 +201,31 @@ class AuthApiService {
             log('AuthApiService: Password reset successful');
             return Right(response['data']);
           } else {
-            log('AuthApiService: Password reset failed - ${response['message']}');
-            return Left(MyError(
+            log(
+              'AuthApiService: Password reset failed - ${response['message']}',
+            );
+            return Left(
+              MyError(
                 key: AppError.apiError,
-                message: response['message'] ?? 'Password reset failed'));
+                message: response['message'] ?? 'Password reset failed',
+              ),
+            );
           }
         },
       );
     } on DioException catch (e) {
       log('AuthApiService: DioException during password reset - ${e.message}');
-      return Left(MyError(
-          key: AppError.apiError, message: 'Network error: ${e.message}'));
+      return Left(
+        MyError(key: AppError.apiError, message: 'Network error: ${e.message}'),
+      );
     } catch (e) {
       log('AuthApiService: Unexpected error during password reset - $e');
-      return Left(MyError(
-          key: AppError.unknown, message: 'Unexpected error: ${e.toString()}'));
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -204,13 +234,13 @@ class AuthApiService {
     required String email,
   }) async {
     try {
-      log('AuthApiService: Attempting to resend verification for email: $email');
+      log(
+        'AuthApiService: Attempting to resend verification for email: $email',
+      );
 
       final result = await _apiService.postAPI(
         url: ApiConstants.authResendVerificationUrl,
-        body: {
-          'email': email,
-        },
+        body: {'email': email},
       );
 
       return result.fold(
@@ -224,21 +254,33 @@ class AuthApiService {
             log('AuthApiService: Resend verification successful');
             return Right(response['data']);
           } else {
-            log('AuthApiService: Resend verification failed - ${response['message']}');
-            return Left(MyError(
+            log(
+              'AuthApiService: Resend verification failed - ${response['message']}',
+            );
+            return Left(
+              MyError(
                 key: AppError.apiError,
-                message: response['message'] ?? 'Resend verification failed'));
+                message: response['message'] ?? 'Resend verification failed',
+              ),
+            );
           }
         },
       );
     } on DioException catch (e) {
-      log('AuthApiService: DioException during resend verification - ${e.message}');
-      return Left(MyError(
-          key: AppError.apiError, message: 'Network error: ${e.message}'));
+      log(
+        'AuthApiService: DioException during resend verification - ${e.message}',
+      );
+      return Left(
+        MyError(key: AppError.apiError, message: 'Network error: ${e.message}'),
+      );
     } catch (e) {
       log('AuthApiService: Unexpected error during resend verification - $e');
-      return Left(MyError(
-          key: AppError.unknown, message: 'Unexpected error: ${e.toString()}'));
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -251,9 +293,7 @@ class AuthApiService {
 
       final result = await _apiService.postAPI(
         url: ApiConstants.authVerifyEmailUrl,
-        body: {
-          'token': token,
-        },
+        body: {'token': token},
       );
 
       return result.fold(
@@ -267,70 +307,33 @@ class AuthApiService {
             log('AuthApiService: Email verification successful');
             return Right(response['data']);
           } else {
-            log('AuthApiService: Email verification failed - ${response['message']}');
-            return Left(MyError(
+            log(
+              'AuthApiService: Email verification failed - ${response['message']}',
+            );
+            return Left(
+              MyError(
                 key: AppError.apiError,
-                message: response['message'] ?? 'Email verification failed'));
+                message: response['message'] ?? 'Email verification failed',
+              ),
+            );
           }
         },
       );
     } on DioException catch (e) {
-      log('AuthApiService: DioException during email verification - ${e.message}');
-      return Left(MyError(
-          key: AppError.apiError, message: 'Network error: ${e.message}'));
+      log(
+        'AuthApiService: DioException during email verification - ${e.message}',
+      );
+      return Left(
+        MyError(key: AppError.apiError, message: 'Network error: ${e.message}'),
+      );
     } catch (e) {
       log('AuthApiService: Unexpected error during email verification - $e');
-      return Left(MyError(
-          key: AppError.unknown, message: 'Unexpected error: ${e.toString()}'));
-    }
-  }
-
-  // Profile Completion API call
-  Future<Either<MyError, ProfileCompletionModel>> getProfileCompletion({
-    required String candidateId,
-    String? token,
-  }) async {
-    try {
-      log('AuthApiService: Attempting to get profile completion for candidate: $candidateId');
-
-      final url = await ApiConstants.profileCompletionUrl;
-      final result = await _apiService.getRequest(
-        url,
-        token,
-        queryParameters: {
-          'cand_id': candidateId,
-        },
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
       );
-
-      return result.fold(
-        (error) {
-          log('AuthApiService: Profile completion check failed - ${error.message}');
-          return Left(error);
-        },
-        (responseData) {
-          final response = json.decode(responseData);
-          if (response['status'] == true) {
-            log('AuthApiService: Profile completion check successful');
-            final completionData =
-                ProfileCompletionModel.fromJson(response['data']['completion']);
-            return Right(completionData);
-          } else {
-            log('AuthApiService: Profile completion check failed - ${response['message']}');
-            return Left(MyError(
-                key: AppError.apiError,
-                message:
-                    response['message'] ?? 'Profile completion check failed'));
-          }
-        },
-      );
-    } on DioException catch (e) {
-      log('AuthApiService: DioException during profile completion check - ${e.message}');
-      return Left(MyError(
-          key: AppError.apiError, message: 'Network error: ${e.message}'));
-    } catch (e) {
-      log('AuthApiService: Unexpected error during profile completion check - $e');
-      return Left(MyError(
-          key: AppError.unknown, message: 'Unexpected error: ${e.toString()}'));
     }
   }
 }

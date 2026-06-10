@@ -56,7 +56,8 @@ class CareersUserManager {
 
   // Update user preferences
   static Future<void> updatePreferences(
-      Map<String, dynamic> preferences) async {
+    Map<String, dynamic> preferences,
+  ) async {
     await _careersUserService.updateUserPreferences(preferences);
   }
 
@@ -68,16 +69,6 @@ class CareersUserManager {
   // Update user skills
   static Future<void> updateSkills(List<String> skills) async {
     await _careersUserService.updateUserSkills(skills);
-  }
-
-  // Mark profile as complete
-  static Future<void> markProfileComplete() async {
-    await _careersUserService.markProfileComplete();
-  }
-
-  // Check if profile is complete
-  static bool isProfileComplete() {
-    return _careersUserService.isProfileComplete();
   }
 
   // Get user preferences

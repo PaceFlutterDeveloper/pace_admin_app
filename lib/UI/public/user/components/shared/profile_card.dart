@@ -5,11 +5,7 @@ class ProfileCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
 
-  const ProfileCard({
-    super.key,
-    required this.child,
-    this.padding,
-  });
+  const ProfileCard({super.key, required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {

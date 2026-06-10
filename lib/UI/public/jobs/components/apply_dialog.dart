@@ -7,11 +7,7 @@ class ApplyDialog extends StatelessWidget {
   final JobModel job;
   final VoidCallback? onApply;
 
-  const ApplyDialog({
-    super.key,
-    required this.job,
-    this.onApply,
-  });
+  const ApplyDialog({super.key, required this.job, this.onApply});
 
   @override
   Widget build(BuildContext context) {
@@ -61,10 +57,7 @@ class ApplyDialog extends StatelessWidget {
   }) {
     showDialog<void>(
       context: context,
-      builder: (context) => ApplyDialog(
-        job: job,
-        onApply: onApply,
-      ),
+      builder: (context) => ApplyDialog(job: job, onApply: onApply),
     );
   }
 }

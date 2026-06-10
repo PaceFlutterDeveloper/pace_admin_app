@@ -63,16 +63,14 @@ class _SignupPageState extends State<SignupPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
-            color: theme.colorScheme.onSurface,
-          ),
+          icon: Icon(CupertinoIcons.back, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -259,8 +257,9 @@ class _SignupPageState extends State<SignupPage> {
                           child: RichText(
                             text: TextSpan(
                               style: GoogleFonts.inter(
-                                color:
-                                    theme.colorScheme.onSurface.withOpacity(0.6),
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
                                 fontSize: 14,
                               ),
                               children: [
@@ -293,8 +292,9 @@ class _SignupPageState extends State<SignupPage> {
                       return AppButton.primary(
                         label: 'Create Account',
                         isLoading: state is SignupLoading,
-                        onPressed:
-                            state is SignupLoading ? null : _handleSignup,
+                        onPressed: state is SignupLoading
+                            ? null
+                            : _handleSignup,
                       );
                     },
                   ),
@@ -340,13 +340,13 @@ class _SignupPageState extends State<SignupPage> {
       }
 
       context.read<UserBloc>().add(
-            SignupEvent(
-              name: _nameController.text.trim(),
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-              phone: '+971${_phoneController.text.trim()}',
-            ),
-          );
+        SignupEvent(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          phone: '+971${_phoneController.text.trim()}',
+        ),
+      );
     }
   }
 }

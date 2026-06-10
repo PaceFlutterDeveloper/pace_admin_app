@@ -5,8 +5,14 @@ class FetchJobsEvent extends JobsEvent {
   final String? searchQuery;
   final String? filterBy;
   final int? schoolId;
+  final String? location;
 
-  FetchJobsEvent({this.searchQuery, this.filterBy, this.schoolId});
+  FetchJobsEvent({
+    this.searchQuery,
+    this.filterBy,
+    this.schoolId,
+    this.location,
+  });
 }
 
 class SearchJobsEvent extends JobsEvent {
@@ -19,8 +25,14 @@ class RefreshJobsEvent extends JobsEvent {
   final String? searchQuery;
   final String? filterBy;
   final int? schoolId;
+  final String? location;
 
-  RefreshJobsEvent({this.searchQuery, this.filterBy, this.schoolId});
+  RefreshJobsEvent({
+    this.searchQuery,
+    this.filterBy,
+    this.schoolId,
+    this.location,
+  });
 }
 
 class ClearFiltersEvent extends JobsEvent {}
@@ -37,6 +49,18 @@ class SelectSchoolEvent extends JobsEvent {
   final int? schoolId;
 
   SelectSchoolEvent(this.schoolId);
+}
+
+class FilterByLocationEvent extends JobsEvent {
+  final String location;
+
+  FilterByLocationEvent(this.location);
+}
+
+class FilterBySearchEvent extends JobsEvent {
+  final String searchQuery;
+
+  FilterBySearchEvent(this.searchQuery);
 }
 
 class LoadMoreJobsEvent extends JobsEvent {}

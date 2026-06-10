@@ -18,10 +18,13 @@ import 'package:admin_app/UI/home/cubit/home_cubit.dart';
 import 'package:admin_app/UI/home/repository/home_repository.dart';
 import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/UI/notification/repository/notification_repository.dart';
+import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
+import 'package:admin_app/UI/public/user/repository/careers_profile_repository.dart';
 import 'package:admin_app/UI/public/user/services/auth_api_service.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
+import 'package:admin_app/UI/public/user/services/profile_api_service.dart';
 import 'package:admin_app/UI/students/bloc/student_attendance_bloc.dart';
 import 'package:admin_app/UI/students/cubit/students_cubit.dart';
 import 'package:admin_app/UI/students/repository/students_repository.dart';
@@ -65,14 +68,15 @@ Future<void> serviceLocators() async {
       dio: locator<Dio>(), // Use registered Dio instance
     ),
   );
-// Register authuntication Service
+  // Register authuntication Service
   locator.registerLazySingleton<AuthenticationService>(
     () => AuthenticationService(),
   );
   // Register Hive Adapters
   Hive.registerAdapter(AuthModelAdapter()); // Register the LoginModel adapter
   Hive.registerAdapter(
-      CareersUserModelAdapter()); // Register the CareersUserModel adapter
+    CareersUserModelAdapter(),
+  ); // Register the CareersUserModel adapter
   await Hive.openBox('settingsBox');
 
   // Open Hive Box for LoginModel and register it
@@ -80,8 +84,9 @@ Future<void> serviceLocators() async {
   locator.registerSingleton<Box<AuthModel>>(loginBox);
 
   // Open Hive Box for CareersUserModel and register it
-  var careersUserBoxInstance =
-      await Hive.openBox<CareersUserModel>(careersUserBox);
+  var careersUserBoxInstance = await Hive.openBox<CareersUserModel>(
+    careersUserBox,
+  );
   locator.registerSingleton<Box<CareersUserModel>>(careersUserBoxInstance);
 
   // Register AuthRepository and AuthCubit
@@ -96,17 +101,13 @@ Future<void> serviceLocators() async {
   locator.registerLazySingleton<NotificationRepository>(
     () => NotificationRepository(apiService: locator<ApiService>()),
   );
-  locator.registerLazySingleton<NotificationCubit>(
-    () => NotificationCubit(),
-  );
+  locator.registerLazySingleton<NotificationCubit>(() => NotificationCubit());
   locator.registerLazySingleton<legacy_attendance.AttendanceRepository>(
     () => legacy_attendance.AttendanceRepository(
       apiService: locator<ApiService>(),
     ),
   );
-  locator.registerLazySingleton<AttendanceCubit>(
-    () => AttendanceCubit(),
-  );
+  locator.registerLazySingleton<AttendanceCubit>(() => AttendanceCubit());
   locator.registerLazySingleton<GeofenceLocalDataSource>(
     () => GeofenceLocalDataSource(),
   );
@@ -128,7 +129,8 @@ Future<void> serviceLocators() async {
   );
   locator.registerLazySingleton<SubmitAttendanceUseCase>(
     () => SubmitAttendanceUseCase(
-        locator<attendance_domain.AttendanceRepository>()),
+      locator<attendance_domain.AttendanceRepository>(),
+    ),
   );
   locator.registerFactory<AttendanceBloc>(
     () => AttendanceBloc(
@@ -137,44 +139,30 @@ Future<void> serviceLocators() async {
       submitAttendanceUseCase: locator<SubmitAttendanceUseCase>(),
     ),
   );
-// Register HomeRepository and HomeCubit
+  // Register HomeRepository and HomeCubit
   locator.registerLazySingleton<HomeRepository>(
-    () => HomeRepository(
-      apiService: locator<ApiService>(),
-    ),
+    () => HomeRepository(apiService: locator<ApiService>()),
   );
-  locator.registerLazySingleton<HomeCubit>(
-    () => HomeCubit(),
-  );
+  locator.registerLazySingleton<HomeCubit>(() => HomeCubit());
 
   // Register HomeRepository and HomeCubit
   locator.registerLazySingleton<ProfileRepository>(
-    () => ProfileRepository(
-      apiService: locator<ApiService>(),
-    ),
+    () => ProfileRepository(apiService: locator<ApiService>()),
   );
-  locator.registerLazySingleton<ProfileCubit>(
-    () => ProfileCubit(),
-  );
+  locator.registerLazySingleton<ProfileCubit>(() => ProfileCubit());
 
   // Register HomeRepository and HomeCubit
   locator.registerLazySingleton<ClassAttendanceRepository>(
-    () => ClassAttendanceRepository(
-      apiService: locator<ApiService>(),
-    ),
+    () => ClassAttendanceRepository(apiService: locator<ApiService>()),
   );
   locator.registerLazySingleton<GradeAttendanceCubit>(
     () => GradeAttendanceCubit(),
   );
   // Register HomeRepository and HomeCubit
   locator.registerLazySingleton<StudentsRepository>(
-    () => StudentsRepository(
-      apiService: locator<ApiService>(),
-    ),
+    () => StudentsRepository(apiService: locator<ApiService>()),
   );
-  locator.registerLazySingleton<StudentsCubit>(
-    () => StudentsCubit(),
-  );
+  locator.registerLazySingleton<StudentsCubit>(() => StudentsCubit());
   locator.registerLazySingleton<StudentAttendanceBloc>(
     () => StudentAttendanceBloc(),
   );
@@ -182,24 +170,16 @@ Future<void> serviceLocators() async {
 
   // Register HomeRepository and HomeCubit
   locator.registerLazySingleton<ManageTicketRepository>(
-    () => ManageTicketRepository(
-      apiService: locator<ApiService>(),
-    ),
+    () => ManageTicketRepository(apiService: locator<ApiService>()),
   );
 
   locator.registerLazySingleton<TicketRepository>(
-    () => TicketRepository(
-      apiService: locator<ApiService>(),
-    ),
+    () => TicketRepository(apiService: locator<ApiService>()),
   );
   locator.registerLazySingleton<NfcMappRepository>(
-    () => NfcMappRepository(
-      apiService: locator<ApiService>(),
-    ),
+    () => NfcMappRepository(apiService: locator<ApiService>()),
   );
-  locator.registerLazySingleton<TicketsCubit>(
-    () => TicketsCubit(),
-  );
+  locator.registerLazySingleton<TicketsCubit>(() => TicketsCubit());
   locator.registerLazySingleton<ManageTicketListBloc>(
     () => ManageTicketListBloc(),
   );
@@ -208,19 +188,36 @@ Future<void> serviceLocators() async {
   );
 
   // Register CareersUserService
-  locator.registerLazySingleton<CareersUserService>(
-    () => CareersUserService(),
-  );
+  locator.registerLazySingleton<CareersUserService>(() => CareersUserService());
 
   // Register AuthApiService
   locator.registerLazySingleton<AuthApiService>(
     () => AuthApiService(apiService: locator<ApiService>()),
   );
 
-  // Register UserBloc
+  // Register ProfileApiService (careers candidate profile)
+  locator.registerLazySingleton<ProfileApiService>(
+    () => ProfileApiService(apiService: locator<ApiService>()),
+  );
+
+  // Register CareersProfileRepository
+  locator.registerLazySingleton<CareersProfileRepository>(
+    () => CareersProfileRepository(
+      profileApiService: locator<ProfileApiService>(),
+      careersUserService: locator<CareersUserService>(),
+    ),
+  );
+
+  // Register CareersProfileBloc as factory: each profile screen gets its own
+  // instance so page states don't leak between routes.
+  locator.registerFactory<CareersProfileBloc>(
+    () => CareersProfileBloc(repository: locator<CareersProfileRepository>()),
+  );
+
+  // Register UserBloc (careers candidate auth)
   locator.registerLazySingleton<UserBloc>(
     () => UserBloc(
-      apiService: locator<ApiService>(),
+      authApiService: locator<AuthApiService>(),
       careersUserService: locator<CareersUserService>(),
     ),
   );

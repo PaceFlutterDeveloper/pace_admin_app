@@ -26,10 +26,7 @@ class JobsApiService {
   }) async {
     try {
       // Build query parameters
-      final Map<String, dynamic> queryParams = {
-        'page': page,
-        'limit': limit,
-      };
+      final Map<String, dynamic> queryParams = {'page': page, 'limit': limit};
 
       if (search != null && search.isNotEmpty) {
         queryParams['search'] = search;
@@ -51,46 +48,47 @@ class JobsApiService {
         queryParameters: queryParams,
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (responseData) {
-          try {
-            final Map<String, dynamic> jsonData = json.decode(responseData);
+      return result.fold((error) => Left(error), (responseData) {
+        try {
+          final Map<String, dynamic> jsonData = json.decode(responseData);
 
-            // Handle the API response format
-            if (jsonData['status'] == true) {
-              // Convert the API response to our JobResponseModel format
-              final List<dynamic> jobsData = jsonData['data'] ?? [];
-              final List<JobModel> jobs =
-                  jobsData.map((job) => JobModel.fromMap(job)).toList();
+          // Handle the API response format
+          if (jsonData['status'] == true) {
+            // Convert the API response to our JobResponseModel format
+            final List<dynamic> jobsData = jsonData['data'] ?? [];
+            final List<JobModel> jobs = jobsData
+                .map((job) => JobModel.fromMap(job))
+                .toList();
 
-              final jobResponse = JobResponseModel(
-                data: jobs,
-                total: jsonData['pagination']?['total_count'] ?? jobs.length,
-                page: jsonData['pagination']?['current_page'] ?? 1,
-                limit: jsonData['pagination']?['per_page'] ?? 20,
-              );
+            final jobResponse = JobResponseModel(
+              data: jobs,
+              total: jsonData['pagination']?['total_count'] ?? jobs.length,
+              page: jsonData['pagination']?['current_page'] ?? 1,
+              limit: jsonData['pagination']?['per_page'] ?? 20,
+            );
 
-              return Right(jobResponse);
-            } else {
-              return Left(MyError(
+            return Right(jobResponse);
+          } else {
+            return Left(
+              MyError(
                 key: AppError.unknown,
                 message: jsonData['message'] ?? 'Unknown API error',
-              ));
-            }
-          } catch (e) {
-            return Left(MyError(
+              ),
+            );
+          }
+        } catch (e) {
+          return Left(
+            MyError(
               key: AppError.unknown,
               message: 'Failed to parse jobs data: $e',
-            ));
-          }
-        },
-      );
+            ),
+          );
+        }
+      });
     } catch (e) {
-      return Left(MyError(
-        key: AppError.unknown,
-        message: 'Failed to fetch jobs: $e',
-      ));
+      return Left(
+        MyError(key: AppError.unknown, message: 'Failed to fetch jobs: $e'),
+      );
     }
   }
 
@@ -105,58 +103,62 @@ class JobsApiService {
         queryParameters: {'id': jobId},
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (responseData) {
-          try {
-            final Map<String, dynamic> jsonData = json.decode(responseData);
+      return result.fold((error) => Left(error), (responseData) {
+        try {
+          final Map<String, dynamic> jsonData = json.decode(responseData);
 
-            if (jsonData['status'] == true) {
-              final jobData = jsonData['data'];
+          if (jsonData['status'] == true) {
+            final jobData = jsonData['data'];
 
-              // Transform the detailed response to match our JobModel structure
-              final job = JobModel(
-                jobId: jobData['job_id'] ?? 0,
-                title: jobData['title'] ?? '',
-                location: jobData['location'] ?? '',
-                schoolName: jobData['school']?['name'] ?? '',
-                country: jobData['country']?['name'],
-                createdAt: jobData['dates']?['posted'] ?? '',
-                deadline: jobData['dates']?['deadline'] ?? '',
-                description: jobData['description']?['html'] ?? '',
-                salary: SalaryInfo(
-                  range: jobData['salary']?['range'] ?? '',
-                  minYears: jobData['salary']?['min_years'] ?? 0,
-                  maxYears: jobData['salary']?['max_years'],
-                ),
-                employmentType: jobData['details']?['employment_type'] ?? '',
-                requirements: jobData['requirements']?['skills'] ?? '',
-                department: null, // Not provided in detailed response
-                isActive: jobData['dates']?['is_active'] ?? true,
-                status:
-                    jobData['dates']?['is_active'] == true ? 'Open' : 'Closed',
-              );
+            // Transform the detailed response to match our JobModel structure
+            final job = JobModel(
+              jobId: jobData['job_id'] ?? 0,
+              title: jobData['title'] ?? '',
+              location: jobData['location'] ?? '',
+              schoolName: jobData['school']?['name'] ?? '',
+              country: jobData['country']?['name'],
+              createdAt: jobData['dates']?['posted'] ?? '',
+              deadline: jobData['dates']?['deadline'] ?? '',
+              description: jobData['description']?['html'] ?? '',
+              salary: SalaryInfo(
+                range: jobData['salary']?['range'] ?? '',
+                minYears: jobData['salary']?['min_years'] ?? 0,
+                maxYears: jobData['salary']?['max_years'],
+              ),
+              employmentType: jobData['details']?['employment_type'] ?? '',
+              requirements: jobData['requirements']?['skills'] ?? '',
+              department: null, // Not provided in detailed response
+              isActive: jobData['dates']?['is_active'] ?? true,
+              status: jobData['dates']?['is_active'] == true
+                  ? 'Open'
+                  : 'Closed',
+            );
 
-              return Right(job);
-            } else {
-              return Left(MyError(
+            return Right(job);
+          } else {
+            return Left(
+              MyError(
                 key: AppError.unknown,
                 message: jsonData['message'] ?? 'Unknown API error',
-              ));
-            }
-          } catch (e) {
-            return Left(MyError(
+              ),
+            );
+          }
+        } catch (e) {
+          return Left(
+            MyError(
               key: AppError.unknown,
               message: 'Failed to parse job details: $e',
-            ));
-          }
-        },
-      );
+            ),
+          );
+        }
+      });
     } catch (e) {
-      return Left(MyError(
-        key: AppError.unknown,
-        message: 'Failed to fetch job details: $e',
-      ));
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Failed to fetch job details: $e',
+        ),
+      );
     }
   }
 
@@ -181,24 +183,27 @@ class JobsApiService {
               final schoolResponse = SchoolResponseModel.fromMap(jsonData);
               return Right(schoolResponse);
             } else {
-              return Left(MyError(
-                key: AppError.unknown,
-                message: jsonData['message'] ?? 'Unknown API error',
-              ));
+              return Left(
+                MyError(
+                  key: AppError.unknown,
+                  message: jsonData['message'] ?? 'Unknown API error',
+                ),
+              );
             }
           } catch (e) {
-            return Left(MyError(
-              key: AppError.unknown,
-              message: 'Failed to parse schools data: $e',
-            ));
+            return Left(
+              MyError(
+                key: AppError.unknown,
+                message: 'Failed to parse schools data: $e',
+              ),
+            );
           }
         },
       );
     } catch (e) {
-      return Left(MyError(
-        key: AppError.unknown,
-        message: 'Failed to fetch schools: $e',
-      ));
+      return Left(
+        MyError(key: AppError.unknown, message: 'Failed to fetch schools: $e'),
+      );
     }
   }
 
@@ -218,7 +223,11 @@ class JobsApiService {
     String? token,
   }) async {
     return fetchJobs(
-        schoolId: schoolId, page: page, limit: limit, token: token);
+      schoolId: schoolId,
+      page: page,
+      limit: limit,
+      token: token,
+    );
   }
 
   Future<Either<MyError, JobResponseModel>> filterJobsByCountry(
@@ -228,7 +237,11 @@ class JobsApiService {
     String? token,
   }) async {
     return fetchJobs(
-        countryId: countryId, page: page, limit: limit, token: token);
+      countryId: countryId,
+      page: page,
+      limit: limit,
+      token: token,
+    );
   }
 
   Future<Either<MyError, JobResponseModel>> filterJobsByEmploymentType(
@@ -240,24 +253,23 @@ class JobsApiService {
     // Since the API doesn't have employment_type filter, we'll filter client-side
     final result = await fetchJobs(page: page, limit: limit, token: token);
 
-    return result.fold(
-      (error) => Left(error),
-      (response) {
-        final filteredJobs = response.data
-            .where((job) =>
+    return result.fold((error) => Left(error), (response) {
+      final filteredJobs = response.data
+          .where(
+            (job) =>
                 job.employmentType.toLowerCase() ==
-                employmentType.toLowerCase())
-            .toList();
+                employmentType.toLowerCase(),
+          )
+          .toList();
 
-        final filteredResponse = JobResponseModel(
-          data: filteredJobs,
-          total: filteredJobs.length,
-          page: response.page,
-          limit: response.limit,
-        );
+      final filteredResponse = JobResponseModel(
+        data: filteredJobs,
+        total: filteredJobs.length,
+        page: response.page,
+        limit: response.limit,
+      );
 
-        return Right(filteredResponse);
-      },
-    );
+      return Right(filteredResponse);
+    });
   }
 }

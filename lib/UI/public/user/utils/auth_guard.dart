@@ -1,9 +1,11 @@
 import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
 class AuthGuard {
-  static final CareersUserService _userService = CareersUserService();
+  static CareersUserService get _userService =>
+      GetIt.instance<CareersUserService>();
 
   /// Check if user is logged in
   static bool isLoggedIn() {
@@ -11,8 +13,10 @@ class AuthGuard {
   }
 
   /// Navigate to login page if user is not authenticated
-  static void requireAuth(BuildContext context,
-      {VoidCallback? onAuthenticated}) {
+  static void requireAuth(
+    BuildContext context, {
+    VoidCallback? onAuthenticated,
+  }) {
     if (isLoggedIn()) {
       onAuthenticated?.call();
     } else {
@@ -22,11 +26,9 @@ class AuthGuard {
 
   /// Navigate to login page
   static void _navigateToLogin(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const LoginPage(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const LoginPage()));
   }
 
   /// Show authentication required dialog

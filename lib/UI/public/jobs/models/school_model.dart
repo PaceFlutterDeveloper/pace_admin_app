@@ -16,22 +16,22 @@ class SchoolModel {
   });
 
   factory SchoolModel.fromMap(Map<String, dynamic> json) => SchoolModel(
-        id: json["id"] ?? 0,
-        name: json["name"] ?? "",
-        code: json["code"] ?? "",
-        baseUrl: json["base_url"] ?? "",
-        color: json["color"] ?? "#000000",
-        jobCount: json["job_count"] ?? 0,
-      );
+    id: json["id"] ?? 0,
+    name: json["name"] ?? "",
+    code: json["code"] ?? "",
+    baseUrl: json["base_url"] ?? "",
+    color: json["color"] ?? "#000000",
+    jobCount: json["job_count"] ?? 0,
+  );
 
   Map<String, dynamic> toMap() => {
-        "id": id,
-        "name": name,
-        "code": code,
-        "base_url": baseUrl,
-        "color": color,
-        "job_count": jobCount,
-      };
+    "id": id,
+    "name": name,
+    "code": code,
+    "base_url": baseUrl,
+    "color": color,
+    "job_count": jobCount,
+  };
 
   @override
   bool operator ==(Object other) {
@@ -47,17 +47,15 @@ class SchoolResponseModel {
   final List<SchoolModel> data;
   final int count;
 
-  SchoolResponseModel({
-    required this.data,
-    required this.count,
-  });
+  SchoolResponseModel({required this.data, required this.count});
 
   factory SchoolResponseModel.fromMap(Map<String, dynamic> json) =>
       SchoolResponseModel(
         data: json["data"] == null
             ? []
             : List<SchoolModel>.from(
-                json["data"].map((x) => SchoolModel.fromMap(x))),
+                json["data"].map((x) => SchoolModel.fromMap(x)),
+              ),
         count: json["count"] ?? 0,
       );
 }

@@ -1,16 +1,26 @@
 import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
-import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Header card showing the candidate's identity and completion status.
 class ProfileHeaderCard extends StatelessWidget {
-  final VoidCallback? onCompleteProfile;
+  final String name;
+  final String email;
+  final String? avatarUrl;
+
+  /// API-driven completion state; null while unknown.
+  final bool? isComplete;
+  final int? completionPercentage;
 
   const ProfileHeaderCard({
     super.key,
-    this.onCompleteProfile,
+    required this.name,
+    required this.email,
+    this.avatarUrl,
+    this.isComplete,
+    this.completionPercentage,
   });
 
   @override
@@ -19,10 +29,12 @@ class ProfileHeaderCard extends StatelessWidget {
       child: Column(
         children: [
           _buildAvatar(context),
-          const SizedBox(height: AppSpacing.md),
+          AppSpacing.vGapMd,
           _buildUserInfo(context),
-          const SizedBox(height: AppSpacing.md),
-          _buildProfileStatus(context),
+          if (isComplete != null) ...[
+            AppSpacing.vGapMd,
+            _buildProfileStatus(context),
+          ],
         ],
       ),
     );
@@ -32,13 +44,18 @@ class ProfileHeaderCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return CircleAvatar(
-      radius: 44,
-      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-      child: Icon(
-        CupertinoIcons.person_fill,
-        size: 44,
-        color: theme.colorScheme.primary,
-      ),
+      radius: AppSizes.avatarXl / 2,
+      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
+      backgroundImage: (avatarUrl?.isNotEmpty ?? false)
+          ? NetworkImage(avatarUrl!)
+          : null,
+      child: (avatarUrl?.isNotEmpty ?? false)
+          ? null
+          : Icon(
+              CupertinoIcons.person_fill,
+              size: AppSizes.iconXl,
+              color: theme.colorScheme.primary,
+            ),
     );
   }
 
@@ -48,19 +65,20 @@ class ProfileHeaderCard extends StatelessWidget {
     return Column(
       children: [
         Text(
-          CareersUserManager.getDisplayName(),
+          name,
           style: GoogleFonts.inter(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onSurface,
+            letterSpacing: -0.3,
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        AppSpacing.vGapXs,
         Text(
-          CareersUserManager.getEmail(),
+          email,
           style: GoogleFonts.inter(
             fontSize: 15,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -68,8 +86,13 @@ class ProfileHeaderCard extends StatelessWidget {
   }
 
   Widget _buildProfileStatus(BuildContext context) {
-    final isComplete = CareersUserManager.isProfileComplete();
-    final color = isComplete ? AppColors.success : AppColors.warning;
+    final complete = isComplete ?? false;
+    final color = complete ? AppColors.success : AppColors.warning;
+    final label = complete
+        ? 'Profile Complete'
+        : completionPercentage != null
+        ? 'Profile $completionPercentage% Complete'
+        : 'Profile Incomplete';
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -77,23 +100,23 @@ class ProfileHeaderCard extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppRadius.borderRadiusPill,
         border: Border.all(color: color),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isComplete
+            complete
                 ? CupertinoIcons.checkmark_circle_fill
                 : CupertinoIcons.exclamationmark_triangle_fill,
             color: color,
-            size: 16,
+            size: AppSizes.iconXs,
           ),
-          const SizedBox(width: AppSpacing.sm),
+          AppSpacing.hGapSm,
           Text(
-            isComplete ? 'Profile Complete' : 'Profile Incomplete',
+            label,
             style: GoogleFonts.inter(
               color: color,
               fontWeight: FontWeight.w600,

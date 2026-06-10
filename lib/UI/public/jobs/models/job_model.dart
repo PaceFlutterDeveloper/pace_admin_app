@@ -5,23 +5,19 @@ class SalaryInfo {
   final int minYears;
   final int? maxYears;
 
-  SalaryInfo({
-    required this.range,
-    required this.minYears,
-    this.maxYears,
-  });
+  SalaryInfo({required this.range, required this.minYears, this.maxYears});
 
   factory SalaryInfo.fromMap(Map<String, dynamic> json) => SalaryInfo(
-        range: json["range"] ?? "",
-        minYears: json["min_years"] ?? 0,
-        maxYears: json["max_years"],
-      );
+    range: json["range"] ?? "",
+    minYears: json["min_years"] ?? 0,
+    maxYears: json["max_years"],
+  );
 
   Map<String, dynamic> toMap() => {
-        "range": range,
-        "min_years": minYears,
-        "max_years": maxYears,
-      };
+    "range": range,
+    "min_years": minYears,
+    "max_years": maxYears,
+  };
 }
 
 class JobModel {
@@ -70,38 +66,38 @@ class JobModel {
   String toJson() => json.encode(toMap());
 
   factory JobModel.fromMap(Map<String, dynamic> json) => JobModel(
-        jobId: json["job_id"] ?? 0,
-        title: json["title"] ?? "",
-        location: json["location"] ?? "",
-        schoolName: json["school_name"] ?? "",
-        country: json["country"],
-        createdAt: json["created_at"] ?? "",
-        deadline: json["deadline"] ?? "",
-        description: json["description"] ?? "",
-        salary: SalaryInfo.fromMap(json["salary"] ?? {}),
-        employmentType: json["employment_type"] ?? "",
-        requirements: json["requirements"],
-        department: json["department"],
-        isActive: json["is_active"] ?? true,
-        status: json["status"] ?? "Open",
-      );
+    jobId: json["job_id"] ?? 0,
+    title: json["title"] ?? "",
+    location: json["location"] ?? "",
+    schoolName: json["school_name"] ?? "",
+    country: json["country"],
+    createdAt: json["created_at"] ?? "",
+    deadline: json["deadline"] ?? "",
+    description: json["description"] ?? "",
+    salary: SalaryInfo.fromMap(json["salary"] ?? {}),
+    employmentType: json["employment_type"] ?? "",
+    requirements: json["requirements"],
+    department: json["department"],
+    isActive: json["is_active"] ?? true,
+    status: json["status"] ?? "Open",
+  );
 
   Map<String, dynamic> toMap() => {
-        "job_id": jobId,
-        "title": title,
-        "location": location,
-        "school_name": schoolName,
-        "country": country,
-        "created_at": createdAt,
-        "deadline": deadline,
-        "description": description,
-        "salary": salary.toMap(),
-        "employment_type": employmentType,
-        "requirements": requirements,
-        "department": department,
-        "is_active": isActive,
-        "status": status,
-      };
+    "job_id": jobId,
+    "title": title,
+    "location": location,
+    "school_name": schoolName,
+    "country": country,
+    "created_at": createdAt,
+    "deadline": deadline,
+    "description": description,
+    "salary": salary.toMap(),
+    "employment_type": employmentType,
+    "requirements": requirements,
+    "department": department,
+    "is_active": isActive,
+    "status": status,
+  };
 
   JobModel copyWith({
     int? jobId,
@@ -167,9 +163,9 @@ class JobResponseModel {
       );
 
   Map<String, dynamic> toMap() => {
-        "data": List<dynamic>.from(data.map((x) => x.toMap())),
-        "total": total,
-        "page": page,
-        "limit": limit,
-      };
+    "data": List<dynamic>.from(data.map((x) => x.toMap())),
+    "total": total,
+    "page": page,
+    "limit": limit,
+  };
 }

@@ -23,9 +23,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 class MyApp extends StatefulWidget {
-  const MyApp({
-    super.key,
-  });
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -57,10 +55,7 @@ class _MyAppState extends State<MyApp> {
       }
     } else if (page == Routes.ticketDetailPage.path) {
       if (ticketId != null) {
-        AppRoute.router.goNamed(
-          Routes.ticketDetailPage.name,
-          extra: ticketId,
-        );
+        AppRoute.router.goNamed(Routes.ticketDetailPage.name, extra: ticketId);
       }
     } else {
       AppRoute.router.goNamed(Routes.getNotifications.name);
@@ -78,11 +73,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (context) => NfcProvider(),
-        ),
-      ],
+      providers: [ChangeNotifierProvider(create: (context) => NfcProvider())],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(create: (_) => locator<AuthCubit>()),

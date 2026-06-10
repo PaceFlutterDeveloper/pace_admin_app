@@ -7,10 +7,7 @@ import 'package:flutter/material.dart';
 class JobDescriptionCard extends StatelessWidget {
   final JobModel job;
 
-  const JobDescriptionCard({
-    Key? key,
-    required this.job,
-  }) : super(key: key);
+  const JobDescriptionCard({Key? key, required this.job}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

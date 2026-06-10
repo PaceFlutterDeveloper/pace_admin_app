@@ -93,11 +93,7 @@ class _JobSearchBarState extends State<JobSearchBar> {
           ),
 
           // Vertical Divider
-          Container(
-            height: h * 0.03,
-            width: 1,
-            color: ConstColors.borderColor,
-          ),
+          Container(height: h * 0.03, width: 1, color: ConstColors.borderColor),
 
           // Location Field
           Expanded(

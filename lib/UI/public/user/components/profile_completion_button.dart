@@ -1,48 +1,47 @@
-import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
+import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// API-driven completion banner with a call to action when incomplete.
 class ProfileCompletionButton extends StatelessWidget {
+  final ProfileCompletionModel? completion;
   final VoidCallback? onNavigateToCompleteProfile;
 
   const ProfileCompletionButton({
     super.key,
+    this.completion,
     this.onNavigateToCompleteProfile,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isComplete = CareersUserManager.isProfileComplete();
+    final completion = this.completion;
 
-    if (isComplete) {
-      return _buildCompleteStatusCard(context);
+    if (completion != null && completion.isComplete && completion.canApply) {
+      return const _StatusBanner(
+        color: AppColors.success,
+        icon: Icons.check_circle_rounded,
+        title: 'Profile Complete!',
+        message: 'Your profile is complete and you can apply for jobs.',
+      );
     }
 
-    return _buildIncompleteSection(context);
-  }
+    final message = completion != null
+        ? 'Your profile is ${completion.percentage}% complete. '
+              'Complete it to apply for jobs.'
+        : 'Complete your profile to apply for jobs.';
 
-  Widget _buildCompleteStatusCard(BuildContext context) {
-    return _StatusBanner(
-      color: AppColors.success,
-      icon: CupertinoIcons.checkmark_circle_fill,
-      title: 'Profile Complete!',
-      message: 'Your profile is complete and you can apply for jobs.',
-    );
-  }
-
-  Widget _buildIncompleteSection(BuildContext context) {
     return Column(
       children: [
         _StatusBanner(
           color: AppColors.warning,
-          icon: CupertinoIcons.exclamationmark_triangle_fill,
+          icon: Icons.warning_rounded,
           title: 'Profile Incomplete',
-          message: 'Complete your profile to apply for jobs.',
+          message: message,
         ),
-        const SizedBox(height: AppSpacing.md),
+        AppSpacing.vGapMd,
         AppButton.primary(
           label: 'Complete Profile',
           onPressed: onNavigateToCompleteProfile,
@@ -71,14 +70,14 @@ class _StatusBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppRadius.borderRadiusMd,
         border: Border.all(color: color),
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: AppSpacing.sm),
+          Icon(icon, color: color, size: AppSizes.iconSm + 2),
+          AppSpacing.hGapSm,
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +94,7 @@ class _StatusBanner extends StatelessWidget {
                   message,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: color.withOpacity(0.85),
+                    color: color.withValues(alpha: 0.85),
                   ),
                 ),
               ],

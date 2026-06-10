@@ -43,10 +43,7 @@ class CareersScaffold extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(
-          color: theme.colorScheme.onSurface,
-          size: 22,
-        ),
+        iconTheme: IconThemeData(color: theme.colorScheme.onSurface, size: 22),
         actions: actions,
       ),
       body: body,

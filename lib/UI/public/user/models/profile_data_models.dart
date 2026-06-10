@@ -104,7 +104,7 @@ class ProfileModel {
       referencePermissionYn: json['reference_permission_yn'] is bool
           ? json['reference_permission_yn']
           : json['reference_permission_yn'] == 1 ||
-              json['reference_permission_yn'] == true,
+                json['reference_permission_yn'] == true,
       noticePeriod: json['notice_period'],
       preferredPosition: json['preferred_position'],
       avatarFile: json['avatar_file'],
@@ -241,8 +241,8 @@ class EducationRecord {
       gpa: json['gpa'] != null
           ? double.tryParse(json['gpa'].toString())
           : (json['percentage'] != null
-              ? double.tryParse(json['percentage'].toString())
-              : null),
+                ? double.tryParse(json['percentage'].toString())
+                : null),
       grade: json['grade'] ?? json['percentage'],
     );
   }
@@ -288,7 +288,8 @@ class ExperienceRecord {
       position: json['position'] ?? json['designation'],
       startDate: json['start_date'] ?? json['from_date'],
       endDate: json['end_date'] ?? json['to_date'],
-      isCurrent: json['is_current'] == 1 ||
+      isCurrent:
+          json['is_current'] == 1 ||
           json['is_current'] == true ||
           json['current_role_yn'] == 1 ||
           json['current_role_yn'] == true,
@@ -417,7 +418,8 @@ class ProfessionalProgram {
       id: json['id'],
       programName: json['program_name'] ?? json['course_name'],
       institution: json['institution'] ?? json['institute'],
-      completionDate: json['completion_date'] ??
+      completionDate:
+          json['completion_date'] ??
           (json['year_passing'] != null
               ? json['year_passing'].toString()
               : null),
@@ -461,23 +463,28 @@ class CompleteProfileModel {
     return CompleteProfileModel(
       candidateId: json['candidate_id'] ?? json['cand_id'],
       profile: ProfileModel.fromJson(json['candidate'] ?? json),
-      educationRecords: (json['education_records'] as List<dynamic>?)
+      educationRecords:
+          (json['education_records'] as List<dynamic>?)
               ?.map((e) => EducationRecord.fromJson(e))
               .toList() ??
           [],
-      experienceRecords: (json['experience_records'] as List<dynamic>?)
+      experienceRecords:
+          (json['experience_records'] as List<dynamic>?)
               ?.map((e) => ExperienceRecord.fromJson(e))
               .toList() ??
           [],
-      familyMembers: (json['family_members'] as List<dynamic>?)
+      familyMembers:
+          (json['family_members'] as List<dynamic>?)
               ?.map((e) => FamilyMember.fromJson(e))
               .toList() ??
           [],
-      references: (json['references'] as List<dynamic>?)
+      references:
+          (json['references'] as List<dynamic>?)
               ?.map((e) => Reference.fromJson(e))
               .toList() ??
           [],
-      professionalPrograms: (json['professional_programs'] as List<dynamic>?)
+      professionalPrograms:
+          (json['professional_programs'] as List<dynamic>?)
               ?.map((e) => ProfessionalProgram.fromJson(e))
               .toList() ??
           [],
@@ -492,8 +499,9 @@ class CompleteProfileModel {
       'experience_records': experienceRecords.map((e) => e.toJson()).toList(),
       'family_members': familyMembers.map((e) => e.toJson()).toList(),
       'references': references.map((e) => e.toJson()).toList(),
-      'professional_programs':
-          professionalPrograms.map((e) => e.toJson()).toList(),
+      'professional_programs': professionalPrograms
+          .map((e) => e.toJson())
+          .toList(),
     };
   }
 }

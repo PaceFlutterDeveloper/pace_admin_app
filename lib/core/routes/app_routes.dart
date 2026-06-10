@@ -26,6 +26,9 @@ import 'package:admin_app/UI/public/jobs/bloc/jobs_bloc.dart';
 import 'package:admin_app/UI/public/jobs/pages/job_detail_page.dart';
 import 'package:admin_app/UI/public/jobs/pages/jobs_page.dart';
 import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
+import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
+import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile_page.dart';
+import 'package:admin_app/UI/public/user/pages/profile_page.dart';
 import 'package:admin_app/UI/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
@@ -54,187 +57,186 @@ class AppRoute {
 
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: Routes.root.path,
+    initialLocation: Routes.careers.path,
     debugLogDiagnostics: kDebugMode,
     refreshListenable: GoRouterRefreshStream(context.watch<AuthCubit>().stream),
     routes: [
       GoRoute(
         path: Routes.root.path,
         name: Routes.root.name,
-        redirect: (_, __) => Routes.home.path,
+        redirect: (_, __) => Routes.careers.path,
       ),
       ShellRoute(
-          navigatorKey: _shellNavigatorKey,
-          observers: [shellRouteObserver],
-          builder: (context, state, child) {
-            return ScaffoldWithNavBar(child: child);
-          },
-          routes: [
-            GoRoute(
-              path: Routes.home.path,
-              name: Routes.home.name,
-              builder: (_, __) => const HomeScreen(),
-            ),
-            GoRoute(
-              path: Routes.navAttendance.path,
-              name: Routes.navAttendance.name,
-              builder: (context, _) => Scaffold(
-                body: Center(
-                  child: Text(
-                    'Attendance',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+        navigatorKey: _shellNavigatorKey,
+        observers: [shellRouteObserver],
+        builder: (context, state, child) {
+          return ScaffoldWithNavBar(child: child);
+        },
+        routes: [
+          GoRoute(
+            path: Routes.home.path,
+            name: Routes.home.name,
+            builder: (_, __) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: Routes.navAttendance.path,
+            name: Routes.navAttendance.name,
+            builder: (context, _) => Scaffold(
+              body: Center(
+                child: Text(
+                  'Attendance',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
             ),
-            GoRoute(
-              path: Routes.navReports.path,
-              name: Routes.navReports.name,
-              builder: (context, _) => Scaffold(
-                body: Center(
-                  child: Text(
-                    'Reports',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+          ),
+          GoRoute(
+            path: Routes.navReports.path,
+            name: Routes.navReports.name,
+            builder: (context, _) => Scaffold(
+              body: Center(
+                child: Text(
+                  'Reports',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
             ),
-            GoRoute(
-              path: Routes.navSchedule.path,
-              name: Routes.navSchedule.name,
-              builder: (context, _) => Scaffold(
-                body: Center(
-                  child: Text(
-                    'Schedule',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+          ),
+          GoRoute(
+            path: Routes.navSchedule.path,
+            name: Routes.navSchedule.name,
+            builder: (context, _) => Scaffold(
+              body: Center(
+                child: Text(
+                  'Schedule',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
             ),
-            GoRoute(
-              path: Routes.getNotifications.path,
-              name: Routes.getNotifications.name,
-              builder: (_, __) => BlocProvider.value(
-                value: locator<NotificationCubit>()..fetchNotifications(),
-                child: const NotificationPage(),
-              ),
+          ),
+          GoRoute(
+            path: Routes.getNotifications.path,
+            name: Routes.getNotifications.name,
+            builder: (_, __) => BlocProvider.value(
+              value: locator<NotificationCubit>()..fetchNotifications(),
+              child: const NotificationPage(),
             ),
-            GoRoute(
-              path: Routes.subMenuPage.path,
-              name: Routes.subMenuPage.name,
-              builder: (context, state) {
-                final menuModel = state.extra as MenuModel;
+          ),
+          GoRoute(
+            path: Routes.subMenuPage.path,
+            name: Routes.subMenuPage.name,
+            builder: (context, state) {
+              final menuModel = state.extra as MenuModel;
 
-                return SubMenuPage(
-                  menuModel: menuModel,
-                );
-              },
-            ),
-            GoRoute(
-              path: Routes.userProfile.path,
-              name: Routes.userProfile.name,
-              builder: (context, state) {
-                final menuModel =
-                    state.extra is MenuModel ? state.extra as MenuModel : null;
+              return SubMenuPage(menuModel: menuModel);
+            },
+          ),
+          GoRoute(
+            path: Routes.userProfile.path,
+            name: Routes.userProfile.name,
+            builder: (context, state) {
+              final menuModel = state.extra is MenuModel
+                  ? state.extra as MenuModel
+                  : null;
 
-                return ProfilePage(
-                  appTitle: menuModel?.menuName ?? 'My Profile',
-                );
-              },
+              return ProfilePage(appTitle: menuModel?.menuName ?? 'My Profile');
+            },
+          ),
+          GoRoute(
+            path: Routes.classAttendance.path,
+            name: Routes.classAttendance.name,
+            builder: (context, state) {
+              final menuModel = state.extra as MenuModel;
+              return GradeAttendanceScreen(appTitle: menuModel.menuName);
+            },
+          ),
+          GoRoute(
+            path: Routes.manageTickets.path,
+            name: Routes.manageTickets.name,
+            // builder: (context, state) => const ManageTicketListPage(),
+            builder: (_, __) => BlocProvider.value(
+              value: locator<ManageTicketListBloc>()
+                ..add(const FetchTicketListEvent()),
+              child: const ManageTicketListPage(),
             ),
-            GoRoute(
-              path: Routes.classAttendance.path,
-              name: Routes.classAttendance.name,
-              builder: (context, state) {
-                final menuModel = state.extra as MenuModel;
-                return GradeAttendanceScreen(
-                  appTitle: menuModel.menuName,
-                );
-              },
-            ),
-            GoRoute(
-                path: Routes.manageTickets.path,
-                name: Routes.manageTickets.name,
-                // builder: (context, state) => const ManageTicketListPage(),
-                builder: (_, __) => BlocProvider.value(
-                      value: locator<ManageTicketListBloc>()
-                        ..add(const FetchTicketListEvent()),
-                      child: const ManageTicketListPage(),
-                    ),
-                routes: [
-                  GoRoute(
-                    path: Routes.manageTicketDetailPage.path,
-                    name: Routes.manageTicketDetailPage.name,
-                    builder: (context, state) {
-                      final data = state.extra as Map<String, dynamic>;
-                      String _t = data['ticketId'] as String;
-                      return ManageTicketDetailPage(
-                        ticketId: int.parse(_t),
-                        isPushNotification: data['isPushNotification'] as bool,
-                      );
-                    },
-                  ),
-                ]),
-            GoRoute(
-                path: Routes.tickets.path,
-                name: Routes.tickets.name,
+            routes: [
+              GoRoute(
+                path: Routes.manageTicketDetailPage.path,
+                name: Routes.manageTicketDetailPage.name,
                 builder: (context, state) {
-                  return BlocProvider(
-                    create: (_) => TicketsCubit()..fetchTickets(),
-                    child: const TicketListPage(),
+                  final data = state.extra as Map<String, dynamic>;
+                  String _t = data['ticketId'] as String;
+                  return ManageTicketDetailPage(
+                    ticketId: int.parse(_t),
+                    isPushNotification: data['isPushNotification'] as bool,
                   );
                 },
-                routes: [
-                  GoRoute(
-                    path: Routes.ticketDetailPage.path,
-                    name: Routes.ticketDetailPage.name,
-                    builder: (context, state) {
-                      final data = state.extra as Map<String, dynamic>;
-                      String _t = data['ticketId'] as String;
-                      return TicketDetailPage(
-                        ticketId: int.parse(_t),
-                        isPushNotification: data['isPushNotification'] as bool,
-                      );
-                    },
-                  ),
-                ]),
-            GoRoute(
-              path: Routes.students.path,
-              name: Routes.students.name,
-              builder: (context, state) {
-                final grade = state.uri.queryParameters['grade'] ?? '';
-                final section = state.uri.queryParameters['section'] ??
-                    ''; // Ensure key matches
-                final title = state.uri.queryParameters['title'] ?? 'Students';
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.tickets.path,
+            name: Routes.tickets.name,
+            builder: (context, state) {
+              return BlocProvider(
+                create: (_) => TicketsCubit()..fetchTickets(),
+                child: const TicketListPage(),
+              );
+            },
+            routes: [
+              GoRoute(
+                path: Routes.ticketDetailPage.path,
+                name: Routes.ticketDetailPage.name,
+                builder: (context, state) {
+                  final data = state.extra as Map<String, dynamic>;
+                  String _t = data['ticketId'] as String;
+                  return TicketDetailPage(
+                    ticketId: int.parse(_t),
+                    isPushNotification: data['isPushNotification'] as bool,
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.students.path,
+            name: Routes.students.name,
+            builder: (context, state) {
+              final grade = state.uri.queryParameters['grade'] ?? '';
+              final section =
+                  state.uri.queryParameters['section'] ??
+                  ''; // Ensure key matches
+              final title = state.uri.queryParameters['title'] ?? 'Students';
 
-                if (grade.isEmpty || section.isEmpty) {
-                  return const Center(child: Text("Invalid student data"));
-                }
+              if (grade.isEmpty || section.isEmpty) {
+                return const Center(child: Text("Invalid student data"));
+              }
 
-                return StudentsPage(
-                  grade: grade,
-                  section: section,
-                  appTitle: title,
-                );
-              },
-            ),
-            GoRoute(
-              path: Routes.userAttendance.path,
-              name: Routes.userAttendance.name,
-              builder: (context, state) {
-                final menuModel = state.extra as MenuModel;
-                return EmpAttendancePage(menuModel: menuModel);
-              },
-            ),
-            GoRoute(
-              path: Routes.faceAttendance.path,
-              name: Routes.faceAttendance.name,
-              builder: (context, state) {
-                final menuModel = state.extra as MenuModel;
-                return AttendancePage(title: menuModel.menuName);
-              },
-            ),
-          ]),
+              return StudentsPage(
+                grade: grade,
+                section: section,
+                appTitle: title,
+              );
+            },
+          ),
+          GoRoute(
+            path: Routes.userAttendance.path,
+            name: Routes.userAttendance.name,
+            builder: (context, state) {
+              final menuModel = state.extra as MenuModel;
+              return EmpAttendancePage(menuModel: menuModel);
+            },
+          ),
+          GoRoute(
+            path: Routes.faceAttendance.path,
+            name: Routes.faceAttendance.name,
+            builder: (context, state) {
+              final menuModel = state.extra as MenuModel;
+              return AttendancePage(title: menuModel.menuName);
+            },
+          ),
+        ],
+      ),
       // Jobs Shell Route - child pages own their Scaffold/AppBar
       ShellRoute(
         navigatorKey: GlobalKey<NavigatorState>(),
@@ -251,10 +253,8 @@ class AppRoute {
               final token = null; // Get from your auth service
 
               return BlocProvider<JobsBloc>(
-                create: (context) => JobsBloc(
-                  jobsApiService: jobsApiService,
-                  token: token,
-                ),
+                create: (context) =>
+                    JobsBloc(jobsApiService: jobsApiService, token: token),
                 child: const JobsPage(),
               );
             },
@@ -270,13 +270,30 @@ class AppRoute {
               final token = null; // Get from your auth service
 
               return BlocProvider<JobsBloc>(
-                create: (context) => JobsBloc(
-                  jobsApiService: jobsApiService,
-                  token: token,
+                create: (context) =>
+                    JobsBloc(jobsApiService: jobsApiService, token: token),
+                child: BlocProvider<CareersProfileBloc>(
+                  create: (context) => locator<CareersProfileBloc>(),
+                  child: JobDetailPage(jobId: jobId),
                 ),
-                child: JobDetailPage(jobId: jobId),
               );
             },
+          ),
+          GoRoute(
+            path: Routes.careersProfile.path,
+            name: Routes.careersProfile.name,
+            builder: (context, state) => BlocProvider<CareersProfileBloc>(
+              create: (context) => locator<CareersProfileBloc>(),
+              child: const CareersProfilePage(),
+            ),
+          ),
+          GoRoute(
+            path: Routes.careersCompleteProfile.path,
+            name: Routes.careersCompleteProfile.name,
+            builder: (context, state) => BlocProvider<CareersProfileBloc>(
+              create: (context) => locator<CareersProfileBloc>(),
+              child: const CompleteProfilePage(),
+            ),
           ),
         ],
       ),
@@ -314,15 +331,19 @@ class AppRoute {
       // Determine if there is an active user
       bool hasActiveUser = loginBox.values.any((login) => login.isActive);
 
-      // Case 1: Allow direct access to LoginPage even if an active user exists
+      // Case 1: Admin login is hidden — always land on careers instead
       if (state.matchedLocation == Routes.loginPage.path) {
-        log("Accessing LoginPage directly, allowing access regardless of active user.");
-        return null;
+        log("Admin login is hidden. Redirecting to careers.");
+        return Routes.careers.path;
       }
 
       // Case 1.5: Allow direct access to Jobs-related pages for non-logged-in users
       if (state.matchedLocation == Routes.careers.path ||
-          state.matchedLocation.startsWith(Routes.jobDetail.path)) {
+          state.matchedLocation.startsWith(Routes.jobDetail.path) ||
+          state.matchedLocation.startsWith(Routes.careersProfile.path) ||
+          state.matchedLocation.startsWith(
+            Routes.careersCompleteProfile.path,
+          )) {
         log("Accessing Jobs page, allowing access for all users.");
         return null;
       }
@@ -330,16 +351,16 @@ class AppRoute {
         log("No active user found. users is existing.");
         return Routes.usersPage.path;
       }
-      // Case 2: Redirect to LoginPage if no active user is found
+      // Case 2: Unauthenticated users see careers instead of admin login
       if (!hasActiveUser) {
-        log("No active user found. Redirecting to login page.");
-        return Routes.loginPage.path;
+        log("No active user found. Redirecting to careers.");
+        return Routes.careers.path;
       }
 
-      // Case 3: Redirect to Home if accessing Root with an active user
-      if (state.matchedLocation == Routes.root.path && hasActiveUser) {
-        log("Active user exists, redirecting from root to home.");
-        return Routes.home.path;
+      // Case 3: Root always opens careers
+      if (state.matchedLocation == Routes.root.path) {
+        log("Redirecting from root to careers.");
+        return Routes.careers.path;
       }
 
       // Log that access to the route is allowed
@@ -371,10 +392,14 @@ enum Routes {
   nfcMapping("/nfcMapping"),
   careers('/careers'),
   jobDetail('/job-detail'),
-// employee pages
+  careersProfile('/careers-profile'),
+  careersCompleteProfile('/careers-complete-profile'),
+  // employee pages
   userAttendance('/userAttendance'),
+
   /// Face + geofence check-in (new). Legacy calendar stays on [userAttendance].
   faceAttendance('/faceAttendance'),
+
   /// Bottom-nav placeholders (scrollable shell tabs).
   navAttendance('/navAttendance'),
   navReports('/navReports'),

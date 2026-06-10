@@ -88,21 +88,6 @@ class CareersUserService {
     }
   }
 
-  // Check if profile is complete
-  bool isProfileComplete() {
-    final user = getCurrentCareersUser();
-    return user?.isProfileComplete ?? false;
-  }
-
-  // Mark profile as complete
-  Future<void> markProfileComplete() async {
-    final user = getCurrentCareersUser();
-    if (user != null) {
-      final updatedUser = user.copyWith(isProfileComplete: true);
-      await setCurrentCareersUser(updatedUser);
-    }
-  }
-
   // Get user by ID (for future use if we need to store multiple users)
   CareersUserModel? getUserById(String id) {
     return _careersUserBox.get(id);

@@ -4,10 +4,9 @@ import 'package:admin_app/UI/public/jobs/bloc/jobs_states.dart';
 import 'package:admin_app/UI/public/jobs/components/index.dart';
 import 'package:admin_app/UI/public/jobs/components/careers_scaffold.dart';
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
-import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
-import 'package:admin_app/UI/public/user/bloc/user_events.dart';
-import 'package:admin_app/UI/public/user/bloc/user_states.dart';
-import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
+import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
+import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
+import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_states.dart';
 import 'package:admin_app/UI/public/user/utils/profile_completion_helper.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/utils/utils.dart';
@@ -18,10 +17,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class JobDetailPage extends StatefulWidget {
   final int jobId;
 
-  const JobDetailPage({
-    super.key,
-    required this.jobId,
-  });
+  const JobDetailPage({super.key, required this.jobId});
 
   @override
   State<JobDetailPage> createState() => _JobDetailPageState();
@@ -56,9 +52,9 @@ class _JobDetailPageState extends State<JobDetailPage> {
                   title: 'Error loading job details',
                   message: state.message,
                   onRetry: () {
-                    context
-                        .read<JobsBloc>()
-                        .add(FetchJobDetailsEvent(widget.jobId));
+                    context.read<JobsBloc>().add(
+                      FetchJobDetailsEvent(widget.jobId),
+                    );
                   },
                 ),
               ),
@@ -96,19 +92,19 @@ class _JobDetailPageState extends State<JobDetailPage> {
           ],
           CompanyCard(job: job),
           const SizedBox(height: AppSpacing.md),
-          BlocListener<UserBloc, UserState>(
+          BlocListener<CareersProfileBloc, CareersProfileState>(
             listener: (context, state) {
-              if (state is ProfileCompletionSuccess) {
-                final profileCompletion = state.profileCompletion;
-                if (ProfileCompletionHelper.isProfileComplete(
-                        profileCompletion) &&
-                    ProfileCompletionHelper.canApplyForJobs(
-                        profileCompletion)) {
+              if (state is ProfileCompletionLoaded) {
+                final completion = state.completion;
+                if (ProfileCompletionHelper.isProfileComplete(completion) &&
+                    ProfileCompletionHelper.canApplyForJobs(completion)) {
                   showToast(
-                      'Your profile is complete and you can apply for jobs.');
+                    'Your profile is complete and you can apply for jobs.',
+                  );
                 } else {
                   showToast(
-                      'Your profile is incomplete and you cannot apply for jobs.');
+                    'Your profile is incomplete and you cannot apply for jobs.',
+                  );
                 }
               } else if (state is ProfileCompletionError) {
                 showToast(state.message);
@@ -117,14 +113,9 @@ class _JobDetailPageState extends State<JobDetailPage> {
             child: ApplyButton(
               job: job,
               onApply: () {
-                context.read<UserBloc>().add(
-                      CheckProfileCompletionEvent(
-                        candidateId: CareersUserService()
-                                .getCurrentCareersUser()
-                                ?.id ??
-                            '',
-                      ),
-                    );
+                context.read<CareersProfileBloc>().add(
+                  const CheckProfileCompletionEvent(),
+                );
               },
             ),
           ),

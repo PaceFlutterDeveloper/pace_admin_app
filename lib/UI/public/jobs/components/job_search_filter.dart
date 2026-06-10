@@ -47,10 +47,7 @@ class _JobSearchFilterState extends State<JobSearchFilter> {
       decoration: BoxDecoration(
         color: ConstColors.whiteColor,
         borderRadius: BorderRadius.circular(w * 0.03),
-        border: Border.all(
-          color: ConstColors.borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: ConstColors.borderColor, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -107,20 +104,14 @@ class _JobSearchFilterState extends State<JobSearchFilter> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(w * 0.025),
-                borderSide: BorderSide(
-                  color: ConstColors.primary,
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: ConstColors.primary, width: 2),
               ),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: w * 0.04,
                 vertical: h * 0.015,
               ),
             ),
-            style: TextStyle(
-              fontSize: w * 0.04,
-              color: ConstColors.textDark,
-            ),
+            style: TextStyle(fontSize: w * 0.04, color: ConstColors.textDark),
           ),
 
           SizedBox(height: h * 0.015),

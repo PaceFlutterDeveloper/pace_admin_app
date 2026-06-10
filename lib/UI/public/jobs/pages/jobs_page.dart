@@ -12,16 +12,18 @@ import 'package:admin_app/UI/public/jobs/models/school_model.dart';
 import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/pages/messages_page.dart';
 import 'package:admin_app/UI/public/user/pages/my_jobs_page.dart';
-import 'package:admin_app/UI/public/user/pages/profile_page.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/UI/public/user/utils/auth_guard.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/core/widgets/app_error_state.dart';
 import 'package:admin_app/core/widgets/app_section_header.dart';
+import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class JobsPage extends StatefulWidget {
@@ -33,14 +35,14 @@ class JobsPage extends StatefulWidget {
 
 class _JobsPageState extends State<JobsPage> {
   String _searchQuery = '';
-  String _location = 'Abu Dhabi';
+  String _location = '';
   int _currentNavIndex = 0;
   final Set<int> _bookmarkedJobs = {};
   List<SchoolModel> _schools = [];
   SchoolModel? _selectedSchool;
   bool _isLoadingSchools = false;
-  bool _isSearching = false;
   Timer? _searchDebounceTimer;
+  Timer? _locationDebounceTimer;
   bool _isLoggedIn = false;
   String? _userName;
 
@@ -49,15 +51,11 @@ class _JobsPageState extends State<JobsPage> {
     super.initState();
     _checkAuthStatus();
     context.read<JobsBloc>().add(FetchJobsEvent());
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        context.read<JobsBloc>().add(FetchSchoolsEvent());
-      }
-    });
+    context.read<JobsBloc>().add(FetchSchoolsEvent());
   }
 
   void _checkAuthStatus() {
-    final userService = CareersUserService();
+    final userService = locator<CareersUserService>();
     setState(() {
       _isLoggedIn = userService.isCareersUserLoggedIn();
       if (_isLoggedIn) {
@@ -69,6 +67,7 @@ class _JobsPageState extends State<JobsPage> {
   @override
   void dispose() {
     _searchDebounceTimer?.cancel();
+    _locationDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -98,7 +97,7 @@ class _JobsPageState extends State<JobsPage> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              CareersUserService().clearCurrentCareersUser();
+              locator<CareersUserService>().clearCurrentCareersUser();
               _checkAuthStatus();
             },
             child: Text(
@@ -202,6 +201,64 @@ class _JobsPageState extends State<JobsPage> {
     ];
   }
 
+  /// Pushes the page for a bottom-nav tab and restores the Jobs tab
+  /// selection once the pushed page is popped.
+  Future<void> _pushTab(int index, Future<void> Function() push) async {
+    setState(() => _currentNavIndex = index);
+    await push();
+    if (mounted) setState(() => _currentNavIndex = 0);
+  }
+
+  void _onNavTap(int index) {
+    if (index == _currentNavIndex) return;
+    switch (index) {
+      case 0:
+        setState(() => _currentNavIndex = 0);
+        break;
+      case 1:
+        AuthGuard.requireAuth(
+          context,
+          onAuthenticated: () {
+            _pushTab(
+              index,
+              () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const MyJobsPage(),
+                ),
+              ),
+            );
+          },
+        );
+        break;
+      case 2:
+        AuthGuard.requireAuth(
+          context,
+          onAuthenticated: () {
+            _pushTab(
+              index,
+              () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const MessagesPage(),
+                ),
+              ),
+            );
+          },
+        );
+        break;
+      case 3:
+        AuthGuard.requireAuth(
+          context,
+          onAuthenticated: () {
+            _pushTab(
+              index,
+              () => context.pushNamed(Routes.careersProfile.name),
+            );
+          },
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -211,37 +268,7 @@ class _JobsPageState extends State<JobsPage> {
       actions: _buildAppBarActions(context),
       bottomNavigationBar: CareersBottomNav(
         currentIndex: _currentNavIndex,
-        onTap: (index) {
-          setState(() => _currentNavIndex = index);
-          switch (index) {
-            case 0:
-              break;
-            case 1:
-              AuthGuard.requireAuth(context, onAuthenticated: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) => const MyJobsPage(),
-                  ),
-                );
-              });
-            case 2:
-              AuthGuard.requireAuth(context, onAuthenticated: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) => const MessagesPage(),
-                  ),
-                );
-              });
-            case 3:
-              AuthGuard.requireAuth(context, onAuthenticated: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) => const ProfilePage(),
-                  ),
-                );
-              });
-          }
-        },
+        onTap: _onNavTap,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -254,10 +281,18 @@ class _JobsPageState extends State<JobsPage> {
                   _isLoadingSchools = false;
                 });
               } else if (state is SchoolsLoading) {
-                setState(() => _isLoadingSchools = true);
+                if (_schools.isEmpty) {
+                  setState(() => _isLoadingSchools = true);
+                }
+              } else if (state is SchoolsError) {
+                setState(() => _isLoadingSchools = false);
               } else if (state is JobsLoaded) {
                 setState(() {
-                  _schools = state.schools;
+                  // Keep existing schools if a concurrent jobs fetch arrives
+                  // before schools are merged into JobsLoaded.
+                  if (state.schools.isNotEmpty) {
+                    _schools = state.schools;
+                  }
                   _isLoadingSchools = false;
                   if (state.selectedSchoolId != null && _schools.isNotEmpty) {
                     try {
@@ -271,6 +306,9 @@ class _JobsPageState extends State<JobsPage> {
                     _selectedSchool = null;
                   }
                 });
+                if (state.schools.isEmpty && _schools.isEmpty) {
+                  context.read<JobsBloc>().add(FetchSchoolsEvent());
+                }
               }
             },
             child: EnhancedSearchBar(
@@ -279,29 +317,33 @@ class _JobsPageState extends State<JobsPage> {
               selectedSchool: _selectedSchool,
               schools: _schools,
               isLoadingSchools: _isLoadingSchools,
-              isSearching: _isSearching,
               onSearchChanged: (query) {
-                setState(() {
-                  _searchQuery = query;
-                  _isSearching = query.isNotEmpty;
-                });
+                setState(() => _searchQuery = query);
                 _searchDebounceTimer?.cancel();
-                if (query.isNotEmpty) {
-                  _searchDebounceTimer =
-                      Timer(const Duration(milliseconds: 500), () {
-                    log('Debounced search for: $query');
+                _searchDebounceTimer = Timer(
+                  const Duration(milliseconds: 500),
+                  () {
                     if (mounted) {
-                      context.read<JobsBloc>().add(SearchJobsEvent(query));
-                      setState(() => _isSearching = false);
+                      log('Debounced search filter: $query');
+                      context.read<JobsBloc>().add(FilterBySearchEvent(query));
                     }
-                  });
-                } else {
-                  setState(() => _isSearching = false);
-                  context.read<JobsBloc>().add(SearchJobsEvent(''));
-                }
+                  },
+                );
               },
               onLocationChanged: (location) {
                 setState(() => _location = location);
+                _locationDebounceTimer?.cancel();
+                _locationDebounceTimer = Timer(
+                  const Duration(milliseconds: 500),
+                  () {
+                    if (mounted) {
+                      log('Debounced location filter: $location');
+                      context.read<JobsBloc>().add(
+                        FilterByLocationEvent(location),
+                      );
+                    }
+                  },
+                );
               },
               onSchoolChanged: (school) {
                 log('School changed to: ${school?.name} (ID: ${school?.id})');
@@ -313,9 +355,9 @@ class _JobsPageState extends State<JobsPage> {
               },
             ),
           ),
-          AppSectionHeader(
+          const AppSectionHeader(
             title: 'Open Positions',
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               AppSpacing.md,
               AppSpacing.xs,
               AppSpacing.md,
@@ -375,8 +417,9 @@ class _JobsPageState extends State<JobsPage> {
                             Icon(
                               CupertinoIcons.briefcase,
                               size: 56,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.3),
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.3,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.md),
                             Text(
@@ -389,26 +432,31 @@ class _JobsPageState extends State<JobsPage> {
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'Try adjusting your search criteria'
+                              _searchQuery.isNotEmpty || _location.isNotEmpty
+                                  ? 'Try adjusting your search or location'
                                   : 'No job listings available at the moment',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6),
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
                               ),
                             ),
-                            if (_searchQuery.isNotEmpty) ...[
+                            if (_searchQuery.isNotEmpty ||
+                                _location.isNotEmpty) ...[
                               const SizedBox(height: AppSpacing.lg),
                               AppButton.primary(
-                                label: 'Clear Search',
+                                label: 'Clear Filters',
                                 isFullWidth: false,
                                 onPressed: () {
-                                  setState(() => _searchQuery = '');
-                                  context
-                                      .read<JobsBloc>()
-                                      .add(ClearFiltersEvent());
+                                  setState(() {
+                                    _searchQuery = '';
+                                    _location = '';
+                                  });
+                                  context.read<JobsBloc>().add(
+                                    ClearFiltersEvent(),
+                                  );
                                 },
                               ),
                             ],
@@ -422,11 +470,13 @@ class _JobsPageState extends State<JobsPage> {
                     color: theme.colorScheme.primary,
                     onRefresh: () async {
                       context.read<JobsBloc>().add(
-                            RefreshJobsEvent(
-                              searchQuery: _searchQuery,
-                              filterBy: 'All',
-                            ),
-                          );
+                        RefreshJobsEvent(
+                          searchQuery: _searchQuery,
+                          filterBy: 'All',
+                          schoolId: _selectedSchool?.id,
+                          location: _location,
+                        ),
+                      );
                     },
                     child: ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(

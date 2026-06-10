@@ -46,6 +46,21 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
   }
 
   @override
+  void didUpdateWidget(covariant EnhancedSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Keep controllers in sync when the parent clears/changes values
+    // externally (e.g. the "Clear Filters" button).
+    if (widget.searchQuery != oldWidget.searchQuery &&
+        widget.searchQuery != _searchController.text) {
+      _searchController.text = widget.searchQuery;
+    }
+    if (widget.location != oldWidget.location &&
+        widget.location != _locationController.text) {
+      _locationController.text = widget.location;
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _locationController.dispose();
@@ -104,7 +119,9 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                           : Icon(
                               CupertinoIcons.search,
                               size: 20,
-                              color: theme.colorScheme.onSurface.withOpacity(0.4),
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.4,
+                              ),
                             ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -174,92 +191,88 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                           ),
                         )
                       : widget.schools.isEmpty
-                          ? _EmptySchoolsRow(onRetry: widget.onRetrySchools)
-                          : DropdownButtonHideUnderline(
-                              child: DropdownButton<SchoolModel?>(
-                                value: uniqueSchools
-                                        .contains(widget.selectedSchool)
-                                    ? widget.selectedSchool
-                                    : null,
-                                isExpanded: true,
-                                hint: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.sm,
-                                  ),
-                                  child: Text(
-                                    'All Schools',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 15,
-                                      color: theme.colorScheme.onSurface
-                                          .withOpacity(0.4),
-                                    ),
-                                  ),
-                                ),
+                      ? _EmptySchoolsRow(onRetry: widget.onRetrySchools)
+                      : DropdownButtonHideUnderline(
+                          child: DropdownButton<SchoolModel?>(
+                            value: uniqueSchools.contains(widget.selectedSchool)
+                                ? widget.selectedSchool
+                                : null,
+                            isExpanded: true,
+                            hint: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                              ),
+                              child: Text(
+                                'All Schools',
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
-                                  color: theme.colorScheme.onSurface,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.4),
                                 ),
-                                dropdownColor: isDark
-                                    ? AppColors.surfaceElevatedDark
-                                    : AppColors.surfaceElevatedLight,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
-                                items: [
-                                  DropdownMenuItem<SchoolModel?>(
-                                    value: null,
-                                    child: Text(
-                                      'All Schools',
-                                      style: GoogleFonts.inter(fontSize: 15),
-                                    ),
-                                  ),
-                                  ...uniqueSchools.map((school) {
-                                    return DropdownMenuItem<SchoolModel?>(
-                                      value: school,
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              school.name,
-                                              overflow: TextOverflow.ellipsis,
-                                              style:
-                                                  GoogleFonts.inter(fontSize: 15),
-                                            ),
-                                          ),
-                                          if (school.jobCount > 0) ...[
-                                            const SizedBox(width: AppSpacing.sm),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: AppSpacing.sm,
-                                                vertical: 2,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: theme.colorScheme.primary
-                                                    .withOpacity(0.12),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                  AppRadius.xs,
-                                                ),
-                                              ),
-                                              child: Text(
-                                                '${school.jobCount}',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600,
-                                                  color:
-                                                      theme.colorScheme.primary,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    );
-                                  }),
-                                ],
-                                onChanged: widget.onSchoolChanged,
                               ),
                             ),
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            dropdownColor: isDark
+                                ? AppColors.surfaceElevatedDark
+                                : AppColors.surfaceElevatedLight,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            items: [
+                              DropdownMenuItem<SchoolModel?>(
+                                value: null,
+                                child: Text(
+                                  'All Schools',
+                                  style: GoogleFonts.inter(fontSize: 15),
+                                ),
+                              ),
+                              ...uniqueSchools.map((school) {
+                                return DropdownMenuItem<SchoolModel?>(
+                                  value: school,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          school.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ),
+                                      if (school.jobCount > 0) ...[
+                                        const SizedBox(width: AppSpacing.sm),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.sm,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.primary
+                                                .withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.xs,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '${school.jobCount}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                            onChanged: widget.onSchoolChanged,
+                          ),
+                        ),
                 ),
               ],
             ),

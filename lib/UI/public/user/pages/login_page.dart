@@ -37,16 +37,14 @@ class _LoginPageState extends State<LoginPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
-            color: theme.colorScheme.onSurface,
-          ),
+          icon: Icon(CupertinoIcons.back, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -74,10 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Center(
-                    child: Image.asset(
-                      'assets/logo/group.png',
-                      width: 180,
-                    ),
+                    child: Image.asset('assets/logo/group.png', width: 180),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   Text(
@@ -221,11 +216,11 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       context.read<UserBloc>().add(
-            LoginEvent(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            ),
-          );
+        LoginEvent(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
     }
   }
 
@@ -282,10 +277,10 @@ class _LoginPageState extends State<LoginPage> {
                     : () {
                         if (formKey.currentState!.validate()) {
                           context.read<UserBloc>().add(
-                                ForgotPasswordEvent(
-                                  email: emailController.text.trim(),
-                                ),
-                              );
+                            ForgotPasswordEvent(
+                              email: emailController.text.trim(),
+                            ),
+                          );
                         }
                       },
                 child: state is ForgotPasswordLoading

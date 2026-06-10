@@ -4,13 +4,15 @@ class ProfileCompletionHelper {
   /// Determines if the user should be navigated to complete profile page
   /// Returns true if profile is not complete or user cannot apply
   static bool shouldNavigateToCompleteProfile(
-      ProfileCompletionModel profileCompletion) {
+    ProfileCompletionModel profileCompletion,
+  ) {
     return !profileCompletion.isComplete || !profileCompletion.canApply;
   }
 
   /// Gets a user-friendly message about profile completion status
   static String getProfileCompletionMessage(
-      ProfileCompletionModel profileCompletion) {
+    ProfileCompletionModel profileCompletion,
+  ) {
     if (profileCompletion.isComplete && profileCompletion.canApply) {
       return 'Your profile is complete and you can apply for jobs!';
     } else if (profileCompletion.isComplete && !profileCompletion.canApply) {
@@ -37,7 +39,8 @@ class ProfileCompletionHelper {
 
   /// Gets the list of missing fields for display
   static List<String> getMissingFields(
-      ProfileCompletionModel profileCompletion) {
+    ProfileCompletionModel profileCompletion,
+  ) {
     return profileCompletion.missingFields;
   }
 }

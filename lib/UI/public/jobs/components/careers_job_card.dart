@@ -40,9 +40,7 @@ class CareersJobCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(
-                color: isDark
-                    ? AppColors.dividerDark
-                    : AppColors.cardBorder,
+                color: isDark ? AppColors.dividerDark : AppColors.cardBorder,
               ),
             ),
             child: Column(
@@ -148,11 +146,7 @@ class _Tag extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const _Tag({
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
+  const _Tag({required this.label, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {

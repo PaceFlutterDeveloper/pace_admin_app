@@ -5,11 +5,8 @@ class DescriptionText extends StatelessWidget {
   final String text;
   final double width;
 
-  const DescriptionText({
-    Key? key,
-    required this.text,
-    required this.width,
-  }) : super(key: key);
+  const DescriptionText({Key? key, required this.text, required this.width})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {

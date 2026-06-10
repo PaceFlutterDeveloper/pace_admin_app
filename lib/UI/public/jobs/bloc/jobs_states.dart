@@ -13,6 +13,7 @@ class JobsLoaded extends JobsState {
   final String searchQuery;
   final String filterBy;
   final int? selectedSchoolId;
+  final String locationQuery;
   final List<SchoolModel> schools;
   final int currentPage;
   final int totalPages;
@@ -24,6 +25,7 @@ class JobsLoaded extends JobsState {
     this.searchQuery = '',
     this.filterBy = 'All',
     this.selectedSchoolId,
+    this.locationQuery = '',
     this.schools = const [],
     this.currentPage = 1,
     this.totalPages = 1,
@@ -36,6 +38,7 @@ class JobsLoaded extends JobsState {
     String? searchQuery,
     String? filterBy,
     int? selectedSchoolId,
+    String? locationQuery,
     List<SchoolModel>? schools,
     int? currentPage,
     int? totalPages,
@@ -47,6 +50,7 @@ class JobsLoaded extends JobsState {
       searchQuery: searchQuery ?? this.searchQuery,
       filterBy: filterBy ?? this.filterBy,
       selectedSchoolId: selectedSchoolId ?? this.selectedSchoolId,
+      locationQuery: locationQuery ?? this.locationQuery,
       schools: schools ?? this.schools,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,

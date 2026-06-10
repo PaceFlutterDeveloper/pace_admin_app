@@ -94,8 +94,8 @@ class CareersUserModel extends HiveObject {
       lastLoginAt: json['last_login_at'] != null
           ? DateTime.parse(json['last_login_at'])
           : json['login_time'] != null
-              ? DateTime.parse(json['login_time'])
-              : null,
+          ? DateTime.parse(json['login_time'])
+          : null,
       isProfileComplete: json['is_profile_complete'] ?? false,
       preferences: Map<String, dynamic>.from(json['preferences'] ?? {}),
       sessionToken: json['session_token'],
