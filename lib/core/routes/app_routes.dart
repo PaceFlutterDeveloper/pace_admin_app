@@ -22,13 +22,14 @@ import 'package:admin_app/UI/home/models/menu_model.dart';
 import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/UI/notification/page/notification_page.dart';
 import 'package:admin_app/UI/profile/components/update_password_page.dart';
+import 'package:admin_app/UI/public/application/bloc/application_bloc.dart';
 import 'package:admin_app/UI/public/jobs/bloc/jobs_bloc.dart';
 import 'package:admin_app/UI/public/jobs/pages/job_detail_page.dart';
 import 'package:admin_app/UI/public/jobs/pages/jobs_page.dart';
 import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile_page.dart';
-import 'package:admin_app/UI/public/user/pages/profile_page.dart';
+import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/UI/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
@@ -246,16 +247,33 @@ class AppRoute {
             path: Routes.careers.path,
             name: Routes.careers.name,
             builder: (context, state) {
-              // Get dependencies from context or create new instances
+              final tabParam = state.uri.queryParameters['tab'];
+              var initialTab = 0;
+              if (tabParam == 'applications') initialTab = 1;
+              if (tabParam == 'profile') initialTab = 2;
+
               final apiService = locator<ApiService>();
               final jobsApiService = JobsApiService(apiService: apiService);
-              // You might want to get token from your auth service
-              final token = null; // Get from your auth service
+              final token = locator<CareersUserService>()
+                  .getCurrentCareersUser()
+                  ?.sessionToken;
 
-              return BlocProvider<JobsBloc>(
-                create: (context) =>
-                    JobsBloc(jobsApiService: jobsApiService, token: token),
-                child: const JobsPage(),
+              return MultiBlocProvider(
+                providers: [
+                  BlocProvider<JobsBloc>(
+                    create: (_) => JobsBloc(
+                      jobsApiService: jobsApiService,
+                      token: token,
+                    ),
+                  ),
+                  BlocProvider<ApplicationBloc>(
+                    create: (_) => locator<ApplicationBloc>(),
+                  ),
+                  BlocProvider<CareersProfileBloc>(
+                    create: (_) => locator<CareersProfileBloc>(),
+                  ),
+                ],
+                child: JobsPage(initialTabIndex: initialTab),
               );
             },
           ),
@@ -264,28 +282,35 @@ class AppRoute {
             name: Routes.jobDetail.name,
             builder: (context, state) {
               final jobId = state.extra as int;
-              // Get dependencies from context or create new instances
               final apiService = locator<ApiService>();
               final jobsApiService = JobsApiService(apiService: apiService);
-              final token = null; // Get from your auth service
+              final token = locator<CareersUserService>()
+                  .getCurrentCareersUser()
+                  ?.sessionToken;
 
-              return BlocProvider<JobsBloc>(
-                create: (context) =>
-                    JobsBloc(jobsApiService: jobsApiService, token: token),
-                child: BlocProvider<CareersProfileBloc>(
-                  create: (context) => locator<CareersProfileBloc>(),
-                  child: JobDetailPage(jobId: jobId),
-                ),
+              return MultiBlocProvider(
+                providers: [
+                  BlocProvider<JobsBloc>(
+                    create: (_) => JobsBloc(
+                      jobsApiService: jobsApiService,
+                      token: token,
+                    ),
+                  ),
+                  BlocProvider<ApplicationBloc>(
+                    create: (_) => locator<ApplicationBloc>(),
+                  ),
+                  BlocProvider<CareersProfileBloc>(
+                    create: (_) => locator<CareersProfileBloc>(),
+                  ),
+                ],
+                child: JobDetailPage(jobId: jobId),
               );
             },
           ),
           GoRoute(
             path: Routes.careersProfile.path,
             name: Routes.careersProfile.name,
-            builder: (context, state) => BlocProvider<CareersProfileBloc>(
-              create: (context) => locator<CareersProfileBloc>(),
-              child: const CareersProfilePage(),
-            ),
+            redirect: (_, __) => '${Routes.careers.path}?tab=profile',
           ),
           GoRoute(
             path: Routes.careersCompleteProfile.path,

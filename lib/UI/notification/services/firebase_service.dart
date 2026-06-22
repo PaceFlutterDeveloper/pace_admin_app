@@ -50,16 +50,35 @@ class FirebaseService {
 
   static Future<void> _handleTokenManagement() async {
     if (Platform.isIOS) {
-      try {
-        final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        log("APNS Token: $apnsToken");
-      } catch (e) {
-        log("APNS Token error: $e");
+      final apnsToken = await _waitForApnsToken();
+      log("APNS Token: $apnsToken");
+
+      // On iOS (especially simulator), APNS may never be available.
+      // Calling getToken() before APNS is ready throws:
+      // [firebase_messaging/apns-token-not-set].
+      if (apnsToken == null || apnsToken.isEmpty) {
+        log("Skipping FCM token fetch until APNS token is available.");
+        return;
       }
     }
 
-    final fcmToken = await _firebaseMessaging.getToken();
-    log("FCM Token: $fcmToken");
+    try {
+      final fcmToken = await _firebaseMessaging.getToken();
+      log("FCM Token: $fcmToken");
+    } catch (e) {
+      log("FCM Token error: $e");
+    }
+  }
+
+  static Future<String?> _waitForApnsToken() async {
+    for (var i = 0; i < 10; i++) {
+      final apnsToken = await _firebaseMessaging.getAPNSToken();
+      if (apnsToken != null && apnsToken.isNotEmpty) {
+        return apnsToken;
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    return null;
   }
 
   static Future<void> _setupMessageHandlers() async {

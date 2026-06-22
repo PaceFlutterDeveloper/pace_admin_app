@@ -85,8 +85,9 @@ class CareersUserModel extends HiveObject {
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'],
-      profileImage: json['profile_image'],
-      resumeUrl: json['resume_url'],
+      profileImage:
+          json['profile_image'] ?? json['avatar_file'] ?? json['avatar'],
+      resumeUrl: json['resume_url'] ?? json['cv_file'] ?? json['cv'],
       skills: List<String>.from(json['skills'] ?? []),
       preferredLocation: json['preferred_location'] ?? json['location'],
       experienceLevel: json['experience_level'],

@@ -4,22 +4,31 @@ import 'package:flutter/material.dart';
 class InfoRow extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final double width;
 
   const InfoRow({
     Key? key,
     required this.label,
     required this.value,
-    required this.icon,
+    this.icon,
+    this.leading,
     required this.width,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = width * 0.035;
+
     return Row(
       children: [
-        Icon(icon, size: width * 0.035, color: ConstColors.textLight),
+        leading ??
+            Icon(
+              icon ?? Icons.info_outline,
+              size: iconSize,
+              color: ConstColors.textLight,
+            ),
         SizedBox(width: width * 0.015),
         Text(
           '$label: ',

@@ -19,15 +19,10 @@ class ReferencesTab extends StatelessWidget {
       titleOf: (reference) => reference.name ?? 'Name',
       detailsOf: (reference) => [
         if (reference.position != null) 'Designation: ${reference.position}',
-        if (reference.organization != null)
-          'Organization: ${reference.organization}',
-        if (reference.relationship != null &&
-            reference.relationship!.isNotEmpty)
-          'Relationship: ${reference.relationship}',
+        if (reference.address != null && reference.address!.isNotEmpty)
+          'Address: ${reference.address}',
         if (reference.phone != null && reference.phone!.isNotEmpty)
           'Contact: ${reference.phone}',
-        if (reference.email != null && reference.email!.isNotEmpty)
-          'Email: ${reference.email}',
       ],
       editor: (context, existing) => showDialog<Reference>(
         context: context,
@@ -52,10 +47,8 @@ class _ReferenceEditorDialogState extends State<_ReferenceEditorDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _position;
-  late final TextEditingController _organization;
-  late final TextEditingController _relationship;
+  late final TextEditingController _address;
   late final TextEditingController _phone;
-  late final TextEditingController _email;
 
   @override
   void initState() {
@@ -63,20 +56,16 @@ class _ReferenceEditorDialogState extends State<_ReferenceEditorDialog> {
     final e = widget.existing;
     _name = TextEditingController(text: e?.name ?? '');
     _position = TextEditingController(text: e?.position ?? '');
-    _organization = TextEditingController(text: e?.organization ?? '');
-    _relationship = TextEditingController(text: e?.relationship ?? '');
+    _address = TextEditingController(text: e?.address ?? '');
     _phone = TextEditingController(text: e?.phone ?? '');
-    _email = TextEditingController(text: e?.email ?? '');
   }
 
   @override
   void dispose() {
     _name.dispose();
     _position.dispose();
-    _organization.dispose();
-    _relationship.dispose();
+    _address.dispose();
     _phone.dispose();
-    _email.dispose();
     super.dispose();
   }
 
@@ -86,12 +75,8 @@ class _ReferenceEditorDialogState extends State<_ReferenceEditorDialog> {
         id: widget.existing?.id,
         name: _name.text.trim(),
         position: _position.text.trim(),
-        organization: _organization.text.trim(),
-        relationship: _relationship.text.trim().isNotEmpty
-            ? _relationship.text.trim()
-            : null,
+        address: _address.text.trim(),
         phone: _phone.text.trim().isNotEmpty ? _phone.text.trim() : null,
-        email: _email.text.trim().isNotEmpty ? _email.text.trim() : null,
       ),
     );
   }
@@ -110,28 +95,15 @@ class _ReferenceEditorDialogState extends State<_ReferenceEditorDialog> {
           isRequired: true,
         ),
         ProfileTextField(
-          label: 'Organization',
-          controller: _organization,
+          label: 'Address',
+          controller: _address,
           isRequired: true,
+          maxLines: 2,
         ),
-        ProfileTextField(label: 'Relationship', controller: _relationship),
         ProfileTextField(
           label: 'Contact Number',
           controller: _phone,
           keyboardType: TextInputType.phone,
-        ),
-        ProfileTextField(
-          label: 'Email',
-          controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            if (value != null &&
-                value.trim().isNotEmpty &&
-                !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim())) {
-              return 'Please enter a valid email';
-            }
-            return null;
-          },
         ),
       ],
     );

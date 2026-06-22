@@ -1,3 +1,4 @@
+import 'package:admin_app/UI/public/jobs/components/shared/aed_currency_icon.dart';
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
@@ -8,15 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class CareersJobCard extends StatelessWidget {
   final JobModel job;
-  final bool isBookmarked;
-  final VoidCallback? onBookmark;
 
-  const CareersJobCard({
-    super.key,
-    required this.job,
-    this.isBookmarked = false,
-    this.onBookmark,
-  });
+  const CareersJobCard({super.key, required this.job});
 
   @override
   Widget build(BuildContext context) {
@@ -46,41 +40,16 @@ class CareersJobCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        job.title,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (onBookmark != null)
-                      IconButton(
-                        onPressed: onBookmark,
-                        icon: Icon(
-                          isBookmarked
-                              ? CupertinoIcons.bookmark_fill
-                              : CupertinoIcons.bookmark,
-                          size: 20,
-                          color: isBookmarked
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface.withOpacity(0.4),
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
-                      ),
-                  ],
+                Text(
+                  job.title,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
@@ -88,7 +57,7 @@ class CareersJobCard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface.withOpacity(0.85),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -97,7 +66,7 @@ class CareersJobCard extends StatelessWidget {
                     Icon(
                       CupertinoIcons.location,
                       size: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
@@ -106,7 +75,7 @@ class CareersJobCard extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -119,15 +88,23 @@ class CareersJobCard extends StatelessWidget {
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.xs,
                   children: [
-                    _Tag(
-                      label: '${job.salary.minYears}+ years experience',
-                      icon: CupertinoIcons.briefcase,
+                    if ((job.salary?.minYears ?? 0) > 0)
+                      _Tag(
+                        label: '${job.salary!.minYears}+ years experience',
+                      icon: Icon(
+                        CupertinoIcons.briefcase,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
                       color: theme.colorScheme.primary,
                     ),
                     if (job.salaryRange.isNotEmpty)
                       _Tag(
                         label: job.salaryRange,
-                        icon: CupertinoIcons.money_dollar_circle,
+                        icon: const AedCurrencyIcon(
+                          color: AppColors.success,
+                          size: 14,
+                        ),
                         color: AppColors.success,
                       ),
                   ],
@@ -143,10 +120,10 @@ class CareersJobCard extends StatelessWidget {
 
 class _Tag extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final Widget? icon;
   final Color color;
 
-  const _Tag({required this.label, required this.icon, required this.color});
+  const _Tag({required this.label, this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -156,14 +133,13 @@ class _Tag extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: AppSpacing.xs),
+          if (icon != null) ...[icon!, const SizedBox(width: AppSpacing.xs)],
           Text(
             label,
             style: GoogleFonts.inter(

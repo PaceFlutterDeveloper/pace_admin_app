@@ -1,4 +1,5 @@
 import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
+import 'package:admin_app/UI/public/user/utils/profile_completion_mapper.dart';
 
 class ProfileCompletionHelper {
   /// Determines if the user should be navigated to complete profile page
@@ -35,6 +36,13 @@ class ProfileCompletionHelper {
   /// Checks if the profile is complete
   static bool isProfileComplete(ProfileCompletionModel profileCompletion) {
     return profileCompletion.isComplete;
+  }
+
+  /// Gets human-readable labels for missing fields.
+  static List<String> getMissingFieldLabels(
+    ProfileCompletionModel profileCompletion,
+  ) {
+    return ProfileCompletionMapper.displayMissingItems(profileCompletion);
   }
 
   /// Gets the list of missing fields for display

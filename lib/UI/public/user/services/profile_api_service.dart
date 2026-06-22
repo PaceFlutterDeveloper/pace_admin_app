@@ -4,10 +4,13 @@ import 'dart:developer';
 import 'package:admin_app/UI/public/user/models/country_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
+import 'package:admin_app/UI/public/user/utils/careers_api_dates.dart';
+import 'package:admin_app/UI/public/user/utils/profile_file_encoder.dart';
+import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
 import 'package:admin_app/core/error/error_exception.dart';
+import 'package:admin_app/core/services/api_post_logger.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/utils/constants/api_constant.dart';
-import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 
 class ProfileApiService {
@@ -24,7 +27,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Fetching profile for candidate: $candidateId');
 
-      const url = ApiConstants.profileUrl;
+      final url = ApiConstants.profileUrl;
       final queryParams = {'cand_id': candidateId};
 
       log('ProfileApiService: URL: $url');
@@ -46,7 +49,7 @@ class ProfileApiService {
         },
         (responseData) {
           try {
-            log('ProfileApiService: Raw response: $responseData');
+            // log('ProfileApiService: Raw response: $responseData');
             final response = json.decode(responseData);
             log('ProfileApiService: Parsed response: $response');
 
@@ -97,23 +100,17 @@ class ProfileApiService {
   }) async {
     try {
       log('ProfileApiService: Updating profile for candidate: $candidateId');
-      log('ProfileApiService: Profile data: $profileData');
 
-      const url = ApiConstants.updateProfileUrl;
+      final url = ApiConstants.updateProfileUrl;
 
-      // Build request body with all required fields
       final body = <String, dynamic>{
         'cand_id': candidateId,
-        // Add any other fields from the API specification that might be required
-        // For now, just send the fields being updated
         ...profileData,
       };
+      _prepareUpdateProfileBody(body);
 
-      // Remove null values to avoid sending them
-      body.removeWhere((key, value) => value == null || value == '');
-
-      log('ProfileApiService: Request body: $body');
       log('ProfileApiService: Request URL: $url');
+      log('ProfileApiService: Request payload: ${ApiPostLogger.summarizePayload(body)}');
 
       final result = await _apiService.postAPI(
         url: url,
@@ -131,7 +128,7 @@ class ProfileApiService {
         },
         (responseData) {
           try {
-            log('ProfileApiService: Raw response: $responseData');
+            // log('ProfileApiService: Raw response: $responseData');
             final response = json.decode(responseData);
             log('ProfileApiService: Parsed response: $response');
 
@@ -180,7 +177,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Updating education for candidate: $candidateId');
 
-      const url = ApiConstants.updateEducationUrl;
+      final url = ApiConstants.updateEducationUrl;
       final body = {
         'cand_id': candidateId,
         'education_records': educationRecords.map((e) => e.toJson()).toList(),
@@ -246,7 +243,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Updating experience for candidate: $candidateId');
 
-      const url = ApiConstants.updateExperienceUrl;
+      final url = ApiConstants.updateExperienceUrl;
       final body = {
         'cand_id': candidateId,
         'experience_records': experienceRecords.map((e) => e.toJson()).toList(),
@@ -312,7 +309,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Updating family for candidate: $candidateId');
 
-      const url = ApiConstants.updateFamilyUrl;
+      final url = ApiConstants.updateFamilyUrl;
       final body = {
         'cand_id': candidateId,
         'family_members': familyMembers.map((e) => e.toJson()).toList(),
@@ -378,7 +375,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Updating references for candidate: $candidateId');
 
-      const url = ApiConstants.updateReferencesUrl;
+      final url = ApiConstants.updateReferencesUrl;
       final body = {
         'cand_id': candidateId,
         'references': references.map((e) => e.toJson()).toList(),
@@ -446,7 +443,7 @@ class ProfileApiService {
         'ProfileApiService: Updating professional programs for candidate: $candidateId',
       );
 
-      const url = ApiConstants.updateProfessionalProgramsUrl;
+      final url = ApiConstants.updateProfessionalProgramsUrl;
       final body = {
         'cand_id': candidateId,
         'professional_programs': programs.map((e) => e.toJson()).toList(),
@@ -519,7 +516,7 @@ class ProfileApiService {
         'ProfileApiService: Updating complete profile for candidate: ${completeProfile.candidateId}',
       );
 
-      const url = ApiConstants.updateCompleteProfileUrl;
+      final url = ApiConstants.updateCompleteProfileUrl;
       final body = completeProfile.toJson();
 
       final result = await _apiService.postAPI(
@@ -585,7 +582,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Fetching education for candidate: $candidateId');
 
-      const url = ApiConstants.getEducationUrl;
+      final url = ApiConstants.getEducationUrl;
       final queryParams = {'cand_id': candidateId};
 
       final result = await _apiService.getRequest(
@@ -652,7 +649,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Fetching experience for candidate: $candidateId');
 
-      const url = ApiConstants.getExperienceUrl;
+      final url = ApiConstants.getExperienceUrl;
       final queryParams = {'cand_id': candidateId};
 
       final result = await _apiService.getRequest(
@@ -719,7 +716,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Fetching family for candidate: $candidateId');
 
-      const url = ApiConstants.getFamilyUrl;
+      final url = ApiConstants.getFamilyUrl;
       final queryParams = {'cand_id': candidateId};
 
       final result = await _apiService.getRequest(
@@ -786,7 +783,7 @@ class ProfileApiService {
     try {
       log('ProfileApiService: Fetching references for candidate: $candidateId');
 
-      const url = ApiConstants.getReferencesUrl;
+      final url = ApiConstants.getReferencesUrl;
       final queryParams = {'cand_id': candidateId};
 
       final result = await _apiService.getRequest(
@@ -855,7 +852,7 @@ class ProfileApiService {
         'ProfileApiService: Fetching professional programs for candidate: $candidateId',
       );
 
-      const url = ApiConstants.getProfessionalProgramsUrl;
+      final url = ApiConstants.getProfessionalProgramsUrl;
       final queryParams = {'cand_id': candidateId};
 
       final result = await _apiService.getRequest(
@@ -920,7 +917,113 @@ class ProfileApiService {
     }
   }
 
-  // Get Profile Completion
+  // Get full profile including all sections
+  Future<Either<MyError, FullProfileResponse>> getFullProfile({
+    required int candidateId,
+    String? token,
+  }) async {
+    try {
+      log('ProfileApiService: Fetching full profile for candidate: $candidateId');
+
+      final result = await _apiService.getRequest(
+        ApiConstants.profileUrl,
+        token,
+        queryParameters: {'cand_id': candidateId},
+        useSessionToken: true,
+      );
+
+      return result.fold(
+        (error) => Left(error),
+        (responseData) {
+          try {
+            final response = json.decode(responseData);
+            if (response['status'] == true) {
+              return Right(
+                FullProfileResponse.fromJson(
+                  response['data'] as Map<String, dynamic>? ?? {},
+                ),
+              );
+            }
+            return Left(
+              MyError(
+                key: AppError.apiError,
+                message: response['message'] ?? 'Failed to get profile',
+              ),
+            );
+          } catch (e) {
+            return Left(
+              MyError(
+                key: AppError.unknown,
+                message: 'Failed to parse full profile data: $e',
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
+      );
+    }
+  }
+
+  // Get Profile Completion (full response)
+  Future<Either<MyError, ProfileCompletionResponse>>
+  getProfileCompletionResponse({
+    required int candidateId,
+    String? token,
+  }) async {
+    try {
+      final result = await _apiService.getRequest(
+        ApiConstants.profileCompletionUrl,
+        token,
+        queryParameters: {'cand_id': candidateId},
+        useSessionToken: true,
+      );
+
+      return result.fold(
+        (error) => Left(error),
+        (responseData) {
+          try {
+            final response = json.decode(responseData);
+            if (response['status'] == true) {
+              return Right(
+                ProfileCompletionResponse.fromJson(
+                  response['data'] as Map<String, dynamic>? ?? {},
+                ),
+              );
+            }
+            return Left(
+              MyError(
+                key: AppError.apiError,
+                message:
+                    response['message'] ?? 'Profile completion check failed',
+              ),
+            );
+          } catch (e) {
+            return Left(
+              MyError(
+                key: AppError.unknown,
+                message: 'Failed to parse profile completion data: $e',
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      return Left(
+        MyError(
+          key: AppError.unknown,
+          message: 'Unexpected error: ${e.toString()}',
+        ),
+      );
+    }
+  }
+
+  // Get Profile Completion (legacy alias — returns merged model)
   Future<Either<MyError, ProfileCompletionModel>> getProfileCompletion({
     required int candidateId,
     String? token,
@@ -948,9 +1051,8 @@ class ProfileApiService {
           try {
             final response = json.decode(responseData);
             if (response['status'] == true) {
-              final completion = ProfileCompletionModel.fromJson(
-                response['data']['completion'],
-              );
+              final data = response['data'] as Map<String, dynamic>? ?? {};
+              final completion = ProfileCompletionModel.fromApiData(data);
               return Right(completion);
             } else {
               return Left(
@@ -1057,7 +1159,7 @@ class ProfileApiService {
     }
   }
 
-  // Upload avatar / CV files (multipart) via the update-profile endpoint.
+  // Upload avatar / CV via JSON (base64) on update-profile.
   Future<Either<MyError, Map<String, dynamic>>> uploadProfileFiles({
     required int candidateId,
     String? avatarFilePath,
@@ -1069,17 +1171,27 @@ class ProfileApiService {
         'ProfileApiService: Uploading profile files for candidate: $candidateId',
       );
 
-      final formMap = <String, dynamic>{'cand_id': candidateId};
-      if (avatarFilePath != null && avatarFilePath.isNotEmpty) {
-        formMap['avatar_file'] = await MultipartFile.fromFile(avatarFilePath);
-      }
-      if (cvFilePath != null && cvFilePath.isNotEmpty) {
-        formMap['cv_file'] = await MultipartFile.fromFile(cvFilePath);
+      final body = <String, dynamic>{'cand_id': candidateId};
+      body.addAll(
+        await ProfileFileEncoder.encodeFiles(
+          avatarFilePath: avatarFilePath,
+          cvFilePath: cvFilePath,
+        ),
+      );
+      _prepareUpdateProfileBody(body);
+
+      if (body.length <= 1) {
+        return Left(
+          MyError(
+            key: AppError.apiError,
+            message: 'No files selected for upload',
+          ),
+        );
       }
 
       final result = await _apiService.postAPI(
         url: ApiConstants.updateProfileUrl,
-        body: FormData.fromMap(formMap),
+        body: body,
         authorization: token ?? '',
         useSessionToken: true,
       );
@@ -1093,9 +1205,11 @@ class ProfileApiService {
           try {
             final response = json.decode(responseData);
             if (response['status'] == true) {
-              return Right(
-                (response['data'] as Map<String, dynamic>?) ?? const {},
-              );
+              final dataRaw = response['data'];
+              final data = dataRaw is Map
+                  ? Map<String, dynamic>.from(dataRaw)
+                  : <String, dynamic>{};
+              return Right(ProfileFilePaths.normalizeUploadData(data));
             } else {
               return Left(
                 MyError(
@@ -1127,5 +1241,27 @@ class ProfileApiService {
         ),
       );
     }
+  }
+
+  static const _filePayloadKeys = {
+    'avatar_file',
+    'profile_image',
+    'cv_file',
+  };
+
+  void _prepareUpdateProfileBody(Map<String, dynamic> body) {
+    if (body.containsKey('available_from')) {
+      final formatted = CareersApiDates.formatForApi(
+        body['available_from']?.toString(),
+      );
+      if (formatted != null) {
+        body['available_from'] = formatted;
+      }
+    }
+
+    body.removeWhere((key, value) {
+      if (_filePayloadKeys.contains(key)) return false;
+      return value == null || value == '';
+    });
   }
 }

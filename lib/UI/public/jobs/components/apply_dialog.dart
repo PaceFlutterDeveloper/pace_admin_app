@@ -1,63 +1,132 @@
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
+import 'package:admin_app/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ApplyDialog extends StatelessWidget {
+class ApplyDialog extends StatefulWidget {
   final JobModel job;
-  final VoidCallback? onApply;
+  final String? cvFile;
 
-  const ApplyDialog({super.key, required this.job, this.onApply});
+  const ApplyDialog({super.key, required this.job, this.cvFile});
+
+  static Future<String?> show(
+    BuildContext context, {
+    required JobModel job,
+    String? cvFile,
+  }) {
+    return showDialog<String?>(
+      context: context,
+      builder: (context) => ApplyDialog(job: job, cvFile: cvFile),
+    );
+  }
+
+  @override
+  State<ApplyDialog> createState() => _ApplyDialogState();
+}
+
+class _ApplyDialogState extends State<ApplyDialog> {
+  final _coverLetterController = TextEditingController();
+
+  @override
+  void dispose() {
+    _coverLetterController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final coverLetter = _coverLetterController.text.trim();
+    Navigator.of(context).pop(coverLetter.isEmpty ? '' : coverLetter);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasCv = widget.cvFile != null && widget.cvFile!.isNotEmpty;
 
     return AlertDialog(
       title: Text(
-        'Apply for ${job.title}',
+        'Apply for ${widget.job.title}',
         style: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: theme.colorScheme.onSurface,
         ),
       ),
-      content: Text(
-        'Application functionality will be implemented here. This could include:\n\n• Resume upload\n• Cover letter\n• Contact information\n• Application form',
-        style: GoogleFonts.inter(
-          fontSize: 14,
-          height: 1.5,
-          color: theme.colorScheme.onSurface.withOpacity(0.75),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.job.schoolName,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (hasCv)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.description_outlined,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        widget.cvFile!,
+                        style: GoogleFonts.inter(fontSize: 13),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Text(
+                'No CV on file. Please upload your CV in your profile before applying.',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _coverLetterController,
+              label: 'Cover letter (optional)',
+              hint: 'Tell us why you are a great fit...',
+              maxLines: 5,
+            ),
+          ],
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            'Close',
+            'Cancel',
             style: GoogleFonts.inter(color: theme.colorScheme.primary),
           ),
         ),
         AppButton.primary(
-          label: 'Apply',
+          label: 'Submit Application',
           isFullWidth: false,
-          onPressed: () {
-            Navigator.of(context).pop();
-            onApply?.call();
-          },
+          onPressed: hasCv ? _submit : null,
         ),
       ],
-    );
-  }
-
-  static void show(
-    BuildContext context,
-    JobModel job, {
-    VoidCallback? onApply,
-  }) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => ApplyDialog(job: job, onApply: onApply),
     );
   }
 }

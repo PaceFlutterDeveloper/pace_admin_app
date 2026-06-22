@@ -141,7 +141,7 @@ class JobHeaderCard extends StatelessWidget {
         Icon(Icons.schedule, size: w * 0.04, color: ConstColors.textLight),
         SizedBox(width: w * 0.02),
         Text(
-          'Posted ${_formatDate(job.postedDate)}',
+          'Posted ${_formatPostedDate(job)}',
           style: TextStyle(
             fontSize: w * 0.032,
             fontWeight: FontWeight.w500,
@@ -182,6 +182,13 @@ class JobHeaderCard extends StatelessWidget {
     }
   }
 
+  String _formatPostedDate(JobModel job) {
+    final date = job.postedDate;
+    if (date != null) return _formatDate(date);
+    if (job.createdAt.isNotEmpty) return job.createdAt;
+    return 'recently';
+  }
+
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
@@ -201,8 +208,12 @@ class JobHeaderCard extends StatelessWidget {
   }
 
   String _formatDeadline(String deadline) {
+    if (deadline.isEmpty) return 'Not specified';
+
     try {
-      final deadlineDate = DateTime.parse(deadline);
+      final deadlineDate = _parseDisplayDate(deadline);
+      if (deadlineDate == null) return deadline;
+
       final now = DateTime.now();
       final difference = deadlineDate.difference(now);
 
@@ -222,6 +233,18 @@ class JobHeaderCard extends StatelessWidget {
     }
   }
 
+  DateTime? _parseDisplayDate(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return null;
+    if (value.contains('/')) {
+      final parts = value.split('/');
+      if (parts.length == 3) {
+        return DateTime.tryParse('${parts[2]}-${parts[1]}-${parts[0]}');
+      }
+    }
+    return DateTime.tryParse(value);
+  }
+
   void _shareJob(BuildContext context) {
     final shareText =
         '''
@@ -239,12 +262,12 @@ Apply now!
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: const Text(
           'Job details copied to clipboard',
           style: TextStyle(fontSize: 14),
         ),
         backgroundColor: ConstColors.primary,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

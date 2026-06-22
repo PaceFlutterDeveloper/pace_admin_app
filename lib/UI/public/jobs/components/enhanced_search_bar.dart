@@ -1,5 +1,5 @@
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/UI/public/jobs/models/school_model.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,9 +11,9 @@ class EnhancedSearchBar extends StatefulWidget {
   final List<SchoolModel> schools;
   final bool isLoadingSchools;
   final bool isSearching;
-  final Function(String) onSearchChanged;
-  final Function(String) onLocationChanged;
-  final Function(SchoolModel?) onSchoolChanged;
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onLocationChanged;
+  final ValueChanged<SchoolModel?> onSchoolChanged;
   final VoidCallback? onRetrySchools;
 
   const EnhancedSearchBar({
@@ -48,8 +48,6 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
   @override
   void didUpdateWidget(covariant EnhancedSearchBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Keep controllers in sync when the parent clears/changes values
-    // externally (e.g. the "Clear Filters" button).
     if (widget.searchQuery != oldWidget.searchQuery &&
         widget.searchQuery != _searchController.text) {
       _searchController.text = widget.searchQuery;
@@ -102,7 +100,9 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                       hintText: 'Search jobs',
                       hintStyle: GoogleFonts.inter(
                         fontSize: 15,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       prefixIcon: widget.isSearching
                           ? Padding(
@@ -119,8 +119,8 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                           : Icon(
                               CupertinoIcons.search,
                               size: 20,
-                              color: theme.colorScheme.onSurface.withOpacity(
-                                0.4,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.4,
                               ),
                             ),
                       border: InputBorder.none,
@@ -147,12 +147,16 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                       hintText: 'Location',
                       hintStyle: GoogleFonts.inter(
                         fontSize: 14,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       prefixIcon: Icon(
                         CupertinoIcons.location,
                         size: 18,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -175,7 +179,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                   child: Icon(
                     CupertinoIcons.building_2_fill,
                     size: 20,
-                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
                 Expanded(
@@ -207,7 +211,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.4),
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                             ),
@@ -250,7 +254,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: theme.colorScheme.primary
-                                                .withOpacity(0.12),
+                                                .withValues(alpha: 0.12),
                                             borderRadius: BorderRadius.circular(
                                               AppRadius.xs,
                                             ),
@@ -299,7 +303,9 @@ class _SearchFieldContainer extends StatelessWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.06),
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.06),
         ),
       ),
       child: child,
@@ -324,7 +330,7 @@ class _EmptySchoolsRow extends StatelessWidget {
             'No schools available',
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           if (onRetry != null) ...[

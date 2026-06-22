@@ -3,7 +3,7 @@ import 'package:admin_app/UI/notification/services/notification_service.dart';
 import 'package:admin_app/app.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/firebase_options.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart' show Firebase;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';

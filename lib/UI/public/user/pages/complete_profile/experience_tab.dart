@@ -19,6 +19,8 @@ class ExperienceTab extends StatelessWidget {
       titleOf: (record) => record.position ?? 'Position',
       detailsOf: (record) => [
         if (record.companyName != null) 'Organization: ${record.companyName}',
+        if (record.location != null && record.location!.isNotEmpty)
+          'Location: ${record.location}',
         if (record.startDate != null) 'From: ${record.startDate}',
         if (record.endDate != null && record.isCurrent != true)
           'To: ${record.endDate}',
@@ -49,6 +51,7 @@ class _ExperienceEditorDialogState extends State<_ExperienceEditorDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _company;
   late final TextEditingController _position;
+  late final TextEditingController _location;
   late final TextEditingController _startDate;
   late final TextEditingController _endDate;
   late final TextEditingController _description;
@@ -60,6 +63,7 @@ class _ExperienceEditorDialogState extends State<_ExperienceEditorDialog> {
     final e = widget.existing;
     _company = TextEditingController(text: e?.companyName ?? '');
     _position = TextEditingController(text: e?.position ?? '');
+    _location = TextEditingController(text: e?.location ?? '');
     _startDate = TextEditingController(text: e?.startDate ?? '');
     _endDate = TextEditingController(text: e?.endDate ?? '');
     _description = TextEditingController(text: e?.jobDescription ?? '');
@@ -70,6 +74,7 @@ class _ExperienceEditorDialogState extends State<_ExperienceEditorDialog> {
   void dispose() {
     _company.dispose();
     _position.dispose();
+    _location.dispose();
     _startDate.dispose();
     _endDate.dispose();
     _description.dispose();
@@ -82,11 +87,13 @@ class _ExperienceEditorDialogState extends State<_ExperienceEditorDialog> {
         id: widget.existing?.id,
         companyName: _company.text.trim(),
         position: _position.text.trim(),
+        location: _location.text.trim().isNotEmpty
+            ? _location.text.trim()
+            : null,
         startDate: _startDate.text.trim(),
         endDate: _isCurrent ? null : _endDate.text.trim(),
         isCurrent: _isCurrent,
         jobDescription: _description.text.trim(),
-        responsibilities: _description.text.trim(),
       ),
     );
   }
@@ -104,10 +111,11 @@ class _ExperienceEditorDialogState extends State<_ExperienceEditorDialog> {
           isRequired: true,
         ),
         ProfileTextField(
-          label: 'Position',
+          label: 'Designation',
           controller: _position,
           isRequired: true,
         ),
+        ProfileTextField(label: 'Location', controller: _location),
         ProfileDateField(
           label: 'Start Date',
           controller: _startDate,

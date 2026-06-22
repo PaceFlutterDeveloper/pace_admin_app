@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
 import 'package:admin_app/UI/public/jobs/models/school_model.dart';
+import 'package:admin_app/UI/public/shared/models/careers_api_models.dart';
 import 'package:admin_app/core/error/error_exception.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/utils/constants/api_constant.dart';
@@ -12,8 +13,6 @@ class JobsApiService {
   final ApiService _apiService;
 
   JobsApiService({required ApiService apiService}) : _apiService = apiService;
-
-  // Endpoints are now managed through ApiConstants
 
   Future<Either<MyError, JobResponseModel>> fetchJobs({
     String? search,
@@ -25,20 +24,16 @@ class JobsApiService {
     String? token,
   }) async {
     try {
-      // Build query parameters
       final Map<String, dynamic> queryParams = {'page': page, 'limit': limit};
 
       if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
+        queryParams['q'] = search;
       }
       if (schoolId != null && schoolId > 0) {
         queryParams['school_id'] = schoolId;
       }
       if (countryId != null && countryId > 0) {
-        queryParams['country'] = countryId;
-      }
-      if (employmentType != null && employmentType != 'All') {
-        queryParams['employment_type'] = employmentType;
+        queryParams['country_id'] = countryId;
       }
 
       log('API call: ${ApiConstants.jobsUrl} with params: $queryParams');
@@ -52,9 +47,7 @@ class JobsApiService {
         try {
           final Map<String, dynamic> jsonData = json.decode(responseData);
 
-          // Handle the API response format
           if (jsonData['status'] == true) {
-            // Convert the API response to our JobResponseModel format
             final List<dynamic> jobsData = jsonData['data'] ?? [];
             final List<JobModel> jobs = jobsData
                 .map((job) => JobModel.fromMap(job))
@@ -62,9 +55,9 @@ class JobsApiService {
 
             final jobResponse = JobResponseModel(
               data: jobs,
-              total: jsonData['pagination']?['total_count'] ?? jobs.length,
-              page: jsonData['pagination']?['current_page'] ?? 1,
-              limit: jsonData['pagination']?['per_page'] ?? 20,
+              pagination: CareersPagination.fromJson(
+                jsonData['pagination'] as Map<String, dynamic>?,
+              ),
             );
 
             return Right(jobResponse);
@@ -72,7 +65,7 @@ class JobsApiService {
             return Left(
               MyError(
                 key: AppError.unknown,
-                message: jsonData['message'] ?? 'Unknown API error',
+                message: careersApiErrorMessage(jsonData),
               ),
             );
           }
@@ -108,38 +101,15 @@ class JobsApiService {
           final Map<String, dynamic> jsonData = json.decode(responseData);
 
           if (jsonData['status'] == true) {
-            final jobData = jsonData['data'];
-
-            // Transform the detailed response to match our JobModel structure
-            final job = JobModel(
-              jobId: jobData['job_id'] ?? 0,
-              title: jobData['title'] ?? '',
-              location: jobData['location'] ?? '',
-              schoolName: jobData['school']?['name'] ?? '',
-              country: jobData['country']?['name'],
-              createdAt: jobData['dates']?['posted'] ?? '',
-              deadline: jobData['dates']?['deadline'] ?? '',
-              description: jobData['description']?['html'] ?? '',
-              salary: SalaryInfo(
-                range: jobData['salary']?['range'] ?? '',
-                minYears: jobData['salary']?['min_years'] ?? 0,
-                maxYears: jobData['salary']?['max_years'],
-              ),
-              employmentType: jobData['details']?['employment_type'] ?? '',
-              requirements: jobData['requirements']?['skills'] ?? '',
-              department: null, // Not provided in detailed response
-              isActive: jobData['dates']?['is_active'] ?? true,
-              status: jobData['dates']?['is_active'] == true
-                  ? 'Open'
-                  : 'Closed',
+            final detail = JobDetailModel.fromJson(
+              jsonData['data'] as Map<String, dynamic>,
             );
-
-            return Right(job);
+            return Right(detail.toJobModel());
           } else {
             return Left(
               MyError(
                 key: AppError.unknown,
-                message: jsonData['message'] ?? 'Unknown API error',
+                message: careersApiErrorMessage(jsonData),
               ),
             );
           }
@@ -172,9 +142,7 @@ class JobsApiService {
       );
 
       return result.fold(
-        (error) {
-          return Left(error);
-        },
+        (error) => Left(error),
         (responseData) {
           try {
             final Map<String, dynamic> jsonData = json.decode(responseData);
@@ -186,7 +154,7 @@ class JobsApiService {
               return Left(
                 MyError(
                   key: AppError.unknown,
-                  message: jsonData['message'] ?? 'Unknown API error',
+                  message: careersApiErrorMessage(jsonData),
                 ),
               );
             }
@@ -250,7 +218,6 @@ class JobsApiService {
     int limit = 10,
     String? token,
   }) async {
-    // Since the API doesn't have employment_type filter, we'll filter client-side
     final result = await fetchJobs(page: page, limit: limit, token: token);
 
     return result.fold((error) => Left(error), (response) {
@@ -262,14 +229,12 @@ class JobsApiService {
           )
           .toList();
 
-      final filteredResponse = JobResponseModel(
-        data: filteredJobs,
-        total: filteredJobs.length,
-        page: response.page,
-        limit: response.limit,
+      return Right(
+        JobResponseModel(
+          data: filteredJobs,
+          pagination: response.pagination,
+        ),
       );
-
-      return Right(filteredResponse);
     });
   }
 }

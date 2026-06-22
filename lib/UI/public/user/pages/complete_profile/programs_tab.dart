@@ -22,13 +22,12 @@ class ProgramsTab extends StatelessWidget {
       titleOf: (program) => program.programName ?? 'Program',
       detailsOf: (program) => [
         if (program.institution != null) 'Institute: ${program.institution}',
-        if (program.completionDate != null)
-          'Completed: ${program.completionDate}',
-        if (program.certificateNumber != null &&
-            program.certificateNumber!.isNotEmpty)
-          'Certificate: ${program.certificateNumber}',
-        if (program.expiryDate != null && program.expiryDate!.isNotEmpty)
-          'Expiry: ${program.expiryDate}',
+        if (program.durationText != null && program.durationText!.isNotEmpty)
+          'Duration: ${program.durationText}',
+        if (program.place != null && program.place!.isNotEmpty)
+          'Place: ${program.place}',
+        if (program.yearPassing != null && program.yearPassing!.isNotEmpty)
+          'Year: ${program.yearPassing}',
       ],
       editor: (context, existing) => showDialog<ProfessionalProgram>(
         context: context,
@@ -53,9 +52,9 @@ class _ProgramEditorDialogState extends State<_ProgramEditorDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _programName;
   late final TextEditingController _institution;
-  late final TextEditingController _completionDate;
-  late final TextEditingController _certificateNumber;
-  late final TextEditingController _expiryDate;
+  late final TextEditingController _durationText;
+  late final TextEditingController _place;
+  late final TextEditingController _yearPassing;
 
   @override
   void initState() {
@@ -63,20 +62,18 @@ class _ProgramEditorDialogState extends State<_ProgramEditorDialog> {
     final e = widget.existing;
     _programName = TextEditingController(text: e?.programName ?? '');
     _institution = TextEditingController(text: e?.institution ?? '');
-    _completionDate = TextEditingController(text: e?.completionDate ?? '');
-    _certificateNumber = TextEditingController(
-      text: e?.certificateNumber ?? '',
-    );
-    _expiryDate = TextEditingController(text: e?.expiryDate ?? '');
+    _durationText = TextEditingController(text: e?.durationText ?? '');
+    _place = TextEditingController(text: e?.place ?? '');
+    _yearPassing = TextEditingController(text: e?.yearPassing ?? '');
   }
 
   @override
   void dispose() {
     _programName.dispose();
     _institution.dispose();
-    _completionDate.dispose();
-    _certificateNumber.dispose();
-    _expiryDate.dispose();
+    _durationText.dispose();
+    _place.dispose();
+    _yearPassing.dispose();
     super.dispose();
   }
 
@@ -86,14 +83,12 @@ class _ProgramEditorDialogState extends State<_ProgramEditorDialog> {
         id: widget.existing?.id,
         programName: _programName.text.trim(),
         institution: _institution.text.trim(),
-        completionDate: _completionDate.text.trim().isNotEmpty
-            ? _completionDate.text.trim()
+        durationText: _durationText.text.trim().isNotEmpty
+            ? _durationText.text.trim()
             : null,
-        certificateNumber: _certificateNumber.text.trim().isNotEmpty
-            ? _certificateNumber.text.trim()
-            : null,
-        expiryDate: _expiryDate.text.trim().isNotEmpty
-            ? _expiryDate.text.trim()
+        place: _place.text.trim().isNotEmpty ? _place.text.trim() : null,
+        yearPassing: _yearPassing.text.trim().isNotEmpty
+            ? _yearPassing.text.trim()
             : null,
       ),
     );
@@ -107,25 +102,27 @@ class _ProgramEditorDialogState extends State<_ProgramEditorDialog> {
       onSave: _save,
       fields: [
         ProfileTextField(
-          label: 'Program Name',
+          label: 'Course Name',
           controller: _programName,
           isRequired: true,
         ),
         ProfileTextField(
-          label: 'Institution',
+          label: 'Institute',
           controller: _institution,
           isRequired: true,
         ),
-        ProfileDateField(
-          label: 'Completion Date',
-          controller: _completionDate,
-          lastDate: DateTime.now(),
-        ),
         ProfileTextField(
-          label: 'Certificate Number',
-          controller: _certificateNumber,
+          label: 'Duration',
+          controller: _durationText,
+          helperText: 'e.g. 6 months',
         ),
-        ProfileDateField(label: 'Expiry Date', controller: _expiryDate),
+        ProfileTextField(label: 'Place', controller: _place),
+        ProfileTextField(
+          label: 'Year of Passing',
+          controller: _yearPassing,
+          keyboardType: TextInputType.number,
+          maxLength: 4,
+        ),
       ],
     );
   }

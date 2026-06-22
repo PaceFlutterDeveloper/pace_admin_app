@@ -44,7 +44,8 @@ class CareersUserService {
   Future<void> updateUserPreferences(Map<String, dynamic> preferences) async {
     final user = getCurrentCareersUser();
     if (user != null) {
-      final updatedUser = user.copyWith(preferences: preferences);
+      final merged = Map<String, dynamic>.from(user.preferences)..addAll(preferences);
+      final updatedUser = user.copyWith(preferences: merged);
       await setCurrentCareersUser(updatedUser);
     }
   }

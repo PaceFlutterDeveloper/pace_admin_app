@@ -11,9 +11,11 @@ enum AppError {
 class MyError {
   final AppError key;
   final String message;
+  final Map<String, dynamic>? data;
 
   const MyError({
     required this.key,
     this.message = "Something Went Wrong",
+    this.data,
   });
 }

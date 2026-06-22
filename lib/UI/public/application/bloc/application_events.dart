@@ -2,7 +2,6 @@ import '../models/application_models.dart';
 
 abstract class ApplicationEvent {}
 
-// Load Applications Event
 class LoadApplicationsEvent extends ApplicationEvent {
   final int candId;
   final int limit;
@@ -13,7 +12,6 @@ class LoadApplicationsEvent extends ApplicationEvent {
   });
 }
 
-// Load More Applications Event
 class LoadMoreApplicationsEvent extends ApplicationEvent {
   final int candId;
   final int limit;
@@ -24,16 +22,37 @@ class LoadMoreApplicationsEvent extends ApplicationEvent {
   });
 }
 
-// Refresh Applications Event
 class RefreshApplicationsEvent extends ApplicationEvent {
   final int candId;
 
   RefreshApplicationsEvent({required this.candId});
 }
 
-// Filter Applications by Status Event
 class FilterApplicationsByStatusEvent extends ApplicationEvent {
   final ApplicationStatus? status;
 
   FilterApplicationsByStatusEvent({this.status});
 }
+
+class CheckApplicationEvent extends ApplicationEvent {
+  final int jobId;
+  final int candId;
+
+  CheckApplicationEvent({required this.jobId, required this.candId});
+}
+
+class ApplyJobEvent extends ApplicationEvent {
+  final int jobId;
+  final int candId;
+  final String cvFile;
+  final String? coverLetter;
+
+  ApplyJobEvent({
+    required this.jobId,
+    required this.candId,
+    required this.cvFile,
+    this.coverLetter,
+  });
+}
+
+class ResetJobApplyStateEvent extends ApplicationEvent {}

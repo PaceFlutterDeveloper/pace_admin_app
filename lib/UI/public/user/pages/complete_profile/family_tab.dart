@@ -20,10 +20,8 @@ class FamilyTab extends StatelessWidget {
       detailsOf: (member) => [
         if (member.relationship != null) 'Relation: ${member.relationship}',
         if (member.occupation != null) 'Profession: ${member.occupation}',
-        if (member.phone != null && member.phone!.isNotEmpty)
-          'Phone: ${member.phone}',
-        if (member.email != null && member.email!.isNotEmpty)
-          'Email: ${member.email}',
+        if (member.age != null) 'Age: ${member.age}',
+        if (member.dependentYn == true) 'Dependent',
       ],
       editor: (context, existing) => showDialog<FamilyMember>(
         context: context,
@@ -48,8 +46,8 @@ class _FamilyEditorDialogState extends State<_FamilyEditorDialog> {
   late final TextEditingController _name;
   late final TextEditingController _relationship;
   late final TextEditingController _occupation;
-  late final TextEditingController _phone;
-  late final TextEditingController _email;
+  late final TextEditingController _age;
+  bool _dependentYn = false;
 
   @override
   void initState() {
@@ -58,8 +56,8 @@ class _FamilyEditorDialogState extends State<_FamilyEditorDialog> {
     _name = TextEditingController(text: e?.name ?? '');
     _relationship = TextEditingController(text: e?.relationship ?? '');
     _occupation = TextEditingController(text: e?.occupation ?? '');
-    _phone = TextEditingController(text: e?.phone ?? '');
-    _email = TextEditingController(text: e?.email ?? '');
+    _age = TextEditingController(text: e?.age?.toString() ?? '');
+    _dependentYn = e?.dependentYn ?? false;
   }
 
   @override
@@ -67,8 +65,7 @@ class _FamilyEditorDialogState extends State<_FamilyEditorDialog> {
     _name.dispose();
     _relationship.dispose();
     _occupation.dispose();
-    _phone.dispose();
-    _email.dispose();
+    _age.dispose();
     super.dispose();
   }
 
@@ -81,8 +78,8 @@ class _FamilyEditorDialogState extends State<_FamilyEditorDialog> {
         occupation: _occupation.text.trim().isNotEmpty
             ? _occupation.text.trim()
             : null,
-        phone: _phone.text.trim().isNotEmpty ? _phone.text.trim() : null,
-        email: _email.text.trim().isNotEmpty ? _email.text.trim() : null,
+        age: int.tryParse(_age.text.trim()),
+        dependentYn: _dependentYn,
       ),
     );
   }
@@ -102,24 +99,16 @@ class _FamilyEditorDialogState extends State<_FamilyEditorDialog> {
           controller: _relationship,
           isRequired: true,
         ),
-        ProfileTextField(label: 'Occupation', controller: _occupation),
+        ProfileTextField(label: 'Profession', controller: _occupation),
         ProfileTextField(
-          label: 'Phone',
-          controller: _phone,
-          keyboardType: TextInputType.phone,
+          label: 'Age',
+          controller: _age,
+          keyboardType: TextInputType.number,
         ),
-        ProfileTextField(
-          label: 'Email',
-          controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            if (value != null &&
-                value.trim().isNotEmpty &&
-                !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim())) {
-              return 'Please enter a valid email';
-            }
-            return null;
-          },
+        ProfileSwitchField(
+          label: 'Dependent',
+          value: _dependentYn,
+          onChanged: (value) => setState(() => _dependentYn = value),
         ),
       ],
     );

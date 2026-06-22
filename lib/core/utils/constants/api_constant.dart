@@ -4,8 +4,9 @@ class ApiConstants {
   // Method to get the current school code dynamically from Hive
   static Future<String> getSchoolCode() async {
     var box = await Hive.openBox('settingsBox');
-    String? schoolCode =
-        box.get('schoolCode'); // Retrieve the selected school code
+    String? schoolCode = box.get(
+      'schoolCode',
+    ); // Retrieve the selected school code
     return schoolCode ??
         'defaultSchool'; // Provide a default school code if none selected
   }
@@ -79,10 +80,12 @@ class ApiConstants {
   }
 
   // ========================================
-  // AUTHENTICATION ENDPOINTS
+  // LEGACY SCHOOL-SCOPED CAREERS ENDPOINTS
+  // Deprecated — use Careers API v2 static URLs below (careersEndpoint).
   // ========================================
 
   // User Authentication Endpoints
+  @Deprecated('Use ApiConstants.authLoginUrl (Careers API v2)')
   static Future<String> getAuthLoginUrl() async {
     String baseUrl = await getBaseUrl();
     return "${baseUrl}auth-login.php";
@@ -195,67 +198,63 @@ class ApiConstants {
   }
 
   // ========================================
-  // STATIC ENDPOINTS (No school code needed)
+  // CAREERS API v2 (unified router)
   // ========================================
 
-  // Static authentication endpoints (for public access)
-  static const String authLoginUrl =
-      "https://paceeducation.com/careers/erp-api/auth-login.php";
-  static const String authRegisterUrl =
-      "https://paceeducation.com/careers/erp-api/auth-register.php";
-  static const String authForgotPasswordUrl =
-      "https://paceeducation.com/careers/erp-api/auth-forgot-password.php";
-  static const String authResetPasswordUrl =
-      "https://paceeducation.com/careers/erp-api/auth-reset-password.php";
-  static const String authResendVerificationUrl =
-      "https://paceeducation.com/careers/erp-api/auth-resend-verification.php";
-  static const String authVerifyEmailUrl =
-      "https://paceeducation.com/careers/erp-api/auth-verify-email.php";
+  /// Base URL for careers media files returned as relative paths
+  /// (e.g. `uploads/profile_photos/cand_123.jpg`).
+  static const String careersMediaBaseUrl =
+      'https://paceeducation.com/careers/';
 
-  // Static jobs endpoints (for public access)
-  static const String jobsUrl =
-      "https://paceeducation.com/careers/erp-api/jobs.php";
-  static const String jobDetailsUrl =
-      "https://paceeducation.com/careers/erp-api/job-details.php";
+  /// Single router entry point for all careers API v2 endpoints.
+  static const String careersApiBaseUrl =
+      'https://paceeducation.com/careers/erp-api/index.php';
 
-  static const String schoolsUrl =
-      "https://paceeducation.com/careers/erp-api/schools.php";
-  static const String countriesUrl =
-      "https://paceeducation.com/careers/erp-api/countries.php";
-  static const String testUrl =
-      "https://paceeducation.com/careers/erp-api/test.php";
-  static const String profileCompletionUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/profile-completion";
-  static const String myApplicationsUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/my-applications";
+  static String careersEndpoint(String path) =>
+      '$careersApiBaseUrl/${path.startsWith('/') ? path.substring(1) : path}';
 
-  // Static profile endpoints (for public access)
-  static const String profileUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/get-profile";
-  static const String updateProfileUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/update-profile";
-  static const String updateEducationUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/update-education";
-  static const String updateExperienceUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/update-experience";
-  static const String updateFamilyUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/update-family";
-  static const String updateReferencesUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/update-references";
-  static const String updateProfessionalProgramsUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/update-professional-programs";
-  static const String updateCompleteProfileUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/update-complete-profile";
+  // Authentication endpoints (public)
+  static final String authLoginUrl = careersEndpoint('auth-login');
+  static final String authRegisterUrl = careersEndpoint('auth-register');
+  static final String authForgotPasswordUrl =
+      careersEndpoint('auth-forgot-password');
+  static final String authResetPasswordUrl =
+      careersEndpoint('auth-reset-password');
+  static final String authResendVerificationUrl =
+      careersEndpoint('auth-resend-verification');
+  static final String authVerifyEmailUrl = careersEndpoint('auth-verify-email');
 
-  // GET endpoints for fetching profile data
-  static const String getEducationUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/get-education";
-  static const String getExperienceUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/get-experience";
-  static const String getFamilyUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/get-family";
-  static const String getReferencesUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/get-references";
-  static const String getProfessionalProgramsUrl =
-      "https://paceeducation.com/careers/erp-api/index.php/get-professional-programs";
+  // Jobs endpoints (public)
+  static final String jobsUrl = careersEndpoint('jobs');
+  static final String jobDetailsUrl = careersEndpoint('job-details');
+  static final String schoolsUrl = careersEndpoint('schools');
+  static final String countriesUrl = careersEndpoint('countries');
+  static final String startupUrl = careersEndpoint('startup');
+
+  // Application endpoints
+  static final String checkApplicationUrl =
+      careersEndpoint('check-application');
+  static final String applyJobUrl = careersEndpoint('apply-job');
+  static final String myApplicationsUrl = careersEndpoint('my-applications');
+
+  // Profile endpoints (protected)
+  static final String profileCompletionUrl =
+      careersEndpoint('profile-completion');
+  static final String profileUrl = careersEndpoint('get-profile');
+  static final String updateProfileUrl = careersEndpoint('update-profile');
+  static final String updateEducationUrl = careersEndpoint('update-education');
+  static final String updateExperienceUrl =
+      careersEndpoint('update-experience');
+  static final String updateFamilyUrl = careersEndpoint('update-family');
+  static final String updateReferencesUrl = careersEndpoint('update-references');
+  static final String updateProfessionalProgramsUrl =
+      careersEndpoint('update-professional-programs');
+  static final String updateCompleteProfileUrl =
+      careersEndpoint('update-complete-profile');
+  static final String getEducationUrl = careersEndpoint('get-education');
+  static final String getExperienceUrl = careersEndpoint('get-experience');
+  static final String getFamilyUrl = careersEndpoint('get-family');
+  static final String getReferencesUrl = careersEndpoint('get-references');
+  static final String getProfessionalProgramsUrl =
+      careersEndpoint('get-professional-programs');
 }

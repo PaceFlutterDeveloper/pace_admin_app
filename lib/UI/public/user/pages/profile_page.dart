@@ -1,5 +1,7 @@
-import 'package:admin_app/UI/public/jobs/components/careers_scaffold.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
+import 'package:admin_app/UI/public/user/pages/login_page.dart';
+import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
+import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_states.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
@@ -8,8 +10,11 @@ import 'package:admin_app/UI/public/user/components/index.dart';
 import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
 import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
+import 'package:admin_app/UI/public/user/utils/careers_avatar_cache.dart';
+import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
+import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/core/widgets/app_error_state.dart';
 import 'package:admin_app/core/widgets/app_shimmer.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,14 +28,25 @@ import 'package:go_router/go_router.dart';
 /// Hive (`CareersUserManager`) is used only as an offline fallback for the
 /// header while the API loads or fails.
 class CareersProfilePage extends StatefulWidget {
-  const CareersProfilePage({super.key});
+  final bool embedded;
+  final VoidCallback? onAuthChanged;
+
+  const CareersProfilePage({
+    super.key,
+    this.embedded = false,
+    this.onAuthChanged,
+  });
 
   @override
   State<CareersProfilePage> createState() => _CareersProfilePageState();
 }
 
-class _CareersProfilePageState extends State<CareersProfilePage> {
+class _CareersProfilePageState extends State<CareersProfilePage>
+    with AutomaticKeepAliveClientMixin {
   ProfileModel? _profile;
+
+  @override
+  bool get wantKeepAlive => widget.embedded;
   ProfileCompletionModel? _completion;
   bool _loading = true;
   String? _error;
@@ -72,39 +88,68 @@ class _CareersProfilePageState extends State<CareersProfilePage> {
       });
     } else if (state is ProfileCompletionLoaded) {
       setState(() => _completion = state.completion);
+    } else if (state is ProfileFilesUploaded) {
+      final candidate = ProfileFilePaths.extractCandidateMap(
+        state.uploadData ?? const {},
+      );
+      if (candidate != null) {
+        final uploaded = ProfileModel.fromJson(candidate);
+        setState(() {
+          _profile = (_profile ?? uploaded).copyWith(
+            avatarFile: uploaded.avatarFile ?? _profile?.avatarFile,
+            cvFile: uploaded.cvFile ?? _profile?.cvFile,
+          );
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return CareersScaffold(
-      title: 'Profile',
-      actions: [
-        IconButton(
-          icon: const Icon(CupertinoIcons.square_arrow_right),
-          tooltip: 'Logout',
-          onPressed: () => LogoutDialog.show(context),
-        ),
-      ],
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<UserBloc, UserState>(
-            listener: (context, state) {
-              if (state is LogoutSuccess) {
+    super.build(context);
+    final body = MultiBlocListener(
+      listeners: [
+        BlocListener<UserBloc, UserState>(
+          listener: (context, state) {
+            if (state is LogoutSuccess) {
+              widget.onAuthChanged?.call();
+              if (!widget.embedded) {
                 Navigator.of(context).pop();
               }
-            },
-          ),
-          BlocListener<CareersProfileBloc, CareersProfileState>(
-            listener: _onProfileStateChange,
+            }
+          },
+        ),
+        BlocListener<CareersProfileBloc, CareersProfileState>(
+          listener: _onProfileStateChange,
+        ),
+      ],
+      child: _buildBody(context),
+    );
+
+    if (widget.embedded) {
+      return body;
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(CupertinoIcons.square_arrow_right),
+            tooltip: 'Logout',
+            onPressed: () => LogoutDialog.show(context),
           ),
         ],
-        child: _buildBody(context),
       ),
+      body: body,
     );
   }
 
   Widget _buildBody(BuildContext context) {
+    if (!locator<CareersUserService>().isCareersUserLoggedIn()) {
+      return _buildLoginPrompt(context);
+    }
+
     if (_loading && _profile == null) {
       return const _ProfileShimmer();
     }
@@ -122,7 +167,12 @@ class _CareersProfilePageState extends State<CareersProfilePage> {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
-            ProfileHeaderCard(name: cachedUser.name, email: cachedUser.email),
+            ProfileHeaderCard(
+              name: cachedUser.name,
+              email: cachedUser.email,
+              avatarUrl: cachedUser.profileImage,
+              localAvatarFile: CareersAvatarCache.getCachedFile(),
+            ),
             AppSpacing.vGapMd,
             AppInlineError(message: _error!, onRetry: _load),
           ],
@@ -141,7 +191,8 @@ class _CareersProfilePageState extends State<CareersProfilePage> {
           ProfileHeaderCard(
             name: profile?.name ?? cachedUser?.name ?? 'Guest User',
             email: profile?.email ?? cachedUser?.email ?? '',
-            avatarUrl: profile?.avatarFile,
+            avatarUrl: profile?.avatarFile ?? cachedUser?.profileImage,
+            localAvatarFile: CareersAvatarCache.getCachedFile(),
             isComplete: _completion?.isComplete,
             completionPercentage: _completion?.percentage,
           ),
@@ -154,7 +205,62 @@ class _CareersProfilePageState extends State<CareersProfilePage> {
             completion: _completion,
             onNavigateToCompleteProfile: _openCompleteProfile,
           ),
+          if (widget.embedded) ...[
+            AppSpacing.vGapLg,
+            AppButton.secondary(
+              label: 'Logout',
+              leadingIcon: CupertinoIcons.square_arrow_right,
+              onPressed: () => LogoutDialog.show(context),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoginPrompt(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.person_crop_circle,
+              size: 56,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            AppSpacing.vGapMd,
+            Text(
+              'Sign in to view your profile',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            AppSpacing.vGapSm,
+            Text(
+              'Log in to manage your candidate profile and apply for jobs.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            AppSpacing.vGapLg,
+            AppButton.primary(
+              label: 'Login',
+              isFullWidth: false,
+              onPressed: () {
+                Navigator.of(context)
+                    .push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const LoginPage(),
+                      ),
+                    )
+                    .then((_) => widget.onAuthChanged?.call());
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

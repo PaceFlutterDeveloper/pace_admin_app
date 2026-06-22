@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_states.dart';
 import 'package:admin_app/UI/public/user/models/country_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
+import 'package:admin_app/UI/public/user/components/careers_profile_image.dart';
 import 'package:admin_app/UI/public/user/pages/complete_profile/widgets/profile_form_fields.dart';
+import 'package:admin_app/UI/public/user/utils/careers_avatar_cache.dart';
+import 'package:admin_app/UI/public/user/utils/careers_media_url.dart';
+import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/core/widgets/app_error_state.dart';
@@ -35,6 +41,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
   final _provinceState = TextEditingController();
   final _address = TextEditingController();
   final _visaStatus = TextEditingController();
+  final _visaExpDate = TextEditingController();
   final _experienceYears = TextEditingController();
   final _uaeExperienceYears = TextEditingController();
   final _otherExperienceYears = TextEditingController();
@@ -48,6 +55,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
   final _preferredPosition = TextEditingController();
 
   String? _maritalStatus;
+  String? _gender;
   bool _convictionYn = false;
   bool _govtIssueYn = false;
   bool _referencePermissionYn = false;
@@ -90,6 +98,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
       _provinceState,
       _address,
       _visaStatus,
+      _visaExpDate,
       _experienceYears,
       _uaeExperienceYears,
       _otherExperienceYears,
@@ -121,6 +130,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
     _provinceState.text = profile.provinceState ?? '';
     _address.text = profile.addressLocal ?? '';
     _visaStatus.text = profile.visaStatus ?? '';
+    _visaExpDate.text = profile.visaExpDate ?? '';
     _experienceYears.text = profile.experienceYears?.toString() ?? '';
     _uaeExperienceYears.text = profile.uaeExperienceYears?.toString() ?? '';
     _otherExperienceYears.text = profile.otherExperienceYears?.toString() ?? '';
@@ -136,6 +146,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
     _maritalStatus = (profile.maritalStatus?.isNotEmpty ?? false)
         ? profile.maritalStatus
         : null;
+    _gender = (profile.gender?.isNotEmpty ?? false) ? profile.gender : null;
     _convictionYn = profile.convictionYn ?? false;
     _govtIssueYn = profile.govtIssueYn ?? false;
     _referencePermissionYn = profile.referencePermissionYn ?? false;
@@ -173,17 +184,34 @@ class _BasicInfoTabState extends State<BasicInfoTab>
       });
     } else if (state is ProfileSaved && state.section == ProfileSection.basic) {
       AppToast.success(context, 'Profile updated successfully');
-      context.read<CareersProfileBloc>().add(const LoadProfileEvent());
+      setState(() {
+        _pickedAvatarPath = null;
+        _pickedCvPath = null;
+      });
     } else if (state is ProfileSaveError &&
         state.section == ProfileSection.basic) {
       AppToast.error(context, state.message);
     } else if (state is ProfileFilesUploaded) {
       AppToast.success(context, 'Files uploaded successfully');
-      setState(() {
-        _pickedAvatarPath = null;
-        _pickedCvPath = null;
-      });
-      context.read<CareersProfileBloc>().add(const LoadProfileEvent());
+      final candidate = ProfileFilePaths.extractCandidateMap(
+        state.uploadData ?? const {},
+      );
+      if (candidate != null) {
+        final uploaded = ProfileModel.fromJson(candidate);
+        setState(() {
+          _profile = (_profile ?? uploaded).copyWith(
+            avatarFile: uploaded.avatarFile ?? _profile?.avatarFile,
+            cvFile: uploaded.cvFile ?? _profile?.cvFile,
+          );
+          _pickedAvatarPath = null;
+          _pickedCvPath = null;
+        });
+      } else {
+        setState(() {
+          _pickedAvatarPath = null;
+          _pickedCvPath = null;
+        });
+      }
     } else if (state is ProfileFilesUploadError) {
       AppToast.error(context, state.message);
     }
@@ -193,7 +221,10 @@ class _BasicInfoTabState extends State<BasicInfoTab>
     final result = await FilePicker.pickFiles(type: FileType.image);
     final path = result?.files.single.path;
     if (path != null) {
-      setState(() => _pickedAvatarPath = path);
+      await CareersAvatarCache.saveFromFile(path);
+      if (mounted) {
+        setState(() => _pickedAvatarPath = path);
+      }
     }
   }
 
@@ -208,14 +239,6 @@ class _BasicInfoTabState extends State<BasicInfoTab>
     }
   }
 
-  void _uploadFiles() {
-    context.read<CareersProfileBloc>().add(
-      UploadProfileFilesEvent(
-        avatarFilePath: _pickedAvatarPath,
-        cvFilePath: _pickedCvPath,
-      ),
-    );
-  }
 
   void _save() {
     if (!_formKey.currentState!.validate()) {
@@ -227,6 +250,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
       'candidate_name': _name.text,
       'phone': _phone.text,
       'date_of_birth': _dob.text,
+      'gender': _gender ?? '',
       'nationality': _nationality.text,
       'current_location': _location.text,
       'province_state': _provinceState.text,
@@ -235,7 +259,9 @@ class _BasicInfoTabState extends State<BasicInfoTab>
       'notice_period': _noticePeriod.text,
       'marital_status': _maritalStatus ?? '',
       'visa_status': _visaStatus.text,
+      'visa_exp_date': _visaExpDate.text,
       'nationality_country_id': _nationalityCountryId ?? 0,
+      'nationality_id': _nationalityCountryId ?? 0,
       'current_country_id': _currentCountryId ?? 0,
       'experience_years': double.tryParse(_experienceYears.text) ?? 0.0,
       'uae_experience_years': double.tryParse(_uaeExperienceYears.text) ?? 0.0,
@@ -253,7 +279,11 @@ class _BasicInfoTabState extends State<BasicInfoTab>
     };
 
     context.read<CareersProfileBloc>().add(
-      SaveBasicInfoEvent(profileData: profileData),
+      SaveBasicInfoEvent(
+        profileData: profileData,
+        avatarFilePath: _pickedAvatarPath,
+        cvFilePath: _pickedCvPath,
+      ),
     );
   }
 
@@ -299,18 +329,24 @@ class _BasicInfoTabState extends State<BasicInfoTab>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _sectionHeader(context, 'Personal Details'),
-            ProfileTextField(label: 'Name', controller: _name, enabled: false),
+            ProfileTextField(
+              label: 'Name',
+              controller: _name,
+              isRequired: true,
+            ),
             AppSpacing.vGapMd,
             ProfileTextField(
               label: 'Email',
               controller: _email,
-              enabled: false,
+              readOnly: true,
+              helperText: 'Email is linked to your account',
             ),
             AppSpacing.vGapMd,
             ProfileTextField(
               label: 'Phone',
               controller: _phone,
-              enabled: false,
+              isRequired: true,
+              keyboardType: TextInputType.phone,
             ),
             AppSpacing.vGapMd,
             ProfileDateField(
@@ -321,11 +357,19 @@ class _BasicInfoTabState extends State<BasicInfoTab>
               lastDate: DateTime.now(),
             ),
             AppSpacing.vGapMd,
-            ProfileTextField(
-              label: 'Nationality',
-              controller: _nationality,
-              enabled: false,
+            ProfileDropdownField<String>(
+              label: 'Gender',
+              value: _gender,
+              hint: 'Select gender',
+              items: const [
+                DropdownMenuItem(value: 'Male', child: Text('Male')),
+                DropdownMenuItem(value: 'Female', child: Text('Female')),
+                DropdownMenuItem(value: 'Other', child: Text('Other')),
+              ],
+              onChanged: (value) => setState(() => _gender = value),
             ),
+            AppSpacing.vGapMd,
+            ProfileTextField(label: 'Nationality', controller: _nationality),
             AppSpacing.vGapMd,
             ProfileDropdownField<int>(
               label: 'Nationality Country',
@@ -354,12 +398,12 @@ class _BasicInfoTabState extends State<BasicInfoTab>
             ),
             AppSpacing.vGapLg,
             _sectionHeader(context, 'Location'),
-            ProfileTextField(
-              label: 'Current Location',
-              controller: _location,
-              isRequired: true,
-            ),
-            AppSpacing.vGapMd,
+            // ProfileTextField(
+            //   label: 'Current Location',
+            //   controller: _location,
+            //   isRequired: true,
+            // ),
+            // AppSpacing.vGapMd,
             ProfileDropdownField<int>(
               label: 'Current Country',
               value: _currentCountryId,
@@ -385,6 +429,13 @@ class _BasicInfoTabState extends State<BasicInfoTab>
               label: 'Visa Status',
               controller: _visaStatus,
               isRequired: true,
+            ),
+            AppSpacing.vGapMd,
+            ProfileDateField(
+              label: 'Visa Expiry Date',
+              controller: _visaExpDate,
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 365 * 20)),
             ),
             AppSpacing.vGapLg,
             _sectionHeader(context, 'Career'),
@@ -430,6 +481,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
             ProfileDateField(
               label: 'Available From',
               controller: _availableFrom,
+              isRequired: true,
             ),
             AppSpacing.vGapMd,
             ProfileTextField(
@@ -480,37 +532,26 @@ class _BasicInfoTabState extends State<BasicInfoTab>
             ),
             AppSpacing.vGapLg,
             _sectionHeader(context, 'Documents'),
+            _AvatarPreview(
+              pickedLocalPath: _pickedAvatarPath,
+              remotePath: _profile?.avatarFile,
+            ),
+            AppSpacing.vGapMd,
             _FilePickerRow(
               label: 'Profile Photo',
-              currentFileName: _profile?.avatarFile,
+              currentFileName: CareersMediaUrl.displayFileLabel(
+                _profile?.avatarFile,
+              ),
               pickedFileName: _pickedAvatarPath?.split('/').last,
               onPick: _pickAvatar,
             ),
             AppSpacing.vGapMd,
             _FilePickerRow(
               label: 'CV / Resume',
-              currentFileName: _profile?.cvFile,
+              currentFileName: CareersMediaUrl.displayFileLabel(_profile?.cvFile),
               pickedFileName: _pickedCvPath?.split('/').last,
               onPick: _pickCv,
             ),
-            if (_pickedAvatarPath != null || _pickedCvPath != null) ...[
-              AppSpacing.vGapMd,
-              BlocBuilder<CareersProfileBloc, CareersProfileState>(
-                buildWhen: (previous, current) =>
-                    current is ProfileFilesUploading ||
-                    current is ProfileFilesUploaded ||
-                    current is ProfileFilesUploadError,
-                builder: (context, state) {
-                  final uploading = state is ProfileFilesUploading;
-                  return AppButton.secondary(
-                    label: 'Upload Selected Files',
-                    leadingIcon: CupertinoIcons.cloud_upload,
-                    isLoading: uploading,
-                    onPressed: uploading ? null : _uploadFiles,
-                  );
-                },
-              ),
-            ],
             AppSpacing.vGapLg,
             BlocBuilder<CareersProfileBloc, CareersProfileState>(
               buildWhen: (previous, current) =>
@@ -555,6 +596,46 @@ class _BasicInfoTabState extends State<BasicInfoTab>
   }
 }
 
+class _AvatarPreview extends StatelessWidget {
+  final String? pickedLocalPath;
+  final String? remotePath;
+
+  const _AvatarPreview({this.pickedLocalPath, this.remotePath});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const size = AppSizes.avatarLg;
+    final hasRemote = remotePath != null && remotePath!.isNotEmpty;
+
+    return Center(
+      child: Column(
+        children: [
+          CareersProfileImage(
+            localFile: pickedLocalPath != null
+                ? File(pickedLocalPath!)
+                : CareersAvatarCache.getCachedFile(),
+            remoteSource: pickedLocalPath == null ? remotePath : null,
+            size: size,
+          ),
+          AppSpacing.vGapXs,
+          Text(
+            pickedLocalPath != null
+                ? 'Preview — will upload when you save'
+                : hasRemote
+                ? 'Current profile photo'
+                : 'No profile photo yet',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FilePickerRow extends StatelessWidget {
   final String label;
   final String? currentFileName;
@@ -571,47 +652,67 @@ class _FilePickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fileText =
-        pickedFileName ??
-        ((currentFileName?.isNotEmpty ?? false)
-            ? currentFileName!
-            : 'No file selected');
+    final isDark = theme.brightness == Brightness.dark;
+    final fillColor = isDark
+        ? theme.colorScheme.surfaceContainerHigh
+        : AppColors.iosSystemGray6;
+    final idleBorder = isDark
+        ? AppColors.iosSystemGray4Dark
+        : AppColors.iosSystemGray3;
+    final fileText = pickedFileName ?? currentFileName ?? 'No file selected';
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+          ),
+        ),
+        AppSpacing.vGapSm,
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: fillColor,
+            borderRadius: AppRadius.borderRadiusMd,
+            border: Border.all(color: idleBorder, width: 1),
+          ),
+          child: Row(
             children: [
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              Icon(
+                CupertinoIcons.doc,
+                size: AppSizes.iconSm,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+              AppSpacing.hGapSm,
+              Expanded(
+                child: Text(
+                  fileText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: pickedFileName != null
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                 ),
               ),
-              AppSpacing.vGapXs,
-              Text(
-                fileText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: pickedFileName != null
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+              AppSpacing.hGapSm,
+              AppButton.ghost(
+                label: 'Choose',
+                size: AppButtonSize.small,
+                leadingIcon: CupertinoIcons.folder,
+                onPressed: onPick,
               ),
             ],
           ),
-        ),
-        AppSpacing.hGapMd,
-        AppButton.ghost(
-          label: 'Choose File',
-          size: AppButtonSize.small,
-          leadingIcon: CupertinoIcons.folder,
-          onPressed: onPick,
         ),
       ],
     );

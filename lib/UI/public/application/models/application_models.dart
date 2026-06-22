@@ -1,3 +1,5 @@
+import 'package:admin_app/UI/public/shared/models/careers_api_models.dart';
+
 class MyApplicationsResponse {
   final bool status;
   final String message;
@@ -21,7 +23,7 @@ class MyApplicationsResponse {
 class MyApplicationsData {
   final Candidate candidate;
   final List<Application> applications;
-  final Pagination pagination;
+  final CareersPagination pagination;
 
   MyApplicationsData({
     required this.candidate,
@@ -36,7 +38,9 @@ class MyApplicationsData {
               ?.map((e) => Application.fromJson(e))
               .toList() ??
           [],
-      pagination: Pagination.fromJson(json['pagination'] ?? {}),
+      pagination: CareersPagination.fromJson(
+        json['pagination'] as Map<String, dynamic>?,
+      ),
     );
   }
 }
@@ -63,7 +67,7 @@ class Candidate {
 
 class Application {
   final int applicationId;
-  final Job job;
+  final ApplicationJobSummary job;
   final ApplicationDetails application;
 
   Application({
@@ -75,13 +79,13 @@ class Application {
   factory Application.fromJson(Map<String, dynamic> json) {
     return Application(
       applicationId: json['application_id'] ?? 0,
-      job: Job.fromJson(json['job'] ?? {}),
+      job: ApplicationJobSummary.fromJson(json['job'] ?? {}),
       application: ApplicationDetails.fromJson(json['application'] ?? {}),
     );
   }
 }
 
-class Job {
+class ApplicationJobSummary {
   final int id;
   final String title;
   final String location;
@@ -89,7 +93,7 @@ class Job {
   final String salaryRange;
   final String school;
 
-  Job({
+  ApplicationJobSummary({
     required this.id,
     required this.title,
     required this.location,
@@ -98,8 +102,8 @@ class Job {
     required this.school,
   });
 
-  factory Job.fromJson(Map<String, dynamic> json) {
-    return Job(
+  factory ApplicationJobSummary.fromJson(Map<String, dynamic> json) {
+    return ApplicationJobSummary(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       location: json['location'] ?? '',
@@ -135,38 +139,96 @@ class ApplicationDetails {
       source: json['source'] ?? '',
       cvFile: json['cv_file'] ?? '',
       status: json['status'] ?? '',
-      availabilityOk: json['availability_ok'] ?? false,
+      availabilityOk: json['availability_ok'] == true ||
+          json['availability_ok'] == 1,
       appliedDate: json['applied_date'] ?? '',
       lastActivity: json['last_activity'] ?? '',
     );
   }
 }
 
-class Pagination {
-  final int currentPage;
-  final int totalPages;
-  final int totalItems;
-  final int itemsPerPage;
-  final bool hasNext;
-  final bool hasPrev;
+class CheckApplicationResponse {
+  final bool hasApplied;
+  final ApplicationDetails? application;
+  final ApplicationJobSummary? job;
 
-  Pagination({
-    required this.currentPage,
-    required this.totalPages,
-    required this.totalItems,
-    required this.itemsPerPage,
-    required this.hasNext,
-    required this.hasPrev,
+  CheckApplicationResponse({
+    required this.hasApplied,
+    this.application,
+    this.job,
   });
 
-  factory Pagination.fromJson(Map<String, dynamic> json) {
-    return Pagination(
-      currentPage: json['current_page'] ?? 1,
-      totalPages: json['total_pages'] ?? 1,
-      totalItems: json['total_items'] ?? 0,
-      itemsPerPage: json['items_per_page'] ?? 20,
-      hasNext: json['has_next'] ?? false,
-      hasPrev: json['has_prev'] ?? false,
+  factory CheckApplicationResponse.fromJson(Map<String, dynamic> json) {
+    return CheckApplicationResponse(
+      hasApplied: json['has_applied'] == true || json['has_applied'] == 1,
+      application: json['application'] != null
+          ? ApplicationDetails.fromJson(
+              json['application'] as Map<String, dynamic>,
+            )
+          : null,
+      job: json['job'] != null
+          ? ApplicationJobSummary.fromJson(json['job'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class ApplyJobResponse {
+  final int applicationId;
+  final ApplicationJobSummary? job;
+  final Candidate? candidate;
+  final String applicationDate;
+  final String status;
+
+  ApplyJobResponse({
+    required this.applicationId,
+    this.job,
+    this.candidate,
+    required this.applicationDate,
+    required this.status,
+  });
+
+  factory ApplyJobResponse.fromJson(Map<String, dynamic> json) {
+    return ApplyJobResponse(
+      applicationId: json['application_id'] ?? 0,
+      job: json['job'] != null
+          ? ApplicationJobSummary.fromJson(json['job'] as Map<String, dynamic>)
+          : null,
+      candidate: json['candidate'] != null
+          ? Candidate.fromJson(json['candidate'] as Map<String, dynamic>)
+          : null,
+      applicationDate: json['application_date'] ?? '',
+      status: json['status'] ?? '',
+    );
+  }
+}
+
+class ApplyJobErrorData {
+  final int? profileCompletion;
+  final int? requiredCompletion;
+  final bool isFresher;
+  final List<String> missingFields;
+
+  ApplyJobErrorData({
+    this.profileCompletion,
+    this.requiredCompletion,
+    this.isFresher = false,
+    this.missingFields = const [],
+  });
+
+  factory ApplyJobErrorData.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return ApplyJobErrorData();
+    }
+    return ApplyJobErrorData(
+      profileCompletion: json['profile_completion'] is int
+          ? json['profile_completion'] as int
+          : int.tryParse(json['profile_completion']?.toString() ?? ''),
+      requiredCompletion: json['required_completion'] is int
+          ? json['required_completion'] as int
+          : int.tryParse(json['required_completion']?.toString() ?? ''),
+      isFresher: json['is_fresher'] == true || json['is_fresher'] == 1,
+      missingFields: List<String>.from(json['missing_fields'] ?? []),
     );
   }
 }

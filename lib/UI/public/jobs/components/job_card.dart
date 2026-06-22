@@ -17,7 +17,7 @@ class JobCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        context.pushNamed(Routes.jobDetail.name, extra: job);
+        context.pushNamed(Routes.jobDetail.name, extra: job.jobId);
       },
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: w * 0.03, vertical: h * 0.008),
@@ -27,7 +27,7 @@ class JobCard extends StatelessWidget {
           border: Border.all(color: ConstColors.borderColor, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -60,7 +60,7 @@ class JobCard extends StatelessWidget {
                       vertical: h * 0.005,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(job.status).withOpacity(0.1),
+                      color: _getStatusColor(job.status).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(w * 0.02),
                       border: Border.all(
                         color: _getStatusColor(job.status),
@@ -142,7 +142,7 @@ class JobCard extends StatelessWidget {
                   ),
                   SizedBox(width: w * 0.02),
                   Text(
-                    _formatDate(job.postedDate),
+                    _formatPostedDate(job),
                     style: TextStyle(
                       fontSize: w * 0.035,
                       fontWeight: FontWeight.w400,
@@ -216,7 +216,7 @@ class JobCard extends StatelessWidget {
                           vertical: h * 0.006,
                         ),
                         decoration: BoxDecoration(
-                          color: ConstColors.primary.withOpacity(0.1),
+                          color: ConstColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(w * 0.015),
                         ),
                         child: Text(
@@ -267,6 +267,13 @@ class JobCard extends StatelessWidget {
       default:
         return ConstColors.blueColor;
     }
+  }
+
+  String _formatPostedDate(JobModel job) {
+    final date = job.postedDate;
+    if (date != null) return _formatDate(date);
+    if (job.createdAt.isNotEmpty) return 'Posted ${job.createdAt}';
+    return 'Posted recently';
   }
 
   String _formatDate(DateTime date) {

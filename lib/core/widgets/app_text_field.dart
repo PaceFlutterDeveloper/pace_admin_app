@@ -35,6 +35,9 @@ class AppTextField extends StatefulWidget {
   final bool showClearButton;
   final AutovalidateMode? autovalidateMode;
 
+  /// When true, shows a subtle 1px border when idle (used on profile forms).
+  final bool outlined;
+
   const AppTextField({
     super.key,
     this.label,
@@ -65,6 +68,7 @@ class AppTextField extends StatefulWidget {
     this.onSuffixTap,
     this.showClearButton = false,
     this.autovalidateMode,
+    this.outlined = false,
   });
 
   @override
@@ -128,7 +132,8 @@ class _AppTextFieldState extends State<AppTextField> {
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.colorScheme.primary;
     final hasError =
-        widget.errorText != null || (_errorText != null && _errorText!.isNotEmpty);
+        widget.errorText != null ||
+        (_errorText != null && _errorText!.isNotEmpty);
 
     final fillColor = isDark
         ? theme.colorScheme.surfaceContainerHigh
@@ -136,17 +141,33 @@ class _AppTextFieldState extends State<AppTextField> {
 
     final adaptiveErrorColor = isDark ? AppColors.iosRedDark : AppColors.iosRed;
 
+    final idleBorderColor = isDark
+        ? AppColors.iosSystemGray4Dark
+        : AppColors.iosSystemGray3;
+
     Color borderColor;
     if (hasError) {
       borderColor = adaptiveErrorColor;
     } else if (_isFocused) {
       borderColor = primaryColor;
+    } else if (widget.outlined) {
+      borderColor = idleBorderColor;
     } else {
       borderColor = Colors.transparent;
     }
 
-    final grayColor = isDark ? AppColors.iosSystemGrayDark : AppColors.iosSystemGray;
-    final gray3Color = isDark ? AppColors.iosSystemGray3Dark : AppColors.iosSystemGray3;
+    final borderWidth = _isFocused || hasError
+        ? 2.0
+        : widget.outlined
+        ? 1.0
+        : 0.0;
+
+    final grayColor = isDark
+        ? AppColors.iosSystemGrayDark
+        : AppColors.iosSystemGray;
+    final gray3Color = isDark
+        ? AppColors.iosSystemGray3Dark
+        : AppColors.iosSystemGray3;
 
     Widget? suffixWidget;
     if (widget.suffix != null) {
@@ -172,11 +193,7 @@ class _AppTextFieldState extends State<AppTextField> {
     } else if (widget.suffixIcon != null) {
       suffixWidget = GestureDetector(
         onTap: widget.onSuffixTap,
-        child: Icon(
-          widget.suffixIcon,
-          color: grayColor,
-          size: 22,
-        ),
+        child: Icon(widget.suffixIcon, color: grayColor, size: 22),
       );
     }
 
@@ -201,12 +218,11 @@ class _AppTextFieldState extends State<AppTextField> {
           duration: AppDurations.fast,
           curve: AppCurves.standard,
           decoration: BoxDecoration(
-            color: widget.enabled ? fillColor : fillColor.withValues(alpha: 0.5),
+            color: widget.enabled
+                ? fillColor
+                : fillColor.withValues(alpha: 0.5),
             borderRadius: AppRadius.borderRadiusMd,
-            border: Border.all(
-              color: borderColor,
-              width: _isFocused || hasError ? 2 : 0,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
           ),
           child: TextFormField(
             controller: _controller,
@@ -249,12 +265,9 @@ class _AppTextFieldState extends State<AppTextField> {
               prefixIcon: widget.prefixIcon != null || widget.prefix != null
                   ? Padding(
                       padding: const EdgeInsets.only(left: 12, right: 8),
-                      child: widget.prefix ??
-                          Icon(
-                            widget.prefixIcon,
-                            color: grayColor,
-                            size: 22,
-                          ),
+                      child:
+                          widget.prefix ??
+                          Icon(widget.prefixIcon, color: grayColor, size: 22),
                     )
                   : null,
               prefixIconConstraints: const BoxConstraints(

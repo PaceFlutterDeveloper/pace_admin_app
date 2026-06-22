@@ -18,6 +18,8 @@ import 'package:admin_app/UI/home/cubit/home_cubit.dart';
 import 'package:admin_app/UI/home/repository/home_repository.dart';
 import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/UI/notification/repository/notification_repository.dart';
+import 'package:admin_app/UI/public/application/bloc/application_bloc.dart';
+import 'package:admin_app/UI/public/application/services/application_api_service.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
@@ -29,9 +31,10 @@ import 'package:admin_app/UI/students/bloc/student_attendance_bloc.dart';
 import 'package:admin_app/UI/students/cubit/students_cubit.dart';
 import 'package:admin_app/UI/students/repository/students_repository.dart';
 import 'package:admin_app/core/const/db_names.dart';
-import 'package:admin_app/core/services/api_log_interceptor.dart';
+import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/services/authentication_service.dart';
+import 'package:admin_app/core/services/careers_session_expired_handler.dart';
 import 'package:admin_app/features/attendance/data/datasources/attendance_remote_datasource.dart';
 import 'package:admin_app/features/attendance/data/datasources/geofence_local_datasource.dart';
 import 'package:admin_app/features/attendance/data/repositories/attendance_repository_impl.dart';
@@ -42,7 +45,6 @@ import 'package:admin_app/features/attendance/domain/usecases/check_geofence_use
 import 'package:admin_app/features/attendance/domain/usecases/submit_attendance_usecase.dart';
 import 'package:admin_app/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -57,9 +59,6 @@ Future<void> serviceLocators() async {
 
   // Register Dio instance
   final dio = Dio();
-  if (kDebugMode) {
-    dio.interceptors.add(ApiLogInterceptor());
-  }
   locator.registerSingleton<Dio>(dio);
 
   // Register ApiService
@@ -68,6 +67,7 @@ Future<void> serviceLocators() async {
       dio: locator<Dio>(), // Use registered Dio instance
     ),
   );
+
   // Register authuntication Service
   locator.registerLazySingleton<AuthenticationService>(
     () => AuthenticationService(),
@@ -190,6 +190,11 @@ Future<void> serviceLocators() async {
   // Register CareersUserService
   locator.registerLazySingleton<CareersUserService>(() => CareersUserService());
 
+  CareersSessionExpiredHandler.onExpired = () async {
+    await locator<CareersUserService>().clearCurrentCareersUser();
+    AppRoute.router.go(Routes.careers.path);
+  };
+
   // Register AuthApiService
   locator.registerLazySingleton<AuthApiService>(
     () => AuthApiService(apiService: locator<ApiService>()),
@@ -219,6 +224,21 @@ Future<void> serviceLocators() async {
     () => UserBloc(
       authApiService: locator<AuthApiService>(),
       careersUserService: locator<CareersUserService>(),
+    ),
+  );
+
+  // Register ApplicationApiService (careers job applications)
+  locator.registerLazySingleton<ApplicationApiService>(
+    () => ApplicationApiService(apiService: locator<ApiService>()),
+  );
+
+  // Register ApplicationBloc as factory: reads session token at creation time.
+  locator.registerFactory<ApplicationBloc>(
+    () => ApplicationBloc(
+      applicationApiService: locator<ApplicationApiService>(),
+      token: locator<CareersUserService>()
+          .getCurrentCareersUser()
+          ?.sessionToken,
     ),
   );
 }

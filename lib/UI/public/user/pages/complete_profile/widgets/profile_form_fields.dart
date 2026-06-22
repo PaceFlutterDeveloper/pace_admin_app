@@ -6,12 +6,72 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Shared bordered input decoration for profile dropdowns.
+class ProfileFieldDecorations {
+  ProfileFieldDecorations._();
+
+  static InputDecoration bordered(ThemeData theme, {String? errorText}) {
+    final isDark = theme.brightness == Brightness.dark;
+    final fillColor = isDark
+        ? theme.colorScheme.surfaceContainerHigh
+        : AppColors.iosSystemGray6;
+    final idleBorder = isDark
+        ? AppColors.iosSystemGray4Dark
+        : AppColors.iosSystemGray3;
+    final errorColor = isDark ? AppColors.iosRedDark : AppColors.iosRed;
+    final hasError = errorText != null && errorText.isNotEmpty;
+
+    return InputDecoration(
+      filled: true,
+      fillColor: fillColor,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 14,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: AppRadius.borderRadiusMd,
+        borderSide: BorderSide(color: idleBorder, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppRadius.borderRadiusMd,
+        borderSide: BorderSide(
+          color: hasError ? errorColor : idleBorder,
+          width: hasError ? 2 : 1,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppRadius.borderRadiusMd,
+        borderSide: BorderSide(
+          color: hasError ? errorColor : theme.colorScheme.primary,
+          width: 2,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: AppRadius.borderRadiusMd,
+        borderSide: BorderSide(color: errorColor, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: AppRadius.borderRadiusMd,
+        borderSide: BorderSide(color: errorColor, width: 2),
+      ),
+      errorStyle: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: errorColor,
+      ),
+    );
+  }
+}
+
 /// Plain text form field used across the complete-profile tabs.
 class ProfileTextField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final bool isRequired;
   final bool enabled;
+  final bool readOnly;
+  final String? helperText;
   final TextInputType? keyboardType;
   final int? maxLength;
   final int maxLines;
@@ -23,6 +83,8 @@ class ProfileTextField extends StatelessWidget {
     required this.controller,
     this.isRequired = false,
     this.enabled = true,
+    this.readOnly = false,
+    this.helperText,
     this.keyboardType,
     this.maxLength,
     this.maxLines = 1,
@@ -35,6 +97,9 @@ class ProfileTextField extends StatelessWidget {
       label: isRequired ? '$label *' : label,
       controller: controller,
       enabled: enabled,
+      readOnly: readOnly,
+      helperText: helperText,
+      outlined: true,
       keyboardType: keyboardType,
       maxLength: maxLength,
       maxLines: maxLines,
@@ -72,6 +137,7 @@ class ProfileNumericField extends StatelessWidget {
     return AppTextField(
       label: isCurrency ? '$label (AED)' : label,
       controller: controller,
+      outlined: true,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
@@ -135,6 +201,7 @@ class ProfileDateField extends StatelessWidget {
     return AppTextField(
       label: isRequired ? '$label *' : label,
       controller: controller,
+      outlined: true,
       readOnly: true,
       suffixIcon: CupertinoIcons.calendar,
       onTap: () => _pickDate(context),
@@ -170,13 +237,15 @@ class ProfileDropdownField<T> extends StatelessWidget {
     this.hint,
   });
 
+  bool _valueInItems(T? selected) {
+    if (selected == null) return false;
+    return items.any((item) => item.value == selected);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final fillColor = isDark
-        ? theme.colorScheme.surfaceContainerHigh
-        : AppColors.iosSystemGray6;
+    final effectiveValue = _valueInItems(value) ? value : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +261,8 @@ class ProfileDropdownField<T> extends StatelessWidget {
         ),
         AppSpacing.vGapSm,
         DropdownButtonFormField<T>(
-          initialValue: value,
+          key: ValueKey('$label-$effectiveValue-${items.length}'),
+          initialValue: effectiveValue,
           items: items,
           onChanged: onChanged,
           isExpanded: true,
@@ -209,30 +279,7 @@ class ProfileDropdownField<T> extends StatelessWidget {
             fontSize: 16,
             color: theme.colorScheme.onSurface,
           ),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: fillColor,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 14,
-            ),
-            border: const OutlineInputBorder(
-              borderRadius: AppRadius.borderRadiusMd,
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: const OutlineInputBorder(
-              borderRadius: AppRadius.borderRadiusMd,
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: AppRadius.borderRadiusMd,
-              borderSide: BorderSide(
-                color: theme.colorScheme.primary,
-                width: 2,
-              ),
-            ),
-          ),
+          decoration: ProfileFieldDecorations.bordered(theme),
           validator: isRequired
               ? (v) => v == null ? 'Please select $label' : null
               : null,
@@ -258,26 +305,44 @@ class ProfileSwitchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final fillColor = isDark
+        ? theme.colorScheme.surfaceContainerHigh
+        : AppColors.iosSystemGray6;
+    final idleBorder = isDark
+        ? AppColors.iosSystemGray4Dark
+        : AppColors.iosSystemGray3;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface,
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: fillColor,
+        borderRadius: AppRadius.borderRadiusMd,
+        border: Border.all(color: idleBorder, width: 1),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
-        ),
-        Switch.adaptive(
-          value: value,
-          activeThumbColor: theme.colorScheme.primary,
-          onChanged: onChanged,
-        ),
-      ],
+          Switch.adaptive(
+            value: value,
+            activeThumbColor: theme.colorScheme.primary,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
     );
   }
 }

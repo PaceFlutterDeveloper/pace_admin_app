@@ -111,7 +111,7 @@ class _SignupPageState extends State<SignupPage> {
                     'Create your account to get started',
                     style: GoogleFonts.inter(
                       fontSize: 15,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -191,7 +191,7 @@ class _SignupPageState extends State<SignupPage> {
                             ? CupertinoIcons.eye
                             : CupertinoIcons.eye_slash,
                         size: 20,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         setState(() => _obscurePassword = !_obscurePassword);
@@ -221,7 +221,7 @@ class _SignupPageState extends State<SignupPage> {
                             ? CupertinoIcons.eye
                             : CupertinoIcons.eye_slash,
                         size: 20,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         setState(
@@ -257,8 +257,8 @@ class _SignupPageState extends State<SignupPage> {
                           child: RichText(
                             text: TextSpan(
                               style: GoogleFonts.inter(
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.6,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
                                 ),
                                 fontSize: 14,
                               ),
@@ -305,7 +305,7 @@ class _SignupPageState extends State<SignupPage> {
                       Text(
                         'Already have an account? ',
                         style: GoogleFonts.inter(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       GestureDetector(

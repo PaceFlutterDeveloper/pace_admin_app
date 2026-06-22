@@ -252,49 +252,23 @@ class ApplicationCard extends StatelessWidget {
   }
 
   Widget _buildFooter() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Applied on',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                application.application.appliedDate,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
-                ),
-              ),
-            ],
+        Text(
+          'Applied on',
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: Colors.grey[600],
           ),
         ),
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.visibility),
-              onPressed: () {
-                // TODO: Navigate to application details
-              },
-              iconSize: 20.w,
-              color: Colors.grey[600],
-            ),
-            IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: () {
-                // TODO: Download CV
-              },
-              iconSize: 20.w,
-              color: Colors.grey[600],
-            ),
-          ],
+        Text(
+          application.application.appliedDate,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+          ),
         ),
       ],
     );

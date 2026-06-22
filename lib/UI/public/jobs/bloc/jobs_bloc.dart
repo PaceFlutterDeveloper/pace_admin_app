@@ -10,7 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 // Bloc
 class JobsBloc extends Bloc<JobsEvent, JobsState> {
   final JobsApiService _jobsApiService;
-  String? _token;
+  final String? _token;
   List<SchoolModel> _schoolsCache = [];
 
   JobsBloc({required JobsApiService jobsApiService, String? token})
@@ -73,6 +73,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     emit(JobsLoading());
 
     final result = await _jobsApiService.fetchJobs(
+      search: event.searchQuery,
       schoolId: event.schoolId,
       employmentType: event.filterBy,
       page: 1,
@@ -116,9 +117,6 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
           }).toList();
         }
 
-        final totalPages = (response.total / response.limit).ceil();
-        final hasMoreJobs = response.page < totalPages;
-
         emit(
           JobsLoaded(
             jobs: filteredJobs,
@@ -128,8 +126,8 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             locationQuery: event.location ?? '',
             schools: _schoolsCache,
             currentPage: response.page,
-            totalPages: totalPages,
-            hasMoreJobs: hasMoreJobs,
+            totalPages: response.totalPages,
+            hasMoreJobs: response.hasNext,
           ),
         );
       } else if (_hasActiveClientFilters(
@@ -277,6 +275,9 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
         'Calling fetchJobs with: schoolId=${event.schoolId}, search=${currentState.searchQuery}, filterBy=${currentState.filterBy}',
       );
       final result = await _jobsApiService.fetchJobs(
+        search: currentState.searchQuery.isNotEmpty
+            ? currentState.searchQuery
+            : null,
         schoolId: event.schoolId,
         employmentType: currentState.filterBy != 'All'
             ? currentState.filterBy
@@ -293,9 +294,6 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
           search: currentState.searchQuery,
           location: currentState.locationQuery,
         );
-        final totalPages = (response.total / response.limit).ceil();
-        final hasMoreJobs = response.page < totalPages;
-
         emit(
           JobsLoaded(
             jobs: filteredJobs,
@@ -305,8 +303,8 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             locationQuery: currentState.locationQuery,
             schools: _schoolsCache,
             currentPage: response.page,
-            totalPages: totalPages,
-            hasMoreJobs: hasMoreJobs,
+            totalPages: response.totalPages,
+            hasMoreJobs: response.hasNext,
           ),
         );
         // } else {
@@ -328,17 +326,14 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       result.fold((error) => emit(JobsError(error.message)), (response) {
         if (response.data.isNotEmpty) {
           List<JobModel> filteredJobs = response.data;
-          final totalPages = (response.total / response.limit).ceil();
-          final hasMoreJobs = response.page < totalPages;
-
           emit(
             JobsLoaded(
               jobs: filteredJobs,
               selectedSchoolId: event.schoolId,
               schools: _schoolsCache,
               currentPage: response.page,
-              totalPages: totalPages,
-              hasMoreJobs: hasMoreJobs,
+              totalPages: response.totalPages,
+              hasMoreJobs: response.hasNext,
             ),
           );
         } else {
@@ -360,6 +355,9 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       emit(currentState.copyWith(isLoadingMore: true));
 
       final result = await _jobsApiService.fetchJobs(
+        search: currentState.searchQuery.isNotEmpty
+            ? currentState.searchQuery
+            : null,
         schoolId: currentState.selectedSchoolId,
         employmentType: currentState.filterBy != 'All'
             ? currentState.filterBy
@@ -405,15 +403,12 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             }).toList();
           }
 
-          final totalPages = (response.total / response.limit).ceil();
-          final hasMoreJobs = response.page < totalPages;
-
           emit(
             currentState.copyWith(
               jobs: [...currentState.jobs, ...newJobs],
               currentPage: response.page,
-              totalPages: totalPages,
-              hasMoreJobs: hasMoreJobs,
+              totalPages: response.totalPages,
+              hasMoreJobs: response.hasNext,
               isLoadingMore: false,
             ),
           );

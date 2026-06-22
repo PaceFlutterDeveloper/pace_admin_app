@@ -1,7 +1,9 @@
+import 'package:admin_app/UI/public/jobs/components/shared/aed_currency_icon.dart';
 import 'package:admin_app/UI/public/jobs/components/shared/card_decoration.dart';
 import 'package:admin_app/UI/public/jobs/components/shared/info_row.dart';
 import 'package:admin_app/UI/public/jobs/components/shared/section_title.dart';
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
+import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:flutter/material.dart';
 
 class JobInfoCard extends StatelessWidget {
@@ -30,19 +32,32 @@ class JobInfoCard extends StatelessWidget {
             icon: Icons.work,
             width: w,
           ),
-          SizedBox(height: h * 0.01),
-          InfoRow(
-            label: 'Experience Level',
-            value: '${job.salary.minYears}+ years',
-            icon: Icons.trending_up,
-            width: w,
-          ),
+          if ((job.salary?.minYears ?? 0) > 0) ...[
+            SizedBox(height: h * 0.01),
+            InfoRow(
+              label: 'Experience Level',
+              value: '${job.salary!.minYears}+ years',
+              icon: Icons.trending_up,
+              width: w,
+            ),
+          ] else ...[
+            SizedBox(height: h * 0.01),
+            InfoRow(
+              label: 'Experience Level',
+              value: job.experienceLevel,
+              icon: Icons.trending_up,
+              width: w,
+            ),
+          ],
           if (job.salaryRange.isNotEmpty) ...[
             SizedBox(height: h * 0.01),
             InfoRow(
               label: 'Salary',
               value: job.salaryRange,
-              icon: Icons.attach_money,
+              leading: AedCurrencyIcon(
+                color: ConstColors.textLight,
+                size: w * 0.035,
+              ),
               width: w,
             ),
           ],

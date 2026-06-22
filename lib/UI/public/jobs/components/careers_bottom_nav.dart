@@ -42,23 +42,16 @@ class CareersBottomNav extends StatelessWidget {
                 onTap: onTap,
               ),
               _NavItem(
-                icon: CupertinoIcons.bookmark,
-                label: 'My Jobs',
+                icon: CupertinoIcons.doc_text,
+                label: 'Applications',
                 index: 1,
-                currentIndex: currentIndex,
-                onTap: onTap,
-              ),
-              _NavItem(
-                icon: CupertinoIcons.chat_bubble,
-                label: 'Messages',
-                index: 2,
                 currentIndex: currentIndex,
                 onTap: onTap,
               ),
               _NavItem(
                 icon: CupertinoIcons.person,
                 label: 'Profile',
-                index: 3,
+                index: 2,
                 currentIndex: currentIndex,
                 onTap: onTap,
               ),
@@ -91,7 +84,7 @@ class _NavItem extends StatelessWidget {
     final isSelected = currentIndex == index;
     final color = isSelected
         ? theme.colorScheme.primary
-        : theme.colorScheme.onSurface.withOpacity(0.45);
+        : theme.colorScheme.onSurface.withValues(alpha: 0.45);
 
     return Expanded(
       child: Material(

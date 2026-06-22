@@ -2,13 +2,79 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:admin_app/core/error/error_exception.dart';
+import 'package:admin_app/core/services/api_post_logger.dart';
+import 'package:admin_app/core/services/careers_session_expired_handler.dart';
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   final Dio _dio;
 
   ApiService({required Dio dio}) : _dio = dio;
+
+  static const _jsonHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  Options _requestOptions({
+    required String method,
+    required String url,
+    required Map<String, dynamic> headers,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    final tag = _buildApiTag(method, url, queryParameters);
+    return Options(
+      method: method,
+      headers: headers,
+      responseType: ResponseType.plain,
+      extra: {'api_tag': tag},
+    );
+  }
+
+  String _buildApiTag(
+    String method,
+    String url,
+    Map<String, dynamic>? queryParameters,
+  ) {
+    if (queryParameters == null || queryParameters.isEmpty) {
+      return '$method $url';
+    }
+
+    final query = queryParameters.entries
+        .map((entry) => '${entry.key}=${entry.value}')
+        .join('&');
+    return '$method $url?$query';
+  }
+
+  /// Strips PHP warnings / HTML noise that some careers endpoints prepend to JSON.
+  static String extractJsonPayload(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) return trimmed;
+
+    final objectStart = trimmed.indexOf('{');
+    final arrayStart = trimmed.indexOf('[');
+    final start = objectStart == -1
+        ? arrayStart
+        : arrayStart == -1
+            ? objectStart
+            : objectStart < arrayStart
+                ? objectStart
+                : arrayStart;
+    if (start == -1) return trimmed;
+
+    final isObject = trimmed[start] == '{';
+    final end = isObject ? trimmed.lastIndexOf('}') : trimmed.lastIndexOf(']');
+    if (end <= start) return trimmed.substring(start).trim();
+    return trimmed.substring(start, end + 1);
+  }
+
+  String _normalizeResponseBody(dynamic data) {
+    if (data == null) return '';
+    if (data is Map || data is List) return json.encode(data);
+    return extractJsonPayload(data.toString());
+  }
 
   // GET request
   Future<Either<MyError, dynamic>> getRequest(
@@ -18,10 +84,7 @@ class ApiService {
     bool useSessionToken = false,
   }) async {
     try {
-      final headers = <String, dynamic>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
+      final headers = <String, dynamic>{..._jsonHeaders};
       if (token != null) {
         if (useSessionToken) {
           headers['X-Session-Token'] = token;
@@ -29,11 +92,19 @@ class ApiService {
           headers['token'] = token;
         }
       }
-      _dio.options = BaseOptions(headers: headers);
-      final response =
-          await _dio.get(endpoint, queryParameters: queryParameters);
-      return Right(json.encode(response.data));
+      final response = await _dio.get(
+        endpoint,
+        queryParameters: queryParameters,
+        options: _requestOptions(
+          method: 'GET',
+          url: endpoint,
+          headers: headers,
+          queryParameters: queryParameters,
+        ),
+      );
+      return Right(_normalizeResponseBody(response.data));
     } on DioException catch (e) {
+      _handleCareersSessionExpiry(e, useSessionToken: useSessionToken);
       return Left(_handleError(e));
     }
   }
@@ -45,22 +116,59 @@ class ApiService {
     String authorization = '',
     bool useSessionToken = false,
   }) async {
-    try {
-      final headers = <String, dynamic>{
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-      if (authorization.isNotEmpty) {
-        if (useSessionToken) {
-          headers['X-Session-Token'] = authorization;
-        } else {
-          headers['token'] = authorization;
-        }
+    final headers = <String, dynamic>{'Accept': 'application/json'};
+    if (body is! FormData) {
+      headers.addAll(_jsonHeaders);
+    }
+    if (authorization.isNotEmpty) {
+      if (useSessionToken) {
+        headers['X-Session-Token'] = authorization;
+      } else {
+        headers['token'] = authorization;
       }
-      _dio.options = BaseOptions(headers: headers);
-      final response = await _dio.post(url, data: body);
-      return Right(json.encode(response.data));
+    }
+
+    final requestId = ApiPostLogger.logRequest(
+      url: url,
+      headers: headers,
+      body: body,
+    );
+    final stopwatch = kDebugMode ? (Stopwatch()..start()) : null;
+
+    try {
+      final response = await _dio.post(
+        url,
+        data: body,
+        options: _requestOptions(
+          method: 'POST',
+          url: url,
+          headers: headers,
+        ),
+      );
+
+      if (kDebugMode) {
+        ApiPostLogger.logResponse(
+          requestId: requestId,
+          url: url,
+          statusCode: response.statusCode,
+          body: response.data,
+          elapsedMs: stopwatch!.elapsedMilliseconds,
+          responseHeaders: response.headers.map,
+        );
+      }
+
+      return Right(_normalizeResponseBody(response.data));
     } on DioException catch (e) {
+      if (kDebugMode) {
+        ApiPostLogger.logError(
+          requestId: requestId,
+          url: url,
+          error: e,
+          elapsedMs: stopwatch?.elapsedMilliseconds ?? 0,
+          requestBody: body,
+        );
+      }
+      _handleCareersSessionExpiry(e, useSessionToken: useSessionToken);
       return Left(_handleError(e));
     } catch (e) {
       log('postAPI non-Dio error: $e (${e.runtimeType})');
@@ -78,15 +186,19 @@ class ApiService {
     dynamic data,
   ) async {
     try {
-      _dio.options = BaseOptions(
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'token': token
-        },
+      final response = await _dio.put(
+        endpoint,
+        data: data,
+        options: _requestOptions(
+          method: 'PUT',
+          url: endpoint,
+          headers: {
+            ..._jsonHeaders,
+            'token': token,
+          },
+        ),
       );
-      final response = await _dio.put(endpoint, data: data);
-      return Right(json.encode(response.data));
+      return Right(_normalizeResponseBody(response.data));
     } on DioException catch (e) {
       return Left(_handleError(e));
     }
@@ -98,14 +210,18 @@ class ApiService {
     String? token,
   ) async {
     try {
-      _dio.options = BaseOptions(
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'token': token
-        },
+      final response = await _dio.delete(
+        endpoint,
+        options: _requestOptions(
+          method: 'DELETE',
+          url: endpoint,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'token': token,
+          },
+        ),
       );
-      final response = await _dio.delete(endpoint);
       return Right(response.data);
     } on DioException catch (e) {
       return Left(_handleError(e));
@@ -191,6 +307,15 @@ class ApiService {
     }
   }
 
+  void _handleCareersSessionExpiry(
+    DioException error, {
+    required bool useSessionToken,
+  }) {
+    if (!useSessionToken) return;
+    if (!CareersSessionExpiredHandler.isExpiredSessionError(error)) return;
+    CareersSessionExpiredHandler.handleExpired();
+  }
+
   // Error handling method
   MyError _handleError(DioException error) {
     String? rawErrorMessage;
@@ -206,20 +331,21 @@ class ApiService {
               responseData['detail'] ??
               responseData.toString();
         } else if (responseData is String) {
+          final jsonPayload = extractJsonPayload(responseData);
           // Check if it's HTML
-          if (responseData.contains('<') && responseData.contains('>')) {
+          if (jsonPayload.contains('<') && jsonPayload.contains('>')) {
             rawErrorMessage = responseData;
           } else {
             // Try to parse as JSON
             try {
-              final decoded = jsonDecode(responseData);
+              final decoded = jsonDecode(jsonPayload);
               if (decoded is Map<String, dynamic>) {
                 rawErrorMessage = decoded['message'] ??
                     decoded['error'] ??
                     decoded['detail'] ??
                     decoded.toString();
               } else {
-                rawErrorMessage = responseData;
+                rawErrorMessage = jsonPayload;
               }
             } catch (e) {
               // Not JSON, use as-is
@@ -234,8 +360,9 @@ class ApiService {
       }
     }
 
-    // ✅ Fallback message
-    rawErrorMessage ??= error.message ?? 'Unknown Error';
+    // ✅ Fallback: Dio message, then the underlying transport error (e.g. SocketException)
+    rawErrorMessage ??=
+        error.message ?? error.error?.toString() ?? 'Unknown Error';
 
     // ✅ Map DioExceptionType to custom error
     switch (error.type) {
@@ -282,6 +409,14 @@ class ApiService {
 
       case DioExceptionType.unknown:
         // Sometimes Dio throws unknown for socket or parsing issues
+        if (rawErrorMessage.toLowerCase().contains('formatexception')) {
+          final userFriendlyMessage =
+              _getUserFriendlyMessage(AppError.internalServerError, rawErrorMessage);
+          return MyError(
+            key: AppError.internalServerError,
+            message: userFriendlyMessage,
+          );
+        }
         if (rawErrorMessage.toLowerCase().contains('socket') ||
             rawErrorMessage.toLowerCase().contains('network') ||
             rawErrorMessage.toLowerCase().contains('connection')) {

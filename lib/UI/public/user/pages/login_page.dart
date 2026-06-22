@@ -89,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
                     'Sign in to continue your job search',
                     style: GoogleFonts.inter(
                       fontSize: 15,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -125,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                             ? CupertinoIcons.eye
                             : CupertinoIcons.eye_slash,
                         size: 20,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         setState(() => _obscurePassword = !_obscurePassword);
@@ -172,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         "Don't have an account? ",
                         style: GoogleFonts.inter(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       GestureDetector(
@@ -199,7 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       'Continue as Guest',
                       style: GoogleFonts.inter(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         fontSize: 15,
                       ),
                     ),

@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:admin_app/UI/public/user/components/careers_profile_image.dart';
+import 'package:admin_app/UI/public/user/utils/careers_avatar_cache.dart';
 import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +13,7 @@ class ProfileHeaderCard extends StatelessWidget {
   final String name;
   final String email;
   final String? avatarUrl;
+  final File? localAvatarFile;
 
   /// API-driven completion state; null while unknown.
   final bool? isComplete;
@@ -19,6 +24,7 @@ class ProfileHeaderCard extends StatelessWidget {
     required this.name,
     required this.email,
     this.avatarUrl,
+    this.localAvatarFile,
     this.isComplete,
     this.completionPercentage,
   });
@@ -28,7 +34,11 @@ class ProfileHeaderCard extends StatelessWidget {
     return ProfileCard(
       child: Column(
         children: [
-          _buildAvatar(context),
+          CareersProfileImage(
+            remoteSource: avatarUrl,
+            localFile: localAvatarFile ?? CareersAvatarCache.getCachedFile(),
+            size: AppSizes.avatarXl,
+          ),
           AppSpacing.vGapMd,
           _buildUserInfo(context),
           if (isComplete != null) ...[
@@ -37,25 +47,6 @@ class ProfileHeaderCard extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildAvatar(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return CircleAvatar(
-      radius: AppSizes.avatarXl / 2,
-      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-      backgroundImage: (avatarUrl?.isNotEmpty ?? false)
-          ? NetworkImage(avatarUrl!)
-          : null,
-      child: (avatarUrl?.isNotEmpty ?? false)
-          ? null
-          : Icon(
-              CupertinoIcons.person_fill,
-              size: AppSizes.iconXl,
-              color: theme.colorScheme.primary,
-            ),
     );
   }
 

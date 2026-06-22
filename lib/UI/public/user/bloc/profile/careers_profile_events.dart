@@ -23,14 +23,21 @@ class LoadProfileEvent extends CareersProfileEvent {
   const LoadProfileEvent();
 }
 
-/// Saves the basic info form (`update-profile`).
+/// Saves the basic info form (`update-profile`), optionally uploading
+/// picked avatar/CV files in the same flow.
 class SaveBasicInfoEvent extends CareersProfileEvent {
   final Map<String, dynamic> profileData;
+  final String? avatarFilePath;
+  final String? cvFilePath;
 
-  const SaveBasicInfoEvent({required this.profileData});
+  const SaveBasicInfoEvent({
+    required this.profileData,
+    this.avatarFilePath,
+    this.cvFilePath,
+  });
 
   @override
-  List<Object?> get props => [profileData];
+  List<Object?> get props => [profileData, avatarFilePath, cvFilePath];
 }
 
 /// Loads one of the list sections (education, experience, ...).
@@ -98,7 +105,7 @@ class LoadCountriesEvent extends CareersProfileEvent {
   const LoadCountriesEvent();
 }
 
-/// Uploads avatar and/or CV files (multipart).
+/// Uploads avatar and/or CV files as base64 JSON on update-profile.
 class UploadProfileFilesEvent extends CareersProfileEvent {
   final String? avatarFilePath;
   final String? cvFilePath;

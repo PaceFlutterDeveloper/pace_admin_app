@@ -184,7 +184,12 @@ class ProfileFilesUploading extends CareersProfileState {
 }
 
 class ProfileFilesUploaded extends CareersProfileState {
-  const ProfileFilesUploaded();
+  final Map<String, dynamic>? uploadData;
+
+  const ProfileFilesUploaded({this.uploadData});
+
+  @override
+  List<Object?> get props => [uploadData];
 }
 
 class ProfileFilesUploadError extends CareersProfileState {
