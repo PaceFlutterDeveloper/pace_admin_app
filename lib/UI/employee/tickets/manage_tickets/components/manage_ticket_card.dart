@@ -1,116 +1,108 @@
-// lib/UI/employee/tickets/widgets/ticket_card.dart
-
-import 'package:admin_app/UI/employee/tickets/manage_tickets/components/build_info_chip.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/components/name_tile.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/models/manage_ticket_model.dart';
+import 'package:admin_app/UI/employee/tickets/tickets/components/ticket_priority_badge.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
+import 'package:admin_app/core/widgets/app_avatar.dart';
+import 'package:admin_app/core/widgets/app_badge.dart';
+import 'package:admin_app/core/widgets/app_card.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-class ManageTicketCard extends StatefulWidget {
+class ManageTicketCard extends StatelessWidget {
   final ManageTicketModel ticket;
-  const ManageTicketCard({Key? key, required this.ticket}) : super(key: key);
+  final VoidCallback? onTicketUpdated;
 
-  @override
-  _TicketCardState createState() => _TicketCardState();
-}
+  const ManageTicketCard({
+    super.key,
+    required this.ticket,
+    this.onTicketUpdated,
+  });
 
-class _TicketCardState extends State<ManageTicketCard> {
   @override
   Widget build(BuildContext context) {
-    final ticket = widget.ticket;
+    final theme = Theme.of(context);
+    final colors = context.appColors;
+    final formattedDate =
+        DateFormat('MMM d, yyyy · h:mm a').format(DateTime.parse(ticket.createdAt));
 
-    // parse & format date
-    final dt = DateTime.parse(ticket.createdAt);
-    final formattedDate = DateFormat('MMM d, yyyy, h:mm a').format(dt);
-
-    return GestureDetector(
-      onTap: () {
-        context.pushNamed(
+    return AppCard(
+      onTap: () async {
+        final updated = await context.pushNamed<bool>(
           Routes.manageTicketDetailPage.name,
           extra: {
-            'ticketId': widget.ticket.id.toString(),
+            'ticketId': ticket.id.toString(),
             'isPushNotification': false,
           },
         );
+
+        if (updated == true) {
+          onTicketUpdated?.call();
+        }
       },
-      child: Container(
-        decoration: ShapeDecoration(
-          color: const Color(0xFFF9FAFB),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ─────────────────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      NameTile(
-                        fullName: ticket.requesterName,
-                        time: formattedDate,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        '#${ticket.id} . ${ticket.category}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ],
+              AppAvatar(
+                name: ticket.requesterName,
+                size: AppAvatarSize.sm,
               ),
-
-              const SizedBox(height: 12),
-
-              // ── Category & Location Chips ──────────────────────
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  Chip(
-                    avatar: Icon(Icons.flag, size: 16, color: Colors.white),
-                    label: Text(ticket.priorityName,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                        )),
-                    backgroundColor: ticket.priorityName == "Medium"
-                        ? Colors.red.shade300
-                        : ticket.priorityName == "High"
-                            ? Colors.red
-                            : Colors.red.shade100,
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.all(4),
-                    side: BorderSide(
-                      color: ticket.priorityName == "Medium"
-                          ? Colors.red.shade400
-                          : ticket.priorityName == "High"
-                              ? Colors.red
-                              : Colors.red.shade100,
+              AppSpacing.hGapSm,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ticket.requesterName,
+                      style: theme.textTheme.titleMedium,
                     ),
-                  ),
-                  BuildInfoChip(
-                      icon: Icons.pin_drop, label: ticket.locationName),
-                  BuildInfoChip(
-                      icon: Icons.location_city_rounded,
-                      label: ticket.blockName),
-                ],
+                    AppSpacing.vGapXs,
+                    Text(
+                      formattedDate,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 16,
+                color: colors.textTertiary,
               ),
             ],
           ),
-        ),
+          AppSpacing.vGapMd,
+          Text(
+            '#${ticket.id} · ${ticket.category}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          AppSpacing.vGapSm,
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              TicketPriorityBadge(priorityName: ticket.priorityName),
+              AppBadge.neutral(
+                label: ticket.locationName,
+                icon: CupertinoIcons.location_solid,
+                size: AppBadgeSize.small,
+              ),
+              AppBadge.neutral(
+                label: ticket.blockName,
+                icon: CupertinoIcons.building_2_fill,
+                size: AppBadgeSize.small,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

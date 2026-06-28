@@ -1,27 +1,31 @@
-import 'dart:io';
-
 import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_bloc.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_event.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_state.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/components/custom_ticket_tabBar.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/components/manage_ticket_card.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/components/non_collapsed_header.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/models/manage_ticket_model.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/UI/employee/tickets/manage_tickets/components/manage_tickets_summary_card.dart';
+import 'package:admin_app/UI/employee/tickets/manage_tickets/models/manage_ticket_response_model.dart';
+import 'package:admin_app/UI/employee/tickets/manage_tickets/utils/manage_ticket_search_filter.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/core/routes/shell_route_observer.dart';
+import 'package:admin_app/core/widgets/app_app_bar.dart';
+import 'package:admin_app/core/widgets/app_empty_state.dart';
+import 'package:admin_app/core/widgets/app_refresh_indicator.dart';
+import 'package:admin_app/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ManageTicketListPage extends StatefulWidget {
-  const ManageTicketListPage({Key? key}) : super(key: key);
+  const ManageTicketListPage({super.key});
 
   @override
   State<ManageTicketListPage> createState() => _ManageTicketListPageState();
 }
 
 class _ManageTicketListPageState extends State<ManageTicketListPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   late final TabController _tabController;
+  late final List<TextEditingController> _searchControllers;
   int _currentTabIndex = 0;
 
   int _lastAll = 0;
@@ -31,74 +35,185 @@ class _ManageTicketListPageState extends State<ManageTicketListPage>
   @override
   void initState() {
     super.initState();
+    _searchControllers = List.generate(3, (_) => TextEditingController());
     _tabController = TabController(length: 3, vsync: this)
-      ..addListener(() {
-        if (_tabController.indexIsChanging) {
-          setState(() {
-            _currentTabIndex = _tabController.index;
-          });
-        }
-      });
+      ..addListener(_onTabChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fetchForTab(_currentTabIndex, refresh: false);
+    });
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    final index = _tabController.index;
+    if (index != _currentTabIndex) {
+      setState(() => _currentTabIndex = index);
+      _fetchForTab(index, refresh: false);
+    }
+  }
+
+  void _fetchForTab(int index, {required bool refresh}) {
+    final bloc = context.read<ManageTicketListBloc>();
+    final event = _eventForTab(index);
+    bloc.add(
+      refresh
+          ? RefreshManageTicketsEvent(
+              action: event.action,
+              endStat: event.endStat,
+            )
+          : event,
+    );
+  }
+
+  FetchTicketListEvent _eventForTab(int index) {
+    switch (index) {
+      case 1:
+        return const FetchTicketListEvent(action: 'assigned', endStat: 0);
+      case 2:
+        return const FetchTicketListEvent(action: 'assigned', endStat: 1);
+      default:
+        return const FetchTicketListEvent();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<void>) {
+      shellRouteObserver.unsubscribe(this);
+      shellRouteObserver.subscribe(this, route);
+    }
   }
 
   @override
   void dispose() {
+    shellRouteObserver.unsubscribe(this);
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    for (final controller in _searchControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   @override
+  void didPopNext() {
+    if (!mounted) return;
+    _fetchForTab(_currentTabIndex, refresh: true);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: ConstColors.backgroundColor,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.pageBg,
+      appBar: const AppAppBar(title: 'Manage Tickets'),
       body: BlocBuilder<ManageTicketListBloc, ManageTicketListState>(
         builder: (context, state) {
-          int all = _lastAll;
-          int inProgress = _lastInProgress;
-          int finished = _lastFinished;
-
           if (state is ManageTicketListLoaded &&
               state.ticketResponseModel.counts != null) {
-            all = state.ticketResponseModel.counts!.unassigned;
-            inProgress = state.ticketResponseModel.counts!.assignedActive;
-            finished = state.ticketResponseModel.counts!.assignedClosed;
-
-            _lastAll = all;
-            _lastInProgress = inProgress;
-            _lastFinished = finished;
+            _lastAll = state.ticketResponseModel.counts!.unassigned;
+            _lastInProgress =
+                state.ticketResponseModel.counts!.assignedActive;
+            _lastFinished = state.ticketResponseModel.counts!.assignedClosed;
           }
 
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: Platform.isIOS ? 260.h : 230.h,
-                child: NonCollapsedHeader(
-                  all: all,
-                  finished: finished,
-                  inProgress: inProgress,
-                  topPadding: MediaQuery.of(context).padding.top,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: ManageTicketsSummaryCard(
+                  toDoCount: _lastAll,
+                  inProgressCount: _lastInProgress,
+                  doneCount: _lastFinished,
                 ),
               ),
-              SizedBox(
-                height: 54.h,
-                child: CustomTicketTabBar(
-                  selectedIndex: _currentTabIndex,
-                  allCount: all,
-                  inProgressCount: inProgress,
-                  finishCount: finished,
-                  onTabChanged: (newIndex) {
-                    _tabController.animateTo(newIndex);
-                  },
+              TabBar(
+                controller: _tabController,
+                onTap: (index) {
+                  if (index != _currentTabIndex) {
+                    setState(() => _currentTabIndex = index);
+                    _fetchForTab(index, refresh: false);
+                  }
+                },
+                labelColor: theme.colorScheme.primary,
+                unselectedLabelColor:
+                    theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                indicatorColor: theme.colorScheme.primary,
+                indicatorWeight: 2.5,
+                dividerColor:
+                    isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                labelStyle: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: [
+                  Tab(text: 'To Do ($_lastAll)'),
+                  Tab(text: 'In Progress ($_lastInProgress)'),
+                  Tab(text: 'Done ($_lastFinished)'),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: AppSearchField(
+                  key: ValueKey('manage_tickets_search_$_currentTabIndex'),
+                  controller: _searchControllers[_currentTabIndex],
+                  hint:
+                      'Search by ticket #, date, person, or priority',
+                  onChanged: (_) => setState(() {}),
                 ),
               ),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
                   physics: const NeverScrollableScrollPhysics(),
-                  children: const [
-                    _TicketsTab(myTickets: false),
-                    _TicketsTab(myTickets: true, isEnd: 0),
-                    _TicketsTab(myTickets: true, isEnd: 1),
+                  children: [
+                    _TicketsTab(
+                      myTickets: false,
+                      searchQuery: _searchControllers[0].text,
+                      onClearSearch: () {
+                        _searchControllers[0].clear();
+                        setState(() {});
+                      },
+                    ),
+                    _TicketsTab(
+                      myTickets: true,
+                      isEnd: 0,
+                      searchQuery: _searchControllers[1].text,
+                      onClearSearch: () {
+                        _searchControllers[1].clear();
+                        setState(() {});
+                      },
+                    ),
+                    _TicketsTab(
+                      myTickets: true,
+                      isEnd: 1,
+                      searchQuery: _searchControllers[2].text,
+                      onClearSearch: () {
+                        _searchControllers[2].clear();
+                        setState(() {});
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -113,53 +228,142 @@ class _ManageTicketListPageState extends State<ManageTicketListPage>
 class _TicketsTab extends StatefulWidget {
   final bool myTickets;
   final int? isEnd;
+  final String searchQuery;
+  final VoidCallback? onClearSearch;
 
-  const _TicketsTab({Key? key, required this.myTickets, this.isEnd})
-      : super(key: key);
+  const _TicketsTab({
+    required this.myTickets,
+    this.isEnd,
+    this.searchQuery = '',
+    this.onClearSearch,
+  });
 
   @override
   State<_TicketsTab> createState() => _TicketsTabState();
 }
 
-class _TicketsTabState extends State<_TicketsTab> {
-  bool _initialized = false;
-
+class _TicketsTabState extends State<_TicketsTab>
+    with AutomaticKeepAliveClientMixin {
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      context.read<ManageTicketListBloc>().add(
-            FetchTicketListEvent(
-              action: widget.myTickets ? "assigned" : null,
-              endStat: widget.myTickets ? widget.isEnd : null,
-            ),
-          );
-      _initialized = true;
-    }
-  }
+  bool get wantKeepAlive => true;
+
+  String get _tabKey => ManageTicketListBloc.tabKey(
+        action: widget.myTickets ? 'assigned' : null,
+        endStat: widget.isEnd,
+      );
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     return BlocBuilder<ManageTicketListBloc, ManageTicketListState>(
       builder: (context, state) {
-        if (state is ManageTicketListLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is ManageTicketListLoaded) {
-          final List<ManageTicketModel> tickets =
-              state.ticketResponseModel.data ?? [];
-          if (tickets.isEmpty) {
-            return const Center(child: Text('No tickets found'));
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: tickets.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, idx) => ManageTicketCard(ticket: tickets[idx]),
-          );
-        } else if (state is ManageTicketListError) {
-          return Center(child: Text(state.message));
+        final bloc = context.read<ManageTicketListBloc>();
+        final cached = bloc.cachedFor(
+          action: widget.myTickets ? 'assigned' : null,
+          endStat: widget.isEnd,
+        );
+
+        final isLoadingThisTab =
+            state is ManageTicketListLoading && state.tabKey == _tabKey;
+        final isLoadedThisTab = state is ManageTicketListLoaded &&
+            ManageTicketListBloc.tabKey(
+                  action: state.action,
+                  endStat: state.endStat,
+                ) ==
+                _tabKey;
+
+        ManageTicketResponseModel? response;
+        if (isLoadedThisTab) {
+          response = state.ticketResponseModel;
+        } else {
+          response = cached;
         }
-        return const SizedBox.shrink();
+
+        if (isLoadingThisTab && response == null) {
+          return const Center(child: AppLoadingIndicator());
+        }
+
+        if (state is ManageTicketListError && response == null) {
+          return Center(
+            child: Text(
+              state.message,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          );
+        }
+
+        if (response == null) {
+          return const SizedBox.shrink();
+        }
+
+        final tickets = response.data ?? [];
+        final filteredTickets = ManageTicketSearchFilter.apply(
+          tickets,
+          widget.searchQuery,
+        );
+        final hasActiveSearch = widget.searchQuery.trim().isNotEmpty;
+
+        return AppRefreshIndicator(
+          onRefresh: () async {
+            bloc.add(
+              RefreshManageTicketsEvent(
+                action: widget.myTickets ? 'assigned' : null,
+                endStat: widget.isEnd,
+              ),
+            );
+            await bloc.stream.firstWhere(
+              (s) =>
+                  s is ManageTicketListLoaded ||
+                  s is ManageTicketListError,
+            );
+          },
+          child: tickets.isEmpty
+              ? CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: AppEmptyState.noData(
+                        title: 'No tickets found',
+                        subtitle:
+                            'There are no tickets in this category yet.',
+                      ),
+                    ),
+                  ],
+                )
+              : filteredTickets.isEmpty
+                  ? CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: AppEmptyState.noResults(
+                            onAction: hasActiveSearch
+                                ? widget.onClearSearch
+                                : null,
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      itemCount: filteredTickets.length,
+                      separatorBuilder: (_, __) => AppSpacing.vGapSm,
+                      itemBuilder: (_, idx) => ManageTicketCard(
+                        ticket: filteredTickets[idx],
+                        onTicketUpdated: () {
+                          bloc.add(
+                            RefreshManageTicketsEvent(
+                              action: widget.myTickets ? 'assigned' : null,
+                              endStat: widget.isEnd,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+        );
       },
     );
   }

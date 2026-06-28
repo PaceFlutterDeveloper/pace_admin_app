@@ -3,6 +3,8 @@
 import 'dart:io';
 
 import 'package:admin_app/UI/employee/tickets/tickets/cubit/tickets_state.dart';
+import 'package:admin_app/UI/employee/tickets/tickets/models/form_config_model.dart';
+import 'package:admin_app/UI/employee/tickets/tickets/models/ticket_response_model.dart';
 import 'package:admin_app/UI/employee/tickets/tickets/repository/ticket_repository.dart';
 import 'package:admin_app/core/utils/debug_logger.dart';
 import 'package:admin_app/dependancy_injection.dart';
@@ -11,7 +13,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class TicketsCubit extends Cubit<TicketsState> {
   final TicketRepository _ticketRepo = locator<TicketRepository>();
 
+  TicketResponseModel? _cachedTickets;
+  FormConfigModel? _cachedFormConfig;
+
   TicketsCubit() : super(TicketsLoading());
+
+  TicketResponseModel? get cachedTickets => _cachedTickets;
+  FormConfigModel? get cachedFormConfig => _cachedFormConfig;
+
+  /// Re-emits the last successful list state after detail/create flows.
+  void restoreListState() {
+    if (_cachedTickets != null) {
+      emit(TicketsLoadingSuccess(tickets: _cachedTickets!));
+    } else {
+      fetchTickets();
+    }
+  }
 
   /// 1️⃣ Fetch all (or “my”) tickets
   Future<void> fetchTickets() async {
@@ -29,6 +46,7 @@ class TicketsCubit extends Cubit<TicketsState> {
       (resp) {
         DebugLogger.log(
             '✅ [CUBIT] Ticket fetch success. Found ${resp.data?.length ?? 0} tickets');
+        _cachedTickets = resp;
         emit(TicketsLoadingSuccess(tickets: resp));
         DebugLogger.log('🔄 [CUBIT] State changed to: TicketsLoadingSuccess');
       },
@@ -52,7 +70,10 @@ class TicketsCubit extends Cubit<TicketsState> {
     final result = await _ticketRepo.getTcketFormConfig();
     result.fold(
       (error) => emit(TicketsConfigFetchError(message: error.message)),
-      (config) => emit(TicketsConfigFetchSuccess(formConfigModel: config)),
+      (config) {
+        _cachedFormConfig = config;
+        emit(TicketsConfigFetchSuccess(formConfigModel: config));
+      },
     );
   }
 
@@ -88,9 +109,6 @@ class TicketsCubit extends Cubit<TicketsState> {
           DebugLogger.log('✅ [CUBIT] Ticket created successfully! ID: ${resp}');
           emit(TicketAddSuccess(result: resp));
           DebugLogger.log('🔄 [CUBIT] State changed to: TicketAddSuccess');
-
-          DebugLogger.log('🔄 [CUBIT] Auto-refreshing ticket list...');
-          fetchTickets(); // This should trigger the refresh
         } else {
           DebugLogger.log('⚠️ [CUBIT] Ticket creation failed: ${resp.message}');
           emit(TicketAddError(message: resp.message));

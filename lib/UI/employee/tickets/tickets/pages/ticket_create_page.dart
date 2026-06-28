@@ -2,11 +2,14 @@
 
 import 'dart:io';
 
+import 'package:admin_app/UI/components/searchable_dropdown_form_field.dart';
 import 'package:admin_app/UI/employee/tickets/tickets/cubit/tickets_cubit.dart';
 import 'package:admin_app/UI/employee/tickets/tickets/cubit/tickets_state.dart';
 import 'package:admin_app/UI/employee/tickets/tickets/models/form_config_model.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/utils/alert_helper.dart';
+import 'package:admin_app/core/widgets/app_app_bar.dart';
+import 'package:admin_app/core/widgets/app_refresh_indicator.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,6 +36,7 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
 
   List<Category> _filteredCategories = [];
   List<Location> _filteredLocations = [];
+  FormConfigModel? _formConfig;
 
   @override
   void initState() {
@@ -46,8 +50,7 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
     BuildContext context,
   ) {
     return Scaffold(
-      backgroundColor: ConstColors.backgroundColor,
-      appBar: AppBar(title: const Text('Raise Ticket')),
+      appBar: const AppAppBar(title: 'Raise Ticket'),
       body: BlocConsumer<TicketsCubit, TicketsState>(
         listener: (context, state) {
           // if (state is TicketAddSuccess) {
@@ -60,9 +63,7 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
               context,
               message: state.result.message,
               onPressed: () {
-                context.read<TicketsCubit>().fetchTickets();
-
-                context.pop();
+                if (context.mounted) context.pop(true);
               },
             );
           }
@@ -78,15 +79,23 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
           // 2) Config error
           if (state is TicketsConfigFetchError) {
             return Center(
-              child: Text(state.message,
-                  style: const TextStyle(color: Colors.red)),
+              child: Text(
+                state.message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: context.appColors.error,
+                    ),
+              ),
             );
           }
-          // 3) Config success → show form
           if (state is TicketsConfigFetchSuccess) {
-            final config = state.formConfigModel;
+            _formConfig = state.formConfigModel;
+          }
+
+          // 3) Config success (or submit in progress) → show form
+          if (_formConfig != null) {
+            final config = _formConfig!;
             return Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Form(
                 key: _formKey,
                 child: ListView(
@@ -161,8 +170,14 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                     const SizedBox(height: 12),
 
                     // ── Location ─────────────────────────────────
-                    DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(labelText: 'Location'),
+                    SearchableDropdownFormField<int>(
+                      key: ValueKey(_selectedBlockId),
+                      decoration: InputDecoration(
+                        labelText: 'Location',
+                        hintText: _selectedBlockId == null
+                            ? 'Select a block first'
+                            : 'Search location',
+                      ),
                       items: _filteredLocations.map((l) {
                         return DropdownMenuItem(
                           value: int.parse(l.locationId),
@@ -170,10 +185,14 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                         );
                       }).toList(),
                       value: _selectedLocationId,
-                      onChanged: (val) =>
-                          setState(() => _selectedLocationId = val),
+                      onChanged: _selectedBlockId == null
+                          ? null
+                          : (val) =>
+                              setState(() => _selectedLocationId = val),
                       validator: (v) =>
                           v == null ? 'Please select a location' : null,
+                      searchHintText: 'Search location...',
+                      emptySearchText: 'No locations found',
                     ),
 
                     const SizedBox(height: 12),
@@ -202,7 +221,6 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                       maxLines: 4,
                       decoration: const InputDecoration(
                         labelText: 'Description',
-                        border: OutlineInputBorder(),
                       ),
                       validator: (v) => (v == null || v.isEmpty)
                           ? 'Enter a description'
@@ -215,6 +233,9 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                     Row(
                       children: [
                         ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, AppSizes.buttonHeight),
+                          ),
                           onPressed: _pickAttachment,
                           icon: const Icon(Icons.attach_file),
                           label: Text(_attachment == null
@@ -240,23 +261,25 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
       ),
 
       // ── Submit button / loading ──────────────────────────
-      bottomNavigationBar: BlocBuilder<TicketsCubit, TicketsState>(
-        builder: (context, state) {
-          if (state is TicketAddLoading) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: _submitForm,
-              child: const Text('Submit Ticket'),
+      bottomNavigationBar: _formConfig == null
+          ? null
+          : BlocBuilder<TicketsCubit, TicketsState>(
+              builder: (context, state) {
+                if (state is TicketAddLoading) {
+                  return const Padding(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    child: Center(child: AppLoadingIndicator()),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    child: const Text('Submit Ticket'),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 

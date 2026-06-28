@@ -1,9 +1,11 @@
+import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 
 class BuildInfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? iconColor;
+
   const BuildInfoChip({
     super.key,
     required this.icon,
@@ -13,13 +15,22 @@ class BuildInfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = context.appColors;
+
     return Chip(
-      avatar: Icon(icon, size: 16, color: iconColor ?? Colors.black54),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      backgroundColor: Colors.white,
+      avatar: Icon(
+        icon,
+        size: 16,
+        color: iconColor ?? colors.textSecondary,
+      ),
+      label: Text(
+        label,
+        style: theme.textTheme.labelSmall,
+      ),
+      backgroundColor: colors.surfaceContainer,
       visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.all(4),
-      side: BorderSide(color: Colors.white),
+      side: BorderSide(color: colors.border),
     );
   }
 }

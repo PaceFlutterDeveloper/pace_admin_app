@@ -11,7 +11,14 @@ abstract class ManageTicketListState extends Equatable {
 
 class ManageTicketListInitial extends ManageTicketListState {}
 
-class ManageTicketListLoading extends ManageTicketListState {}
+class ManageTicketListLoading extends ManageTicketListState {
+  final String? tabKey;
+
+  const ManageTicketListLoading({this.tabKey});
+
+  @override
+  List<Object?> get props => [tabKey];
+}
 
 class ManageTicketListLoaded extends ManageTicketListState {
   final ManageTicketResponseModel ticketResponseModel;

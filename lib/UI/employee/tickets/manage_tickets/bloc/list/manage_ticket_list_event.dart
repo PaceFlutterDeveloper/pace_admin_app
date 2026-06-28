@@ -16,3 +16,13 @@ class FetchTicketListEvent extends ManageTicketListEvent {
   @override
   List<Object?> get props => [action, endStat];
 }
+
+class RefreshManageTicketsEvent extends ManageTicketListEvent {
+  final String? action;
+  final int? endStat;
+
+  const RefreshManageTicketsEvent({this.action, this.endStat});
+
+  @override
+  List<Object?> get props => [action, endStat];
+}

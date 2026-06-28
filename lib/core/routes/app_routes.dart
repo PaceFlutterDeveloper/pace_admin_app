@@ -8,8 +8,9 @@ import 'package:admin_app/UI/class_attendance/page/grade_attendance_page.dart';
 import 'package:admin_app/UI/components/scaffold_with_navbar.dart';
 import 'package:admin_app/UI/employee/attendance/page/emp_attendance_page.dart';
 import 'package:admin_app/UI/employee/profile/page/profile_page.dart';
+import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/detail/manage_ticket_detail_bloc.dart';
+import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/detail/manage_ticket_detail_event.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_bloc.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_event.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/pages/manage_ticket_detail_page.dart';
 import 'package:admin_app/UI/employee/tickets/manage_tickets/pages/manage_ticket_list_page.dart';
 import 'package:admin_app/UI/employee/tickets/tickets/cubit/tickets_cubit.dart';
@@ -158,8 +159,7 @@ class AppRoute {
                 name: Routes.manageTickets.name,
                 // builder: (context, state) => const ManageTicketListPage(),
                 builder: (_, __) => BlocProvider.value(
-                      value: locator<ManageTicketListBloc>()
-                        ..add(const FetchTicketListEvent()),
+                      value: locator<ManageTicketListBloc>(),
                       child: const ManageTicketListPage(),
                     ),
                 routes: [
@@ -168,10 +168,15 @@ class AppRoute {
                     name: Routes.manageTicketDetailPage.name,
                     builder: (context, state) {
                       final data = state.extra as Map<String, dynamic>;
-                      String _t = data['ticketId'] as String;
-                      return ManageTicketDetailPage(
-                        ticketId: int.parse(_t),
-                        isPushNotification: data['isPushNotification'] as bool,
+                      final ticketId = int.parse(data['ticketId'] as String);
+                      return BlocProvider(
+                        create: (_) => ManageTicketDetailBloc()
+                          ..add(FetchTicketDetailEvent(id: ticketId)),
+                        child: ManageTicketDetailPage(
+                          ticketId: ticketId,
+                          isPushNotification:
+                              data['isPushNotification'] as bool,
+                        ),
                       );
                     },
                   ),
@@ -191,10 +196,15 @@ class AppRoute {
                     name: Routes.ticketDetailPage.name,
                     builder: (context, state) {
                       final data = state.extra as Map<String, dynamic>;
-                      String _t = data['ticketId'] as String;
-                      return TicketDetailPage(
-                        ticketId: int.parse(_t),
-                        isPushNotification: data['isPushNotification'] as bool,
+                      final ticketId = int.parse(data['ticketId'] as String);
+                      return BlocProvider(
+                        create: (_) => TicketsCubit()
+                          ..fetchSingleTicket(id: ticketId),
+                        child: TicketDetailPage(
+                          ticketId: ticketId,
+                          isPushNotification:
+                              data['isPushNotification'] as bool,
+                        ),
                       );
                     },
                   ),

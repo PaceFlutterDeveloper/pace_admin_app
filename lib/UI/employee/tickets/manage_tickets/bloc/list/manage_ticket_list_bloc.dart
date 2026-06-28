@@ -11,17 +11,32 @@ class ManageTicketListBloc
     extends Bloc<ManageTicketListEvent, ManageTicketListState> {
   final ManageTicketRepository _ticketRepository =
       locator<ManageTicketRepository>();
+
   CountsModel? countsModel;
+  final Map<String, ManageTicketResponseModel> _tabCache = {};
 
   ManageTicketListBloc() : super(ManageTicketListInitial()) {
     on<FetchTicketListEvent>(_onFetchTicketList);
+    on<RefreshManageTicketsEvent>(_onRefreshManageTickets);
   }
+
+  static String tabKey({String? action, int? endStat}) {
+    if (action == null) return 'all';
+    return 'assigned_$endStat';
+  }
+
+  ManageTicketResponseModel? cachedFor({String? action, int? endStat}) {
+    return _tabCache[tabKey(action: action, endStat: endStat)];
+  }
+
+  void clearCache() => _tabCache.clear();
 
   Future<void> _onFetchTicketList(
     FetchTicketListEvent event,
     Emitter<ManageTicketListState> emit,
   ) async {
-    emit(ManageTicketListLoading());
+    final key = tabKey(action: event.action, endStat: event.endStat);
+    emit(ManageTicketListLoading(tabKey: key));
 
     final res = await _ticketRepository.getTickets(
       action: event.action,
@@ -33,17 +48,35 @@ class ManageTicketListBloc
           message: error.message ?? 'Something went wrong')),
       (data) {
         if (data.counts != null) countsModel = data.counts;
+
+        final response = ManageTicketResponseModel(
+          data: data.data,
+          message: data.message,
+          status: data.status,
+          counts: countsModel,
+        );
+        _tabCache[key] = response;
+
         emit(ManageTicketListLoaded(
-          ticketResponseModel: ManageTicketResponseModel(
-            data: data.data,
-            message: data.message,
-            status: data.status,
-            counts: countsModel,
-          ),
+          ticketResponseModel: response,
           action: event.action,
           endStat: event.endStat,
         ));
       },
+    );
+  }
+
+  Future<void> _onRefreshManageTickets(
+    RefreshManageTicketsEvent event,
+    Emitter<ManageTicketListState> emit,
+  ) async {
+    clearCache();
+    await _onFetchTicketList(
+      FetchTicketListEvent(
+        action: event.action,
+        endStat: event.endStat,
+      ),
+      emit,
     );
   }
 }

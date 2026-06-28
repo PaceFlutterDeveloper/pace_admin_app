@@ -33,6 +33,7 @@ class AppTextField extends StatefulWidget {
   final IconData? suffixIcon;
   final VoidCallback? onSuffixTap;
   final bool showClearButton;
+  final bool showBorderAlways;
   final AutovalidateMode? autovalidateMode;
 
   const AppTextField({
@@ -64,6 +65,7 @@ class AppTextField extends StatefulWidget {
     this.suffixIcon,
     this.onSuffixTap,
     this.showClearButton = false,
+    this.showBorderAlways = false,
     this.autovalidateMode,
   });
 
@@ -136,14 +138,25 @@ class _AppTextFieldState extends State<AppTextField> {
 
     final adaptiveErrorColor = isDark ? AppColors.iosRedDark : AppColors.iosRed;
 
+    final dividerColor =
+        isDark ? AppColors.dividerDark : AppColors.dividerLight;
+
     Color borderColor;
     if (hasError) {
       borderColor = adaptiveErrorColor;
     } else if (_isFocused) {
       borderColor = primaryColor;
+    } else if (widget.showBorderAlways) {
+      borderColor = dividerColor;
     } else {
       borderColor = Colors.transparent;
     }
+
+    final borderWidth = hasError || _isFocused
+        ? 2.0
+        : widget.showBorderAlways
+            ? 1.0
+            : 0.0;
 
     final grayColor = isDark ? AppColors.iosSystemGrayDark : AppColors.iosSystemGray;
     final gray3Color = isDark ? AppColors.iosSystemGray3Dark : AppColors.iosSystemGray3;
@@ -205,7 +218,7 @@ class _AppTextFieldState extends State<AppTextField> {
             borderRadius: AppRadius.borderRadiusMd,
             border: Border.all(
               color: borderColor,
-              width: _isFocused || hasError ? 2 : 0,
+              width: borderWidth,
             ),
           ),
           child: TextFormField(
@@ -316,6 +329,7 @@ class AppSearchField extends StatelessWidget {
   final VoidCallback? onClear;
   final bool autofocus;
   final bool enabled;
+  final bool showBorderAlways;
 
   const AppSearchField({
     super.key,
@@ -326,6 +340,7 @@ class AppSearchField extends StatelessWidget {
     this.onClear,
     this.autofocus = false,
     this.enabled = true,
+    this.showBorderAlways = true,
   });
 
   @override
@@ -335,6 +350,7 @@ class AppSearchField extends StatelessWidget {
       hint: hint ?? 'Search...',
       prefixIcon: CupertinoIcons.search,
       showClearButton: true,
+      showBorderAlways: showBorderAlways,
       autofocus: autofocus,
       enabled: enabled,
       textInputAction: TextInputAction.search,
