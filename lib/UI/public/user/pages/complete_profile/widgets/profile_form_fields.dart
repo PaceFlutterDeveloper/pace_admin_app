@@ -1,3 +1,4 @@
+import 'package:admin_app/UI/public/user/utils/careers_api_dates.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/core/widgets/app_text_field.dart';
@@ -178,17 +179,55 @@ class ProfileDateField extends StatelessWidget {
     this.lastDate,
   });
 
+  static DateTime _dateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
   DateTime? _parseDate(String dateStr) {
     if (dateStr.isEmpty) return null;
-    return DateTime.tryParse(dateStr);
+    return CareersApiDates.parseFlexible(dateStr);
+  }
+
+  String? _validateDateRange(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+
+    final parsed = _parseDate(value.trim());
+    if (parsed == null) return 'Please enter a valid date';
+
+    final date = _dateOnly(parsed);
+    final min = firstDate != null ? _dateOnly(firstDate!) : null;
+    final max = lastDate != null ? _dateOnly(lastDate!) : null;
+
+    if (min != null && date.isBefore(min)) {
+      return '$label must be on or after ${_formatDisplay(min)}';
+    }
+    if (max != null && date.isAfter(max)) {
+      return '$label must be on or before ${_formatDisplay(max)}';
+    }
+
+    return null;
+  }
+
+  String _formatDisplay(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
   }
 
   Future<void> _pickDate(BuildContext context) async {
+    final min = _dateOnly(firstDate ?? DateTime(1950));
+    final max = _dateOnly(
+      lastDate ?? DateTime.now().add(const Duration(days: 365 * 5)),
+    );
+    var initial = _dateOnly(_parseDate(controller.text) ?? DateTime.now());
+    if (initial.isBefore(min)) initial = min;
+    if (initial.isAfter(max)) initial = max;
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _parseDate(controller.text) ?? DateTime.now(),
-      firstDate: firstDate ?? DateTime(1950),
-      lastDate: lastDate ?? DateTime.now().add(const Duration(days: 365 * 5)),
+      initialDate: initial,
+      firstDate: min,
+      lastDate: max,
     );
     if (picked != null) {
       controller.text =
@@ -209,10 +248,7 @@ class ProfileDateField extends StatelessWidget {
         if (isRequired && (value == null || value.trim().isEmpty)) {
           return 'Please select $label';
         }
-        if (value != null && value.isNotEmpty && _parseDate(value) == null) {
-          return 'Please enter a valid date';
-        }
-        return null;
+        return _validateDateRange(value);
       },
     );
   }

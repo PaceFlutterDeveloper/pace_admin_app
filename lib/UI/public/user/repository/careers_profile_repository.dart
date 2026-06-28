@@ -52,12 +52,16 @@ class CareersProfileRepository {
   }
 
   Future<Either<MyError, Map<String, dynamic>>> updateProfile(
-    Map<String, dynamic> profileData,
-  ) {
+    Map<String, dynamic> profileData, {
+    String? avatarFilePath,
+    String? cvFilePath,
+  }) {
     return _withCandidate(
       (candidateId, token) => _profileApiService.updateProfile(
         candidateId: candidateId,
         profileData: profileData,
+        avatarFilePath: avatarFilePath,
+        cvFilePath: cvFilePath,
         token: token,
       ),
     );

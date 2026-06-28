@@ -482,6 +482,8 @@ class _BasicInfoTabState extends State<BasicInfoTab>
               label: 'Available From',
               controller: _availableFrom,
               isRequired: true,
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 365 * 20)),
             ),
             AppSpacing.vGapMd,
             ProfileTextField(

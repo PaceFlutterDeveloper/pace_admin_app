@@ -105,7 +105,7 @@ class LoadCountriesEvent extends CareersProfileEvent {
   const LoadCountriesEvent();
 }
 
-/// Uploads avatar and/or CV files as base64 JSON on update-profile.
+/// Uploads avatar and/or CV files as multipart on update-profile.
 class UploadProfileFilesEvent extends CareersProfileEvent {
   final String? avatarFilePath;
   final String? cvFilePath;

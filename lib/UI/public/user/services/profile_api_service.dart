@@ -5,7 +5,7 @@ import 'package:admin_app/UI/public/user/models/country_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
 import 'package:admin_app/UI/public/user/utils/careers_api_dates.dart';
-import 'package:admin_app/UI/public/user/utils/profile_file_encoder.dart';
+import 'package:admin_app/UI/public/user/utils/profile_file_multipart.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
 import 'package:admin_app/core/error/error_exception.dart';
 import 'package:admin_app/core/services/api_post_logger.dart';
@@ -96,6 +96,8 @@ class ProfileApiService {
   Future<Either<MyError, Map<String, dynamic>>> updateProfile({
     required int candidateId,
     required Map<String, dynamic> profileData,
+    String? avatarFilePath,
+    String? cvFilePath,
     String? token,
   }) async {
     try {
@@ -109,12 +111,30 @@ class ProfileApiService {
       };
       _prepareUpdateProfileBody(body);
 
+      final hasFiles = ProfileFileMultipart.hasFiles(
+        avatarFilePath: avatarFilePath,
+        cvFilePath: cvFilePath,
+      );
+
+      late final dynamic requestBody;
+      if (hasFiles) {
+        requestBody = await ProfileFileMultipart.buildFormData(
+          fields: body,
+          avatarFilePath: avatarFilePath,
+          cvFilePath: cvFilePath,
+        );
+      } else {
+        requestBody = body;
+      }
+
       log('ProfileApiService: Request URL: $url');
-      log('ProfileApiService: Request payload: ${ApiPostLogger.summarizePayload(body)}');
+      log(
+        'ProfileApiService: Request payload: ${ApiPostLogger.summarizePayload(requestBody)}',
+      );
 
       final result = await _apiService.postAPI(
         url: url,
-        body: body,
+        body: requestBody,
         authorization: token ?? '',
         useSessionToken: true,
       );
@@ -1159,7 +1179,7 @@ class ProfileApiService {
     }
   }
 
-  // Upload avatar / CV via JSON (base64) on update-profile.
+  // Upload avatar / CV as multipart files on update-profile.
   Future<Either<MyError, Map<String, dynamic>>> uploadProfileFiles({
     required int candidateId,
     String? avatarFilePath,
@@ -1171,16 +1191,10 @@ class ProfileApiService {
         'ProfileApiService: Uploading profile files for candidate: $candidateId',
       );
 
-      final body = <String, dynamic>{'cand_id': candidateId};
-      body.addAll(
-        await ProfileFileEncoder.encodeFiles(
-          avatarFilePath: avatarFilePath,
-          cvFilePath: cvFilePath,
-        ),
-      );
-      _prepareUpdateProfileBody(body);
-
-      if (body.length <= 1) {
+      if (!ProfileFileMultipart.hasFiles(
+        avatarFilePath: avatarFilePath,
+        cvFilePath: cvFilePath,
+      )) {
         return Left(
           MyError(
             key: AppError.apiError,
@@ -1189,9 +1203,22 @@ class ProfileApiService {
         );
       }
 
+      final body = <String, dynamic>{'cand_id': candidateId};
+      _prepareUpdateProfileBody(body);
+
+      final formData = await ProfileFileMultipart.buildFormData(
+        fields: body,
+        avatarFilePath: avatarFilePath,
+        cvFilePath: cvFilePath,
+      );
+
+      log(
+        'ProfileApiService: Upload payload: ${ApiPostLogger.summarizePayload(formData)}',
+      );
+
       final result = await _apiService.postAPI(
         url: ApiConstants.updateProfileUrl,
-        body: body,
+        body: formData,
         authorization: token ?? '',
         useSessionToken: true,
       );

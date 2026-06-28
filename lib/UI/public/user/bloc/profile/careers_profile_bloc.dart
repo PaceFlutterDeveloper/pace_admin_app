@@ -6,7 +6,7 @@ import 'package:admin_app/UI/public/user/repository/careers_profile_repository.d
 import 'package:admin_app/UI/public/user/utils/careers_api_dates.dart';
 import 'package:admin_app/UI/public/user/utils/careers_avatar_cache.dart';
 import 'package:admin_app/UI/public/user/utils/careers_media_url.dart';
-import 'package:admin_app/UI/public/user/utils/profile_file_encoder.dart';
+import 'package:admin_app/UI/public/user/utils/profile_file_multipart.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -58,12 +58,11 @@ class CareersProfileBloc
     emit(const ProfileSaving(ProfileSection.basic));
 
     final profileData = Map<String, dynamic>.from(event.profileData);
+
     try {
-      profileData.addAll(
-        await ProfileFileEncoder.encodeFiles(
-          avatarFilePath: event.avatarFilePath,
-          cvFilePath: event.cvFilePath,
-        ),
+      await ProfileFileMultipart.ensureReadable(
+        avatarFilePath: event.avatarFilePath,
+        cvFilePath: event.cvFilePath,
       );
     } catch (e) {
       emit(
@@ -75,7 +74,11 @@ class CareersProfileBloc
       return;
     }
 
-    final result = await _repository.updateProfile(profileData);
+    final result = await _repository.updateProfile(
+      profileData,
+      avatarFilePath: event.avatarFilePath,
+      cvFilePath: event.cvFilePath,
+    );
     if (result.isLeft) {
       emit(
         ProfileSaveError(
@@ -264,9 +267,20 @@ class CareersProfileBloc
   ) async {
     emit(const ProfileFilesUploading());
 
-    Map<String, dynamic> encodedFiles = const {};
+    if (!ProfileFileMultipart.hasFiles(
+      avatarFilePath: event.avatarFilePath,
+      cvFilePath: event.cvFilePath,
+    )) {
+      emit(
+        const ProfileFilesUploadError(
+          message: 'No files selected for upload',
+        ),
+      );
+      return;
+    }
+
     try {
-      encodedFiles = await ProfileFileEncoder.encodeFiles(
+      await ProfileFileMultipart.ensureReadable(
         avatarFilePath: event.avatarFilePath,
         cvFilePath: event.cvFilePath,
       );
@@ -296,7 +310,7 @@ class CareersProfileBloc
     var normalized = ProfileFilePaths.normalizeUploadData(
       Map<String, dynamic>.from(data),
     );
-    normalized = _applyOptimisticSavePayload(normalized, encodedFiles);
+    normalized = _applyOptimisticSavePayload(normalized, const {});
     await _syncUploadedFilesToCache(normalized);
     emit(ProfileFilesUploaded(uploadData: normalized));
     _emitUploadedProfileFiles(normalized, emit);
