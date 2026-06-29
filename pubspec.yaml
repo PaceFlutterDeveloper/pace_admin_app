@@ -52,18 +52,12 @@ dependencies:
   bloc_concurrency: ^0.3.0
   equatable: ^2.0.5
   freezed_annotation: ^2.4.4
-  freezed: ^2.5.2
-  build_runner: ^2.4.13
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  hive_generator: ^2.0.1
-  loading_animation_widget: ^1.3.0
   google_fonts: ^8.1.0
   flutter_svg: ^2.0.10+1
   local_auth: ^3.0.1
   flutter_launcher_icons: ^0.14.1
-  flutter_html: ^3.0.0-beta.2
-  flutter_widget_from_html: ^0.17.2
   webview_flutter: ^4.9.0
   flutter_local_notifications: ^21.0.0
   app_settings: ^7.0.0
@@ -75,7 +69,6 @@ dependencies:
   google_mlkit_face_detection: ^0.13.2
   mobile_scanner: ^7.1.2
   image: ^4.2.0
-  table_calendar: ^3.1.3
   flutter_calendar_carousel: ^2.5.3
   package_info_plus: ^9.0.1
   font_awesome_flutter: ^11.0.0
@@ -86,13 +79,15 @@ dependencies:
   logger: ^2.5.0
 
   # UI/UX Design System packages
-  flutter_animate: ^4.5.0
   gap: ^3.0.1
   shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  build_runner: ^2.4.13
+  freezed: ^2.5.2
+  hive_generator: ^2.0.1
 dependency_overrides:
   archive: ^3.6.1
   # objective_c 9.3.0 omits -g; App Store / Xcode 16 then reject archives (missing
