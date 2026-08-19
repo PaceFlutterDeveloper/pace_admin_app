@@ -121,6 +121,10 @@ class _AppTextFieldState extends State<AppTextField> {
     });
   }
 
+  /// Parent-controlled when a custom [suffix] is provided; otherwise internal.
+  bool get _effectiveObscureText =>
+      widget.suffix != null ? widget.obscureText : _obscureText;
+
   void _clearText() {
     _controller.clear();
     widget.onChanged?.call('');
@@ -227,7 +231,7 @@ class _AppTextFieldState extends State<AppTextField> {
           child: TextFormField(
             controller: _controller,
             focusNode: _focusNode,
-            obscureText: _obscureText,
+            obscureText: _effectiveObscureText,
             enabled: widget.enabled,
             readOnly: widget.readOnly,
             autofocus: widget.autofocus,

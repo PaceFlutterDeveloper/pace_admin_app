@@ -55,11 +55,6 @@ class _LoginPageState extends State<LoginPage> {
             Navigator.of(context).popUntil((route) => route.isFirst);
           } else if (state is LoginError) {
             AppToast.error(context, state.message);
-          } else if (state is ForgotPasswordSuccess) {
-            AppToast.success(context, state.message);
-            Navigator.of(context).pop();
-          } else if (state is ForgotPasswordError) {
-            AppToast.error(context, state.message);
           }
         },
         child: SafeArea(
@@ -225,18 +220,50 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showForgotPasswordDialog() {
-    final emailController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => const _ForgotPasswordDialog(),
+    );
+  }
+}
+
+class _ForgotPasswordDialog extends StatefulWidget {
+  const _ForgotPasswordDialog();
+
+  @override
+  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  final _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<UserBloc, UserState>(
+      listenWhen: (previous, current) =>
+          current is ForgotPasswordSuccess || current is ForgotPasswordError,
+      listener: (context, state) {
+        if (state is ForgotPasswordSuccess) {
+          AppToast.success(context, state.message);
+          Navigator.of(context).pop();
+        } else if (state is ForgotPasswordError) {
+          AppToast.error(context, state.message);
+        }
+      },
+      child: AlertDialog(
         title: Text(
           'Forgot Password',
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
         content: Form(
-          key: formKey,
+          key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -248,7 +275,7 @@ class _LoginPageState extends State<LoginPage> {
               AppTextField(
                 label: 'Email',
                 hint: 'Enter your email',
-                controller: emailController,
+                controller: _emailController,
                 prefixIcon: CupertinoIcons.mail,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
@@ -266,19 +293,22 @@ class _LoginPageState extends State<LoginPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
           BlocBuilder<UserBloc, UserState>(
+            buildWhen: (previous, current) =>
+                current is ForgotPasswordLoading ||
+                previous is ForgotPasswordLoading,
             builder: (context, state) {
               return TextButton(
                 onPressed: state is ForgotPasswordLoading
                     ? null
                     : () {
-                        if (formKey.currentState!.validate()) {
+                        if (_formKey.currentState!.validate()) {
                           context.read<UserBloc>().add(
                             ForgotPasswordEvent(
-                              email: emailController.text.trim(),
+                              email: _emailController.text.trim(),
                             ),
                           );
                         }
