@@ -42,7 +42,7 @@ dependencies:
   either_dart: ^1.0.0
   dartz: ^0.10.1
   get_it: ^9.2.1
-  fluttertoast: ^9.0.0
+  fluttertoast: ^10.0.0
   flutter_flavorizr: ^2.2.1
   in_app_update: ^4.2.2
   flutter_screenutil: ^5.9.3
@@ -66,14 +66,13 @@ dependencies:
   flutter_widget_from_html: ^0.17.2
   webview_flutter: ^4.9.0
   flutter_local_notifications: ^21.0.0
-  app_settings: ^7.0.0
   firebase_core: ^4.7.0
   firebase_messaging: ^16.2.0
   permission_handler: ^12.0.1
   geolocator: ^14.0.2
   camera: ^0.12.0+1
   google_mlkit_face_detection: ^0.13.2
-  mobile_scanner: ^7.1.2
+  mobile_scanner: ^7.4.0
   image: ^4.2.0
   table_calendar: ^3.1.3
   flutter_calendar_carousel: ^2.5.3
@@ -95,6 +94,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 dependency_overrides:
+  # camera 0.12.0+1 still resolves camera_android_camerax 0.7.2+1, which
+  # fails on Gradle 9 because camera-core keeps concurrent-futures as runtime-only.
+  camera_android_camerax: 0.7.4+6
+  # Transitive plugin that already supports AGP 9.
+  audio_session: 0.2.4
   archive: ^3.6.1
   # objective_c 9.3.0 omits -g; App Store / Xcode 16 then reject archives (missing
   # dSYM UUID for native_assets objective_c.framework). Fixed upstream; pub.dev not

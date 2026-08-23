@@ -3,18 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../config/themes/app_design_tokens.dart';
 
-enum AppButtonVariant {
-  primary,
-  secondary,
-  ghost,
-  danger,
-}
+enum AppButtonVariant { primary, secondary, ghost, danger }
 
-enum AppButtonSize {
-  small,
-  medium,
-  large,
-}
+enum AppButtonSize { small, medium, large }
 
 class AppButton extends StatefulWidget {
   final String label;
@@ -100,16 +91,11 @@ class _AppButtonState extends State<AppButton>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: AppDurations.fast,
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: AppCurves.standard,
-      ),
-    );
+    _controller = AnimationController(duration: AppDurations.fast, vsync: this);
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _controller, curve: AppCurves.standard));
   }
 
   @override
@@ -223,6 +209,17 @@ class _AppButtonState extends State<AppButton>
       letterSpacing: -0.3,
     );
 
+    final label = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        widget.label,
+        style: textStyle,
+        maxLines: 1,
+        softWrap: false,
+        textAlign: TextAlign.center,
+      ),
+    );
+
     Widget content;
     if (widget.isLoading) {
       content = SizedBox(
@@ -239,27 +236,19 @@ class _AppButtonState extends State<AppButton>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (widget.leadingIcon != null) ...[
-            Icon(
-              widget.leadingIcon,
-              size: _iconSize,
-              color: foregroundColor,
-            ),
+            Icon(widget.leadingIcon, size: _iconSize, color: foregroundColor),
             AppSpacing.hGapSm,
           ],
-          Text(widget.label, style: textStyle),
+          if (widget.isFullWidth) Flexible(child: label) else label,
           if (widget.trailingIcon != null) ...[
             AppSpacing.hGapSm,
-            Icon(
-              widget.trailingIcon,
-              size: _iconSize,
-              color: foregroundColor,
-            ),
+            Icon(widget.trailingIcon, size: _iconSize, color: foregroundColor),
           ],
         ],
       );
     }
 
-    Widget button = GestureDetector(
+    final button = GestureDetector(
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
@@ -267,22 +256,20 @@ class _AppButtonState extends State<AppButton>
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
         child: AnimatedContainer(
           duration: AppDurations.fast,
           curve: AppCurves.standard,
-          height: _height,
+          width: widget.isFullWidth ? double.infinity : null,
+          constraints: BoxConstraints(minHeight: _height),
           padding: _padding,
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: AppRadius.borderRadiusMd,
             border: border,
           ),
-          alignment: Alignment.center,
+          alignment: widget.isFullWidth ? Alignment.center : null,
           child: content,
         ),
       ),
@@ -292,7 +279,13 @@ class _AppButtonState extends State<AppButton>
       return button;
     }
 
-    return IntrinsicWidth(child: button);
+    // Shrink-wrap to the label, and scale down if a parent is narrower
+    // than the text (avoids RenderFlex overflow from font metrics).
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.center,
+      child: button,
+    );
   }
 }
 
@@ -328,16 +321,11 @@ class _AppIconButtonState extends State<AppIconButton>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: AppDurations.fast,
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: AppCurves.standard,
-      ),
-    );
+    _controller = AnimationController(duration: AppDurations.fast, vsync: this);
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.9,
+    ).animate(CurvedAnimation(parent: _controller, curve: AppCurves.standard));
   }
 
   @override
@@ -362,10 +350,7 @@ class _AppIconButtonState extends State<AppIconButton>
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
         child: AnimatedOpacity(
           duration: AppDurations.fast,
@@ -388,10 +373,7 @@ class _AppIconButtonState extends State<AppIconButton>
     );
 
     if (widget.tooltip != null) {
-      button = Tooltip(
-        message: widget.tooltip!,
-        child: button,
-      );
+      button = Tooltip(message: widget.tooltip!, child: button);
     }
 
     return button;

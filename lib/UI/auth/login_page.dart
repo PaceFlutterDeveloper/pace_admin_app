@@ -114,106 +114,118 @@ class _LoginPageState extends State<LoginPage> {
               orElse: () => false,
             );
 
+            final screenWidth = MediaQuery.sizeOf(context).width;
+            final isNarrow = screenWidth < 360;
+            final horizontalPadding = isNarrow ? AppSpacing.md : AppSpacing.lg;
+
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top -
-                      MediaQuery.of(context).padding.bottom,
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: AppSpacing.xxl),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 480,
+                    minHeight:
+                        MediaQuery.sizeOf(context).height -
+                        MediaQuery.paddingOf(context).top -
+                        MediaQuery.paddingOf(context).bottom,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.xxl),
 
-                      // Logo
-                      Center(
-                        child: Image.asset(
-                          "assets/logo/group.png",
-                          width: 220,
+                        // Logo
+                        Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Image.asset(
+                              "assets/logo/group.png",
+                              width: isNarrow ? 160 : 220,
+                            ),
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: AppSpacing.xxl),
+                        const SizedBox(height: AppSpacing.xxl),
 
-                      // Welcome text
-                      Text(
-                        'Welcome back',
-                        style: GoogleFonts.inter(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
+                        // Welcome text
+                        Text(
+                          'Welcome back',
+                          style: GoogleFonts.inter(
+                            fontSize: isNarrow ? 24 : 28,
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Sign in to continue to your account',
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Sign in to continue to your account',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: AppSpacing.xl),
+                        const SizedBox(height: AppSpacing.xl),
 
-                      // School dropdown
-                      _buildSchoolDropdown(theme, isDark),
+                        // School dropdown
+                        _buildSchoolDropdown(theme, isDark),
 
-                      const SizedBox(height: AppSpacing.md),
+                        const SizedBox(height: AppSpacing.md),
 
-                      // Username field
-                      AppTextField(
-                        label: 'Username',
-                        hint: 'Enter your username',
-                        controller: _userNameController,
-                        prefixIcon: CupertinoIcons.person,
-                        textInputAction: TextInputAction.next,
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? 'Please enter your username'
-                            : null,
-                      ),
+                        // Username field
+                        AppTextField(
+                          label: 'Username',
+                          hint: 'Enter your username',
+                          controller: _userNameController,
+                          prefixIcon: CupertinoIcons.person,
+                          textInputAction: TextInputAction.next,
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Please enter your username'
+                              : null,
+                        ),
 
-                      const SizedBox(height: AppSpacing.md),
+                        const SizedBox(height: AppSpacing.md),
 
-                      // Password field
-                      AppTextField(
-                        label: 'Password',
-                        hint: 'Enter your password',
-                        controller: _passwordController,
-                        prefixIcon: CupertinoIcons.lock,
-                        obscureText: true,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _handleLogin(),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? 'Please enter your password'
-                            : null,
-                      ),
+                        // Password field
+                        AppTextField(
+                          label: 'Password',
+                          hint: 'Enter your password',
+                          controller: _passwordController,
+                          prefixIcon: CupertinoIcons.lock,
+                          obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _handleLogin(),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Please enter your password'
+                              : null,
+                        ),
 
-                      const SizedBox(height: AppSpacing.xl),
+                        const SizedBox(height: AppSpacing.xl),
 
-                      // Login button
-                      AppButton.primary(
-                        label: 'Sign In',
-                        onPressed: isLoading ? null : _handleLogin,
-                        isLoading: isLoading,
-                      ),
+                        // Login button
+                        AppButton.primary(
+                          label: 'Sign In',
+                          onPressed: isLoading ? null : _handleLogin,
+                          isLoading: isLoading,
+                        ),
 
-                      const SizedBox(height: AppSpacing.lg),
+                        const SizedBox(height: AppSpacing.lg),
 
-                      _buildOrDivider(theme),
+                        _buildOrDivider(theme),
 
-                      const SizedBox(height: AppSpacing.lg),
+                        const SizedBox(height: AppSpacing.lg),
 
-                      _buildCareersEntry(theme, isDark),
+                        _buildCareersEntry(theme, isDark),
 
-                      const SizedBox(height: AppSpacing.xl),
-                    ],
+                        const SizedBox(height: AppSpacing.xl),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -416,9 +428,7 @@ class _LoginPageState extends State<LoginPage> {
             borderRadius: BorderRadius.circular(AppRadius.md),
             border: _selectedSchool == null
                 ? null
-                : Border.all(
-                    color: theme.colorScheme.primary.withOpacity(0.3),
-                  ),
+                : Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
           ),
           child: DropdownButtonFormField<String>(
             value: _selectedSchool,
