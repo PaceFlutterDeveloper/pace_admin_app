@@ -79,7 +79,8 @@ class _SignupPageState extends State<SignupPage> {
           if (state is SignupSuccess) {
             AppToast.success(
               context,
-              'Registration successful! Please log in with your credentials.',
+              'Registration successful! Check your inbox and verify your '
+              'email (link valid for 24 hours) before logging in.',
             );
             Future.delayed(const Duration(seconds: 1), () {
               if (context.mounted) Navigator.of(context).pop();

@@ -35,6 +35,9 @@ class ProfileFilePaths {
     if (data.containsKey('avatar_file') ||
         data.containsKey('cv_file') ||
         data.containsKey('profile_image') ||
+        data.containsKey('photo') ||
+        data.containsKey('profile_photo') ||
+        data.containsKey('candidate_id') ||
         data.containsKey('candidate_name') ||
         data.containsKey('name')) {
       return Map<String, dynamic>.from(data);
@@ -44,11 +47,34 @@ class ProfileFilePaths {
   }
 
   static String? extractAvatarPath(Map<String, dynamic> map) {
-    for (final key in ['avatar_file', 'profile_image', 'avatar']) {
-      final value = map[key]?.toString().trim();
-      if (value != null && value.isNotEmpty) return value;
+    for (final key in [
+      'avatar_file',
+      'profile_image',
+      'avatar',
+      'photo',
+      'profile_photo',
+    ]) {
+      final value = _fileValue(map[key]);
+      if (value != null) return value;
     }
     return null;
+  }
+
+  static String? _fileValue(dynamic value) {
+    if (value == null) return null;
+    if (value is Map) {
+      return _fileValue(
+        value['path'] ??
+            value['url'] ??
+            value['file'] ??
+            value['avatar_file'] ??
+            value['photo'] ??
+            value['src'],
+      );
+    }
+    final text = value.toString().trim();
+    if (text.isEmpty || text == 'null' || text == '0') return null;
+    return text;
   }
 
   static String? extractCvPath(Map<String, dynamic> map) {
@@ -59,14 +85,14 @@ class ProfileFilePaths {
     return null;
   }
 
-  /// Fills missing avatar/CV paths from the Hive session cache when get-profile
-  /// omits them after a successful upload.
+  /// Fills missing CV / available-from values from the Hive session when
+  /// get-profile omits them. Avatar is never filled from cache — it must
+  /// come from the server.
   static ProfileModel mergeWithCachedFiles(ProfileModel profile) {
     final cached = CareersUserManager.getCurrentUser();
     final prefs = cached?.preferences ?? const {};
 
     return profile.copyWith(
-      avatarFile: _nonEmpty(profile.avatarFile) ?? _nonEmpty(cached?.profileImage),
       cvFile: _nonEmpty(profile.cvFile) ?? _nonEmpty(cached?.resumeUrl),
       availableFrom: _nonEmpty(profile.availableFrom) ??
           CareersApiDates.normalizeFromApi(prefs['available_from']),

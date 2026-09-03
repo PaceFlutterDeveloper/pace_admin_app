@@ -7,7 +7,10 @@ class ProfileCompletionMapper {
 
   static const Map<String, String> _fieldLabels = {
     'avatar_file': 'Profile photo',
-    'cv_file': 'CV / Resume',
+    'photo': 'Profile photo',
+    'profile_photo': 'Profile photo',
+    'profile_image': 'Profile photo',
+    'avatar': 'Profile photo',
     'candidate_data': 'Basic information',
     'candidate_name': 'Full name',
     'name': 'Full name',
@@ -120,7 +123,9 @@ class ProfileCompletionMapper {
       }
     }
 
-    if (!completion.isComplete && sections.isEmpty) {
+    if (!completion.isComplete &&
+        sections.isEmpty &&
+        completion.missingFields.isNotEmpty) {
       sections.add(ProfileSection.basic);
     }
 

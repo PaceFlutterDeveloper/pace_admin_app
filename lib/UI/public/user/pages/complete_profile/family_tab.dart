@@ -95,7 +95,7 @@ class _FamilyEditorDialogState extends State<_FamilyEditorDialog> {
       fields: [
         ProfileTextField(label: 'Name', controller: _name, isRequired: true),
         ProfileTextField(
-          label: 'Relationship',
+          label: 'Relation',
           controller: _relationship,
           isRequired: true,
         ),

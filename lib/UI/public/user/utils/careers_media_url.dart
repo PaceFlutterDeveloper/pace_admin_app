@@ -8,11 +8,37 @@ import 'package:admin_app/core/utils/constants/api_constant.dart';
 class CareersMediaUrl {
   CareersMediaUrl._();
 
+  /// True when [value] is a device filesystem path, not a server media path.
+  static bool isLocalFilePath(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    final trimmed = value.trim();
+    if (trimmed.startsWith('file://')) return true;
+    if (trimmed.contains('/careers_avatars/')) return true;
+    if (trimmed.startsWith('/var/') ||
+        trimmed.startsWith('/private/') ||
+        trimmed.startsWith('/data/') ||
+        trimmed.startsWith('/Users/') ||
+        trimmed.startsWith('/tmp/') ||
+        trimmed.startsWith('/storage/')) {
+      return true;
+    }
+    return RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(trimmed);
+  }
+
+  /// Server-backed avatar values that are safe to display.
+  static bool isDisplayableRemote(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    if (isLocalFilePath(value)) return false;
+    if (isEmbeddedFileData(value)) return true;
+    return resolve(value) != null;
+  }
+
   /// Returns a fully-qualified URL, or `null` when [path] is not a URL/path.
   static String? resolve(String? path) {
     if (path == null || path.trim().isEmpty) return null;
 
     final trimmed = path.trim();
+    if (isLocalFilePath(trimmed)) return null;
     // Never try to resolve embedded/truncated base64 as a URL.
     if (_looksLikeBase64(trimmed)) return null;
     if (isEmbeddedFileData(trimmed)) return null;
@@ -25,14 +51,8 @@ class CareersMediaUrl {
     var normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
     normalized = normalized.replaceFirst(RegExp(r'^\.\./'), '');
 
-    if (normalized.startsWith('erp-api/')) {
-      return '${ApiConstants.careersMediaBaseUrl}$normalized';
-    }
-
-    if (normalized.startsWith('uploads/')) {
-      return '${ApiConstants.careersMediaBaseUrl}erp-api/$normalized';
-    }
-
+    // Backend stores files under the careers site root, e.g.
+    // https://paceeducation.com/careers/uploads/profile_photos/cand_123.jpg
     return '${ApiConstants.careersMediaBaseUrl}$normalized';
   }
 
@@ -82,6 +102,7 @@ class CareersMediaUrl {
   /// Human-readable label for avatar/CV text values in forms.
   static String displayFileLabel(String? value) {
     if (value == null || value.trim().isEmpty) return 'No file selected';
+    if (isLocalFilePath(value)) return 'No file selected';
     if (isEmbeddedFileData(value)) return 'File on record';
     final normalized = value.replaceAll('\\', '/');
     if (normalized.contains('/')) {

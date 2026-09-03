@@ -10,12 +10,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 // Bloc
 class JobsBloc extends Bloc<JobsEvent, JobsState> {
   final JobsApiService _jobsApiService;
-  final String? _token;
   List<SchoolModel> _schoolsCache = [];
 
-  JobsBloc({required JobsApiService jobsApiService, String? token})
+  JobsBloc({required JobsApiService jobsApiService})
     : _jobsApiService = jobsApiService,
-      _token = token,
       super(JobsInitial()) {
     on<FetchJobsEvent>(_onFetchJobs);
     on<SearchJobsEvent>(_onSearchJobs);
@@ -77,9 +75,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       schoolId: event.schoolId,
       employmentType: event.filterBy,
       page: 1,
-      limit: 10,
-      token: _token,
-    );
+      limit: 10,    );
 
     result.fold((error) => emit(JobsError(error.message)), (response) {
       if (response.data.isNotEmpty) {
@@ -213,9 +209,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     emit(JobDetailsLoading());
 
     final result = await _jobsApiService.fetchJobDetails(
-      event.jobId,
-      token: _token,
-    );
+      event.jobId,    );
 
     result.fold(
       (error) => emit(JobDetailsError(error.message)),
@@ -229,7 +223,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       emit(SchoolsLoading());
     }
 
-    final result = await _jobsApiService.fetchSchools(token: _token);
+    final result = await _jobsApiService.fetchSchools();
 
     result.fold(
       (error) {
@@ -283,9 +277,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             ? currentState.filterBy
             : null,
         page: 1,
-        limit: 10,
-        token: _token,
-      );
+        limit: 10,      );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
         // if (response.data.isNotEmpty) {
@@ -319,9 +311,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       final result = await _jobsApiService.fetchJobs(
         schoolId: event.schoolId,
         page: 1,
-        limit: 10,
-        token: _token,
-      );
+        limit: 10,      );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
         if (response.data.isNotEmpty) {
@@ -363,9 +353,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             ? currentState.filterBy
             : null,
         page: currentState.currentPage + 1,
-        limit: 10,
-        token: _token,
-      );
+        limit: 10,      );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
         if (response.data.isNotEmpty) {

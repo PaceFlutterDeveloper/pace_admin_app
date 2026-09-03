@@ -166,7 +166,6 @@ class ApplicationBloc extends Bloc<ApplicationEvent, ApplicationState> {
     final result = await _applicationApiService.applyJob(
       candId: event.candId,
       jobId: event.jobId,
-      cvFile: event.cvFile,
       coverLetter: event.coverLetter,
       token: _token,
     );

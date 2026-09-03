@@ -14,6 +14,8 @@ class JobsApiService {
 
   JobsApiService({required ApiService apiService}) : _apiService = apiService;
 
+  // Jobs, job details and schools are public endpoints (API v2) — no
+  // session token is sent.
   Future<Either<MyError, JobResponseModel>> fetchJobs({
     String? search,
     int? schoolId,
@@ -21,7 +23,6 @@ class JobsApiService {
     String? employmentType,
     int page = 1,
     int limit = 10,
-    String? token,
   }) async {
     try {
       final Map<String, dynamic> queryParams = {'page': page, 'limit': limit};
@@ -39,7 +40,7 @@ class JobsApiService {
       log('API call: ${ApiConstants.jobsUrl} with params: $queryParams');
       final result = await _apiService.getRequest(
         ApiConstants.jobsUrl,
-        token,
+        null,
         queryParameters: queryParams,
       );
 
@@ -85,14 +86,11 @@ class JobsApiService {
     }
   }
 
-  Future<Either<MyError, JobModel>> fetchJobDetails(
-    int jobId, {
-    String? token,
-  }) async {
+  Future<Either<MyError, JobModel>> fetchJobDetails(int jobId) async {
     try {
       final result = await _apiService.getRequest(
         ApiConstants.jobDetailsUrl,
-        token,
+        null,
         queryParameters: {'id': jobId},
       );
 
@@ -132,13 +130,11 @@ class JobsApiService {
     }
   }
 
-  Future<Either<MyError, SchoolResponseModel>> fetchSchools({
-    String? token,
-  }) async {
+  Future<Either<MyError, SchoolResponseModel>> fetchSchools() async {
     try {
       final result = await _apiService.getRequest(
         ApiConstants.schoolsUrl,
-        token,
+        null,
       );
 
       return result.fold(
@@ -179,46 +175,32 @@ class JobsApiService {
     String query, {
     int page = 1,
     int limit = 10,
-    String? token,
   }) async {
-    return fetchJobs(search: query, page: page, limit: limit, token: token);
+    return fetchJobs(search: query, page: page, limit: limit);
   }
 
   Future<Either<MyError, JobResponseModel>> filterJobsBySchool(
     int schoolId, {
     int page = 1,
     int limit = 10,
-    String? token,
   }) async {
-    return fetchJobs(
-      schoolId: schoolId,
-      page: page,
-      limit: limit,
-      token: token,
-    );
+    return fetchJobs(schoolId: schoolId, page: page, limit: limit);
   }
 
   Future<Either<MyError, JobResponseModel>> filterJobsByCountry(
     int countryId, {
     int page = 1,
     int limit = 10,
-    String? token,
   }) async {
-    return fetchJobs(
-      countryId: countryId,
-      page: page,
-      limit: limit,
-      token: token,
-    );
+    return fetchJobs(countryId: countryId, page: page, limit: limit);
   }
 
   Future<Either<MyError, JobResponseModel>> filterJobsByEmploymentType(
     String employmentType, {
     int page = 1,
     int limit = 10,
-    String? token,
   }) async {
-    final result = await fetchJobs(page: page, limit: limit, token: token);
+    final result = await fetchJobs(page: page, limit: limit);
 
     return result.fold((error) => Left(error), (response) {
       final filteredJobs = response.data

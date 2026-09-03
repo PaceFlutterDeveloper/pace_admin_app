@@ -38,6 +38,18 @@ class LoginError extends UserState {
   List<Object?> get props => [message];
 }
 
+/// Login blocked because the account email has not been verified yet
+/// (Careers API returns HTTP 403 until `auth-verify-email` succeeds).
+class LoginEmailNotVerified extends UserState {
+  final String email;
+  final String message;
+
+  const LoginEmailNotVerified({required this.email, required this.message});
+
+  @override
+  List<Object?> get props => [email, message];
+}
+
 // Signup states
 class SignupLoading extends UserState {
   const SignupLoading();

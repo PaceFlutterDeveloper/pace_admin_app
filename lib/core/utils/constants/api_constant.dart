@@ -80,129 +80,13 @@ class ApiConstants {
   }
 
   // ========================================
-  // LEGACY SCHOOL-SCOPED CAREERS ENDPOINTS
-  // Deprecated — use Careers API v2 static URLs below (careersEndpoint).
-  // ========================================
-
-  // User Authentication Endpoints
-  @Deprecated('Use ApiConstants.authLoginUrl (Careers API v2)')
-  static Future<String> getAuthLoginUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}auth-login.php";
-  }
-
-  static Future<String> getAuthRegisterUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}auth-register.php";
-  }
-
-  static Future<String> getAuthForgotPasswordUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}auth-forgot-password.php";
-  }
-
-  static Future<String> getAuthResetPasswordUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}auth-reset-password.php";
-  }
-
-  static Future<String> getAuthResendVerificationUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}auth-resend-verification.php";
-  }
-
-  static Future<String> getAuthVerifyEmailUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}auth-verify-email.php";
-  }
-
-  // ========================================
-  // PROFILE MANAGEMENT ENDPOINTS
-  // ========================================
-
-  static Future<String> getProfileUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}get-profile.php";
-  }
-
-  static Future<String> getUpdateProfileUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}update-profile.php";
-  }
-
-  static Future<String> getUpdateEducationUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}update-education.php";
-  }
-
-  static Future<String> getUpdateExperienceUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}update-experience.php";
-  }
-
-  static Future<String> getUpdateFamilyUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}update-family.php";
-  }
-
-  static Future<String> getUpdateReferencesUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}update-references.php";
-  }
-
-  static Future<String> getUpdateProfessionalProgramsUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}update-professional-programs.php";
-  }
-
-  static Future<String> getUpdateCompleteProfileUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}update-complete-profile.php";
-  }
-
-  // ========================================
-  // JOBS & CAREERS ENDPOINTS
-  // ========================================
-
-  // Job Listing Endpoints
-  static Future<String> getJobsUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}jobs.php";
-  }
-
-  static Future<String> getJobDetailsUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}job-details.php";
-  }
-
-  static Future<String> getJobsSimpleUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}jobs-simple.php";
-  }
-
-  // Schools and Countries Endpoints
-  static Future<String> getSchoolsUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}schools.php";
-  }
-
-  static Future<String> getCountriesUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}countries.php";
-  }
-
-  // Test and Debug Endpoints
-  static Future<String> getTestUrl() async {
-    String baseUrl = await getBaseUrl();
-    return "${baseUrl}test.php";
-  }
-
-  // ========================================
   // CAREERS API v2 (unified router)
   // ========================================
 
-  /// Base URL for careers media files returned as relative paths
-  /// (e.g. `uploads/profile_photos/cand_123.jpg`).
+  /// Public site root for careers media files.
+  /// Join with relative paths from the API, e.g.
+  /// `uploads/profile_photos/cand_123.jpg` →
+  /// `https://paceeducation.com/careers/uploads/profile_photos/cand_123.jpg`.
   static const String careersMediaBaseUrl =
       'https://paceeducation.com/careers/';
 
@@ -242,6 +126,8 @@ class ApiConstants {
       careersEndpoint('profile-completion');
   static final String profileUrl = careersEndpoint('get-profile');
   static final String updateProfileUrl = careersEndpoint('update-profile');
+  static final String updateProfilePhotoUrl =
+      careersEndpoint('update-profile-photo');
   static final String updateEducationUrl = careersEndpoint('update-education');
   static final String updateExperienceUrl =
       careersEndpoint('update-experience');

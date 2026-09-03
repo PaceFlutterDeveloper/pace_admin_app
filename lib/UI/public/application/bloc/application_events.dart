@@ -44,15 +44,9 @@ class CheckApplicationEvent extends ApplicationEvent {
 class ApplyJobEvent extends ApplicationEvent {
   final int jobId;
   final int candId;
-  final String cvFile;
   final String? coverLetter;
 
-  ApplyJobEvent({
-    required this.jobId,
-    required this.candId,
-    required this.cvFile,
-    this.coverLetter,
-  });
+  ApplyJobEvent({required this.jobId, required this.candId, this.coverLetter});
 }
 
 class ResetJobApplyStateEvent extends ApplicationEvent {}

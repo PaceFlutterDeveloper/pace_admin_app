@@ -1,17 +1,16 @@
-/// Date helpers for the careers API, which uses `d/m/Y` for some profile fields.
+/// Date helpers for the careers API. Responses may display `d/m/Y`, but
+/// profile dates in requests must be `Y-m-d` (API v2).
 class CareersApiDates {
   CareersApiDates._();
 
   static const _invalidSentinels = {'0000-00-00', '0000-00-00 00:00:00'};
 
-  /// Converts a UI date (`Y-m-d` or `d/m/Y`) to `d/m/Y` for update-profile.
+  /// Converts a UI date (`Y-m-d` or `d/m/Y`) to `Y-m-d` for profile updates.
   static String? formatForApi(String? value) {
     final parsed = parseFlexible(value);
     if (parsed == null) return null;
 
-    final day = parsed.day.toString().padLeft(2, '0');
-    final month = parsed.month.toString().padLeft(2, '0');
-    return '$day/$month/${parsed.year}';
+    return _toIsoDate(parsed);
   }
 
   /// Normalizes API date text to `Y-m-d` for forms and display.

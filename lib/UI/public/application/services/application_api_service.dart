@@ -130,7 +130,6 @@ class ApplicationApiService {
   Future<Either<MyError, ApplyJobResponse>> applyJob({
     required int candId,
     required int jobId,
-    required String cvFile,
     String? coverLetter,
     String? source,
     String? token,
@@ -140,10 +139,11 @@ class ApplicationApiService {
         'API call: ${ApiConstants.applyJobUrl} with candId: $candId, jobId: $jobId',
       );
 
+      // The profile itself serves as the CV; the backend no longer requires
+      // a cv_file on apply.
       final body = <String, dynamic>{
         'cand_id': candId,
         'job_id': jobId,
-        'cv_file': cvFile,
       };
       if (coverLetter != null && coverLetter.isNotEmpty) {
         body['cover_letter'] = coverLetter;

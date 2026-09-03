@@ -28,9 +28,25 @@ class ProfileCompletionModel {
       requiredPercentage: json['required_percentage'] is int
           ? json['required_percentage'] as int
           : int.tryParse(json['required_percentage']?.toString() ?? '') ?? 85,
-      missingFields: List<String>.from(json['missing_fields'] ?? []),
+      missingFields: _parseMissingFields(json['missing_fields']),
       breakdown: Map<String, dynamic>.from(json['breakdown'] ?? {}),
     );
+  }
+
+  static List<String> _parseMissingFields(dynamic raw) {
+    if (raw is! List) return [];
+    return raw
+        .map((item) {
+          if (item is String) return item.trim();
+          if (item is Map) {
+            return (item['field'] ?? item['key'] ?? item['name'] ?? '')
+                .toString()
+                .trim();
+          }
+          return item.toString().trim();
+        })
+        .where((value) => value.isNotEmpty)
+        .toList();
   }
 
   /// Parses the full `GET /profile-completion` `data` envelope, merging
@@ -41,14 +57,8 @@ class ProfileCompletionModel {
         ? Map<String, dynamic>.from(completionRaw)
         : <String, dynamic>{};
 
-    final rootMissing = (data['missing_fields'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        <String>[];
-    final nestedMissing = (completionJson['missing_fields'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        <String>[];
+    final rootMissing = _parseMissingFields(data['missing_fields']);
+    final nestedMissing = _parseMissingFields(completionJson['missing_fields']);
 
     final mergedMissing = <String>{
       ...rootMissing,
@@ -68,7 +78,39 @@ class ProfileCompletionModel {
     completionJson['missing_fields'] = mergedMissing;
     completionJson['breakdown'] = breakdown;
 
+    for (final key in [
+      'is_complete',
+      'can_apply',
+      'percentage',
+      'is_fresher',
+      'required_percentage',
+    ]) {
+      if (!completionJson.containsKey(key) && data.containsKey(key)) {
+        completionJson[key] = data[key];
+      }
+    }
+
     return ProfileCompletionModel.fromJson(completionJson);
+  }
+
+  ProfileCompletionModel copyWith({
+    bool? isComplete,
+    bool? canApply,
+    int? percentage,
+    bool? isFresher,
+    int? requiredPercentage,
+    List<String>? missingFields,
+    Map<String, dynamic>? breakdown,
+  }) {
+    return ProfileCompletionModel(
+      isComplete: isComplete ?? this.isComplete,
+      canApply: canApply ?? this.canApply,
+      percentage: percentage ?? this.percentage,
+      isFresher: isFresher ?? this.isFresher,
+      requiredPercentage: requiredPercentage ?? this.requiredPercentage,
+      missingFields: missingFields ?? this.missingFields,
+      breakdown: breakdown ?? this.breakdown,
+    );
   }
 
   Map<String, dynamic> toJson() {

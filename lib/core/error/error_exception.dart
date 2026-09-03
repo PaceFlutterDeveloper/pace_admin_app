@@ -3,6 +3,7 @@ enum AppError {
   badRequest,
   unauthorized,
   forbidden,
+  conflict,
   internalServerError,
   unknown,
   apiError,

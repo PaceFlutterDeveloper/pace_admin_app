@@ -35,14 +35,12 @@ class _JobDetailPageState extends State<JobDetailPage> {
   bool _isCheckingApplication = true;
   bool _isApplying = false;
   bool _awaitingCompletionCheck = false;
-  String? _cvFile;
 
   @override
   void initState() {
     super.initState();
     context.read<JobsBloc>().add(FetchJobDetailsEvent(widget.jobId));
     _loadApplicationStatus();
-    context.read<CareersProfileBloc>().add(const LoadProfileEvent());
   }
 
   void _loadApplicationStatus() {
@@ -75,18 +73,7 @@ class _JobDetailPageState extends State<JobDetailPage> {
     final candId = _candId;
     if (candId == null) return;
 
-    final cvFile = _cvFile;
-    if (cvFile == null || cvFile.isEmpty) {
-      showToast('Please upload your CV in your profile before applying.');
-      context.pushNamed(Routes.careersCompleteProfile.name);
-      return;
-    }
-
-    final coverLetter = await ApplyDialog.show(
-      context,
-      job: job,
-      cvFile: cvFile,
-    );
+    final coverLetter = await ApplyDialog.show(context, job: job);
 
     if (!mounted || coverLetter == null) return;
 
@@ -95,7 +82,6 @@ class _JobDetailPageState extends State<JobDetailPage> {
       ApplyJobEvent(
         jobId: widget.jobId,
         candId: candId,
-        cvFile: cvFile,
         coverLetter: coverLetter.isEmpty ? null : coverLetter,
       ),
     );
@@ -137,10 +123,6 @@ class _JobDetailPageState extends State<JobDetailPage> {
         ),
         BlocListener<CareersProfileBloc, CareersProfileState>(
           listener: (context, state) {
-            if (state is ProfileLoaded) {
-              setState(() => _cvFile = state.profile.cvFile);
-            }
-
             if (!_awaitingCompletionCheck) return;
 
             if (state is ProfileCompletionLoaded) {

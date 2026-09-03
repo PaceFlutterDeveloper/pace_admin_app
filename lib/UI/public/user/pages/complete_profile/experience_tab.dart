@@ -16,7 +16,8 @@ class ExperienceTab extends StatelessWidget {
       emptyTitle: 'No experience records yet',
       emptySubtitle: 'Add your work history to strengthen your profile.',
       recordsOf: (state) => state is ExperienceLoaded ? state.records : null,
-      titleOf: (record) => record.position ?? 'Position',
+      titleOf: (record) =>
+          record.companyName ?? record.position ?? 'Organization',
       detailsOf: (record) => [
         if (record.companyName != null) 'Organization: ${record.companyName}',
         if (record.location != null && record.location!.isNotEmpty)

@@ -7,18 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class ApplyDialog extends StatefulWidget {
   final JobModel job;
-  final String? cvFile;
 
-  const ApplyDialog({super.key, required this.job, this.cvFile});
+  const ApplyDialog({super.key, required this.job});
 
-  static Future<String?> show(
-    BuildContext context, {
-    required JobModel job,
-    String? cvFile,
-  }) {
+  static Future<String?> show(BuildContext context, {required JobModel job}) {
     return showDialog<String?>(
       context: context,
-      builder: (context) => ApplyDialog(job: job, cvFile: cvFile),
+      builder: (context) => ApplyDialog(job: job),
     );
   }
 
@@ -43,7 +38,6 @@ class _ApplyDialogState extends State<ApplyDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasCv = widget.cvFile != null && widget.cvFile!.isNotEmpty;
 
     return AlertDialog(
       title: Text(
@@ -68,42 +62,6 @@ class _ApplyDialogState extends State<ApplyDialog> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            if (hasCv)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.description_outlined,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        widget.cvFile!,
-                        style: GoogleFonts.inter(fontSize: 13),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Text(
-                'No CV on file. Please upload your CV in your profile before applying.',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: theme.colorScheme.error,
-                ),
-              ),
-            const SizedBox(height: AppSpacing.md),
             AppTextField(
               controller: _coverLetterController,
               label: 'Cover letter (optional)',
@@ -124,7 +82,7 @@ class _ApplyDialogState extends State<ApplyDialog> {
         AppButton.primary(
           label: 'Submit Application',
           isFullWidth: false,
-          onPressed: hasCv ? _submit : null,
+          onPressed: _submit,
         ),
       ],
     );

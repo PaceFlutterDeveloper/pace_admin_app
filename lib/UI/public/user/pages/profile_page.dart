@@ -10,7 +10,7 @@ import 'package:admin_app/UI/public/user/components/index.dart';
 import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
 import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
-import 'package:admin_app/UI/public/user/utils/careers_avatar_cache.dart';
+import 'package:admin_app/UI/public/user/utils/careers_media_url.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
@@ -94,12 +94,13 @@ class _CareersProfilePageState extends State<CareersProfilePage>
       );
       if (candidate != null) {
         final uploaded = ProfileModel.fromJson(candidate);
-        setState(() {
-          _profile = (_profile ?? uploaded).copyWith(
-            avatarFile: uploaded.avatarFile ?? _profile?.avatarFile,
-            cvFile: uploaded.cvFile ?? _profile?.cvFile,
-          );
-        });
+        if (CareersMediaUrl.isDisplayableRemote(uploaded.avatarFile)) {
+          setState(() {
+            _profile = (_profile ?? uploaded).copyWith(
+              avatarFile: uploaded.avatarFile,
+            );
+          });
+        }
       }
     }
   }
@@ -170,8 +171,11 @@ class _CareersProfilePageState extends State<CareersProfilePage>
             ProfileHeaderCard(
               name: cachedUser.name,
               email: cachedUser.email,
-              avatarUrl: cachedUser.profileImage,
-              localAvatarFile: CareersAvatarCache.getCachedFile(),
+              avatarUrl: CareersMediaUrl.isDisplayableRemote(
+                    cachedUser.profileImage,
+                  )
+                  ? cachedUser.profileImage
+                  : null,
             ),
             AppSpacing.vGapMd,
             AppInlineError(message: _error!, onRetry: _load),
@@ -191,8 +195,9 @@ class _CareersProfilePageState extends State<CareersProfilePage>
           ProfileHeaderCard(
             name: profile?.name ?? cachedUser?.name ?? 'Guest User',
             email: profile?.email ?? cachedUser?.email ?? '',
-            avatarUrl: profile?.avatarFile ?? cachedUser?.profileImage,
-            localAvatarFile: CareersAvatarCache.getCachedFile(),
+            avatarUrl: CareersMediaUrl.isDisplayableRemote(profile?.avatarFile)
+                ? profile?.avatarFile
+                : null,
             isComplete: _completion?.isComplete,
             completionPercentage: _completion?.percentage,
           ),

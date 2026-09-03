@@ -54,10 +54,23 @@ class ProfileApiService {
             log('ProfileApiService: Parsed response: $response');
 
             if (response['status'] == true) {
-              log('ProfileApiService: Profile retrieved successfully');
-              final profile = ProfileModel.fromJson(
-                response['data']['candidate'],
-              );
+              final dataRaw = response['data'];
+              if (dataRaw is! Map) {
+                return const Left(
+                  MyError(
+                    key: AppError.apiError,
+                    message: 'Failed to get profile',
+                  ),
+                );
+              }
+
+              final data = Map<String, dynamic>.from(dataRaw);
+              final normalized = ProfileFilePaths.normalizeUploadData(data);
+              final candidate =
+                  ProfileFilePaths.extractCandidateMap(normalized) ??
+                  const <String, dynamic>{};
+              final profile = ProfileModel.fromJson(candidate);
+              _logGetProfilePhoto(candidate, data, profile.avatarFile);
               return Right(profile);
             } else {
               log(
@@ -92,12 +105,44 @@ class ProfileApiService {
     }
   }
 
-  // Update Profile
+  void _logGetProfilePhoto(
+    Map<String, dynamic> candidate,
+    Map<String, dynamic> data,
+    String? parsedAvatar,
+  ) {
+    const keys = [
+      'avatar_file',
+      'profile_image',
+      'avatar',
+      'photo',
+      'profile_photo',
+    ];
+    String describe(dynamic value) {
+      if (value == null) return 'null';
+      if (value is Map) return 'map(keys=${value.keys.join(',')})';
+      final text = value.toString();
+      if (text.isEmpty) return 'empty';
+      final sample = text.length <= 120 ? text : '${text.substring(0, 120)}…';
+      return '${text.length} chars: $sample';
+    }
+
+    final buffer = StringBuffer('ProfileApiService: get-profile photo fields\n');
+    for (final key in keys) {
+      buffer.writeln('  data.$key = ${describe(data[key])}');
+      buffer.writeln('  candidate.$key = ${describe(candidate[key])}');
+    }
+    buffer.writeln(
+      parsedAvatar == null || parsedAvatar.isEmpty
+          ? '  parsed avatarFile = NOT PRESENT'
+          : '  parsed avatarFile = ${describe(parsedAvatar)}',
+    );
+    log(buffer.toString());
+  }
+
+  // Update Profile (JSON only — photos go to POST /update-profile-photo)
   Future<Either<MyError, Map<String, dynamic>>> updateProfile({
     required int candidateId,
     required Map<String, dynamic> profileData,
-    String? avatarFilePath,
-    String? cvFilePath,
     String? token,
   }) async {
     try {
@@ -111,30 +156,14 @@ class ProfileApiService {
       };
       _prepareUpdateProfileBody(body);
 
-      final hasFiles = ProfileFileMultipart.hasFiles(
-        avatarFilePath: avatarFilePath,
-        cvFilePath: cvFilePath,
-      );
-
-      late final dynamic requestBody;
-      if (hasFiles) {
-        requestBody = await ProfileFileMultipart.buildFormData(
-          fields: body,
-          avatarFilePath: avatarFilePath,
-          cvFilePath: cvFilePath,
-        );
-      } else {
-        requestBody = body;
-      }
-
       log('ProfileApiService: Request URL: $url');
       log(
-        'ProfileApiService: Request payload: ${ApiPostLogger.summarizePayload(requestBody)}',
+        'ProfileApiService: Request payload: ${ApiPostLogger.summarizePayload(body)}',
       );
 
       final result = await _apiService.postAPI(
         url: url,
-        body: requestBody,
+        body: body,
         authorization: token ?? '',
         useSessionToken: true,
       );
@@ -154,7 +183,11 @@ class ProfileApiService {
 
             if (response['status'] == true) {
               log('ProfileApiService: Profile updated successfully');
-              return Right(response['data']);
+              final dataRaw = response['data'];
+              final data = dataRaw is Map
+                  ? Map<String, dynamic>.from(dataRaw)
+                  : <String, dynamic>{};
+              return Right(data);
             } else {
               // Get the error message from either 'message' or 'error' field
               final errorMessage =
@@ -198,9 +231,18 @@ class ProfileApiService {
       log('ProfileApiService: Updating education for candidate: $candidateId');
 
       final url = ApiConstants.updateEducationUrl;
+      final rows = _validatedSectionRows(
+        educationRecords,
+        isValid: (e) => e.isValidForApi,
+        toJson: (e) => e.toJson(),
+        invalidMessage:
+            'Each education record needs a course/qualification and board/university.',
+      );
+      if (rows.isLeft) return Left(rows.left);
+
       final body = {
         'cand_id': candidateId,
-        'education_records': educationRecords.map((e) => e.toJson()).toList(),
+        'education_records': rows.right,
       };
 
       final result = await _apiService.postAPI(
@@ -264,9 +306,18 @@ class ProfileApiService {
       log('ProfileApiService: Updating experience for candidate: $candidateId');
 
       final url = ApiConstants.updateExperienceUrl;
+      final rows = _validatedSectionRows(
+        experienceRecords,
+        isValid: (e) => e.isValidForApi,
+        toJson: (e) => e.toJson(),
+        invalidMessage:
+            'Each experience record needs an organization.',
+      );
+      if (rows.isLeft) return Left(rows.left);
+
       final body = {
         'cand_id': candidateId,
-        'experience_records': experienceRecords.map((e) => e.toJson()).toList(),
+        'experience_records': rows.right,
       };
 
       final result = await _apiService.postAPI(
@@ -330,9 +381,18 @@ class ProfileApiService {
       log('ProfileApiService: Updating family for candidate: $candidateId');
 
       final url = ApiConstants.updateFamilyUrl;
+      final rows = _validatedSectionRows(
+        familyMembers,
+        isValid: (e) => e.isValidForApi,
+        toJson: (e) => e.toJson(),
+        invalidMessage:
+            'Each family member needs a name and relation.',
+      );
+      if (rows.isLeft) return Left(rows.left);
+
       final body = {
         'cand_id': candidateId,
-        'family_members': familyMembers.map((e) => e.toJson()).toList(),
+        'family_members': rows.right,
       };
 
       final result = await _apiService.postAPI(
@@ -396,9 +456,17 @@ class ProfileApiService {
       log('ProfileApiService: Updating references for candidate: $candidateId');
 
       final url = ApiConstants.updateReferencesUrl;
+      final rows = _validatedSectionRows(
+        references,
+        isValid: (e) => e.isValidForApi,
+        toJson: (e) => e.toJson(),
+        invalidMessage: 'Each reference needs a name.',
+      );
+      if (rows.isLeft) return Left(rows.left);
+
       final body = {
         'cand_id': candidateId,
-        'references': references.map((e) => e.toJson()).toList(),
+        'references': rows.right,
       };
 
       final result = await _apiService.postAPI(
@@ -464,9 +532,17 @@ class ProfileApiService {
       );
 
       final url = ApiConstants.updateProfessionalProgramsUrl;
+      final rows = _validatedSectionRows(
+        programs,
+        isValid: (e) => e.isValidForApi,
+        toJson: (e) => e.toJson(),
+        invalidMessage: 'Each professional program needs a course name.',
+      );
+      if (rows.isLeft) return Left(rows.left);
+
       final body = {
         'cand_id': candidateId,
-        'professional_programs': programs.map((e) => e.toJson()).toList(),
+        'professional_programs': rows.right,
       };
 
       final result = await _apiService.postAPI(
@@ -622,12 +698,13 @@ class ProfileApiService {
             final response = json.decode(responseData);
             if (response['status'] == true) {
               log('ProfileApiService: Education retrieved successfully');
-              final records =
-                  (response['data']['education_records'] as List<dynamic>?)
-                      ?.map((e) => EducationRecord.fromJson(e))
-                      .toList() ??
-                  [];
-              return Right(records);
+              return Right(
+                _mapSectionRecords(
+                  response['data'],
+                  'education_records',
+                  EducationRecord.fromJson,
+                ),
+              );
             } else {
               log(
                 'ProfileApiService: Get education failed - ${response['message']}',
@@ -689,12 +766,13 @@ class ProfileApiService {
             final response = json.decode(responseData);
             if (response['status'] == true) {
               log('ProfileApiService: Experience retrieved successfully');
-              final records =
-                  (response['data']['experience_records'] as List<dynamic>?)
-                      ?.map((e) => ExperienceRecord.fromJson(e))
-                      .toList() ??
-                  [];
-              return Right(records);
+              return Right(
+                _mapSectionRecords(
+                  response['data'],
+                  'experience_records',
+                  ExperienceRecord.fromJson,
+                ),
+              );
             } else {
               log(
                 'ProfileApiService: Get experience failed - ${response['message']}',
@@ -756,12 +834,13 @@ class ProfileApiService {
             final response = json.decode(responseData);
             if (response['status'] == true) {
               log('ProfileApiService: Family retrieved successfully');
-              final records =
-                  (response['data']['family_members'] as List<dynamic>?)
-                      ?.map((e) => FamilyMember.fromJson(e))
-                      .toList() ??
-                  [];
-              return Right(records);
+              return Right(
+                _mapSectionRecords(
+                  response['data'],
+                  'family_members',
+                  FamilyMember.fromJson,
+                ),
+              );
             } else {
               log(
                 'ProfileApiService: Get family failed - ${response['message']}',
@@ -823,12 +902,13 @@ class ProfileApiService {
             final response = json.decode(responseData);
             if (response['status'] == true) {
               log('ProfileApiService: References retrieved successfully');
-              final records =
-                  (response['data']['references'] as List<dynamic>?)
-                      ?.map((e) => Reference.fromJson(e))
-                      .toList() ??
-                  [];
-              return Right(records);
+              return Right(
+                _mapSectionRecords(
+                  response['data'],
+                  'references',
+                  Reference.fromJson,
+                ),
+              );
             } else {
               log(
                 'ProfileApiService: Get references failed - ${response['message']}',
@@ -896,12 +976,13 @@ class ProfileApiService {
               log(
                 'ProfileApiService: Professional programs retrieved successfully',
               );
-              final records =
-                  (response['data']['professional_programs'] as List<dynamic>?)
-                      ?.map((e) => ProfessionalProgram.fromJson(e))
-                      .toList() ??
-                  [];
-              return Right(records);
+              return Right(
+                _mapSectionRecords(
+                  response['data'],
+                  'professional_programs',
+                  ProfessionalProgram.fromJson,
+                ),
+              );
             } else {
               log(
                 'ProfileApiService: Get professional programs failed - ${response['message']}',
@@ -1179,23 +1260,19 @@ class ProfileApiService {
     }
   }
 
-  // Upload avatar / CV as multipart files on update-profile.
+  // Upload the avatar as multipart on POST /update-profile-photo.
   Future<Either<MyError, Map<String, dynamic>>> uploadProfileFiles({
     required int candidateId,
     String? avatarFilePath,
-    String? cvFilePath,
     String? token,
   }) async {
     try {
       log(
-        'ProfileApiService: Uploading profile files for candidate: $candidateId',
+        'ProfileApiService: Uploading profile photo for candidate: $candidateId',
       );
 
-      if (!ProfileFileMultipart.hasFiles(
-        avatarFilePath: avatarFilePath,
-        cvFilePath: cvFilePath,
-      )) {
-        return Left(
+      if (!ProfileFileMultipart.hasFiles(avatarFilePath: avatarFilePath)) {
+        return const Left(
           MyError(
             key: AppError.apiError,
             message: 'No files selected for upload',
@@ -1203,13 +1280,9 @@ class ProfileApiService {
         );
       }
 
-      final body = <String, dynamic>{'cand_id': candidateId};
-      _prepareUpdateProfileBody(body);
-
       final formData = await ProfileFileMultipart.buildFormData(
-        fields: body,
+        fields: {'cand_id': candidateId},
         avatarFilePath: avatarFilePath,
-        cvFilePath: cvFilePath,
       );
 
       log(
@@ -1217,7 +1290,7 @@ class ProfileApiService {
       );
 
       final result = await _apiService.postAPI(
-        url: ApiConstants.updateProfileUrl,
+        url: ApiConstants.updateProfilePhotoUrl,
         body: formData,
         authorization: token ?? '',
         useSessionToken: true,
@@ -1270,25 +1343,104 @@ class ProfileApiService {
     }
   }
 
-  static const _filePayloadKeys = {
-    'avatar_file',
-    'profile_image',
-    'cv_file',
+  List<T> _mapSectionRecords<T>(
+    dynamic data,
+    String key,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    if (data is List) return mapCareersSectionRows(data, fromJson);
+    if (data is! Map) return [];
+    return mapCareersSectionRows(data[key], fromJson);
+  }
+
+  /// Replace-all POSTs must send the full list. Never drop invalid rows
+  /// silently — that would delete them on the server.
+  Either<MyError, List<Map<String, dynamic>>> _validatedSectionRows<T>(
+    List<T> records, {
+    required bool Function(T record) isValid,
+    required Map<String, dynamic> Function(T record) toJson,
+    required String invalidMessage,
+  }) {
+    if (records.any((record) => !isValid(record))) {
+      return Left(
+        MyError(key: AppError.apiError, message: invalidMessage),
+      );
+    }
+    return Right(records.map(toJson).toList());
+  }
+
+  /// Candidate fields accepted by `POST /update-profile` (API v2).
+  static const _allowedCandidateKeys = {
+    'cand_id',
+    'candidate_name',
+    'name',
+    'nationality_country_id',
+    'nationality_id',
+    'date_of_birth',
+    'gender',
+    'marital_status',
+    'visa_status',
+    'visa_exp_date',
+    'phone',
+    'current_location',
+    'province_state',
+    'address_local',
+    'current_country_id',
+    'experience_years',
+    'uae_experience_years',
+    'other_experience_years',
+    'current_ctc',
+    'expected_ctc',
+    'available_from',
+    'reason_leaving',
+    'conviction_yn',
+    'conviction_details',
+    'govt_issue_yn',
+    'govt_issue_details',
+    'reference_permission_yn',
+    'notice_period',
+    'preferred_position',
+  };
+
+  static const _datePayloadKeys = {
+    'available_from',
+    'date_of_birth',
+    'visa_exp_date',
+  };
+
+  static const _countryIdKeys = {
+    'nationality_country_id',
+    'nationality_id',
+    'current_country_id',
   };
 
   void _prepareUpdateProfileBody(Map<String, dynamic> body) {
-    if (body.containsKey('available_from')) {
-      final formatted = CareersApiDates.formatForApi(
-        body['available_from']?.toString(),
-      );
+    if (body.containsKey('name') && !body.containsKey('candidate_name')) {
+      body['candidate_name'] = body['name'];
+    }
+    if (body.containsKey('nationality_id') &&
+        !body.containsKey('nationality_country_id')) {
+      body['nationality_country_id'] = body['nationality_id'];
+    }
+    body.remove('name');
+    body.remove('nationality_id');
+
+    for (final key in _datePayloadKeys) {
+      if (!body.containsKey(key)) continue;
+      final formatted = CareersApiDates.formatForApi(body[key]?.toString());
       if (formatted != null) {
-        body['available_from'] = formatted;
+        body[key] = formatted;
       }
     }
 
     body.removeWhere((key, value) {
-      if (_filePayloadKeys.contains(key)) return false;
-      return value == null || value == '';
+      if (!_allowedCandidateKeys.contains(key)) return true;
+      if (value == null || value == '') return true;
+      if (_countryIdKeys.contains(key)) {
+        final id = value is int ? value : int.tryParse(value.toString());
+        if (id == null || id <= 0) return true;
+      }
+      return false;
     });
   }
 }

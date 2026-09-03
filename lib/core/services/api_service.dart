@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:admin_app/core/error/error_exception.dart';
-import 'package:admin_app/core/services/api_post_logger.dart';
 import 'package:admin_app/core/services/careers_session_expired_handler.dart';
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
-import 'package:flutter/foundation.dart';
 
 class ApiService {
   final Dio _dio;
@@ -128,13 +126,6 @@ class ApiService {
       }
     }
 
-    final requestId = ApiPostLogger.logRequest(
-      url: url,
-      headers: headers,
-      body: body,
-    );
-    final stopwatch = kDebugMode ? (Stopwatch()..start()) : null;
-
     try {
       final response = await _dio.post(
         url,
@@ -146,28 +137,8 @@ class ApiService {
         ),
       );
 
-      if (kDebugMode) {
-        ApiPostLogger.logResponse(
-          requestId: requestId,
-          url: url,
-          statusCode: response.statusCode,
-          body: response.data,
-          elapsedMs: stopwatch!.elapsedMilliseconds,
-          responseHeaders: response.headers.map,
-        );
-      }
-
       return Right(_normalizeResponseBody(response.data));
     } on DioException catch (e) {
-      if (kDebugMode) {
-        ApiPostLogger.logError(
-          requestId: requestId,
-          url: url,
-          error: e,
-          elapsedMs: stopwatch?.elapsedMilliseconds ?? 0,
-          requestBody: body,
-        );
-      }
       _handleCareersSessionExpiry(e, useSessionToken: useSessionToken);
       return Left(_handleError(e));
     } catch (e) {
@@ -283,6 +254,8 @@ class ApiService {
             return 'You don\'t have permission to perform this action.';
           case AppError.notFound:
             return 'The requested resource was not found.';
+          case AppError.conflict:
+            return 'This action conflicts with existing data.';
           default:
             return 'Something went wrong. Please try again.';
         }
@@ -302,6 +275,8 @@ class ApiService {
         return 'You don\'t have permission to perform this action.';
       case AppError.notFound:
         return 'The requested resource was not found.';
+      case AppError.conflict:
+        return 'This action conflicts with existing data.';
       default:
         return 'Something went wrong. Please try again.';
     }
@@ -388,6 +363,9 @@ class ApiService {
             break;
           case 404:
             errorKey = AppError.notFound;
+            break;
+          case 409:
+            errorKey = AppError.conflict;
             break;
           case 500:
             errorKey = AppError.internalServerError;

@@ -55,7 +55,13 @@ class _LoginPageState extends State<LoginPage> {
           if (state is LoginSuccess) {
             AppToast.success(context, 'Welcome back, ${state.user.name}!');
             Navigator.of(context).popUntil((route) => route.isFirst);
+          } else if (state is LoginEmailNotVerified) {
+            _showEmailNotVerifiedDialog(state.email);
           } else if (state is LoginError) {
+            AppToast.error(context, state.message);
+          } else if (state is ResendVerificationSuccess) {
+            AppToast.success(context, state.message);
+          } else if (state is ResendVerificationError) {
             AppToast.error(context, state.message);
           }
         },
@@ -255,6 +261,45 @@ class _LoginPageState extends State<LoginPage> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => const _ForgotPasswordDialog(),
+    );
+  }
+
+  void _showEmailNotVerifiedDialog(String email) {
+    final bloc = context.read<UserBloc>();
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Verify Your Email',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Your email address has not been verified yet. Please open the '
+          'verification link sent to $email, then sign in again.\n\n'
+          'Didn\'t receive the email? We can send a new verification link '
+          '(valid for 24 hours).',
+          style: GoogleFonts.inter(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              bloc.add(ResendVerificationEvent(email: email));
+            },
+            child: Text(
+              'Resend Email',
+              style: GoogleFonts.inter(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -79,11 +79,11 @@ class ProfileModel {
       name: json['name'] ?? json['candidate_name'],
       email: json['email'],
       phone: json['phone'],
-      dateOfBirth: json['date_of_birth'],
+      dateOfBirth: CareersApiDates.normalizeFromApi(json['date_of_birth']),
       gender: json['gender'],
       maritalStatus: json['marital_status'],
       visaStatus: json['visa_status'],
-      visaExpDate: json['visa_exp_date'],
+      visaExpDate: CareersApiDates.normalizeFromApi(json['visa_exp_date']),
       nationality: json['nationality'],
       nationalityCountry: json['nationality_country'],
       currentCountry: json['current_country'],
@@ -118,47 +118,70 @@ class ProfileModel {
       portalVisibility: _parseBool(json['portal_visibility']),
       noticePeriod: json['notice_period'],
       preferredPosition: _normalizeTextField(json['preferred_position']),
-      avatarFile: _normalizeTextField(
-        json['avatar_file'] ?? json['profile_image'] ?? json['avatar'],
-      ),
+      avatarFile: _photoField(json),
       cvFile: _normalizeTextField(
         json['cv_file'] ?? json['resume_url'] ?? json['cv'],
       ),
     );
   }
 
-  static bool? _parseBool(dynamic value) {
-    if (value == null) return null;
-    if (value is bool) return value;
-    return value == 1 || value == true;
-  }
+  static bool? _parseBool(dynamic value) => parseCareersYn(value);
 
   static String? _normalizeTextField(dynamic value) {
     final text = value?.toString().trim();
-    if (text == null || text.isEmpty) return null;
+    if (text == null || text.isEmpty || text == 'null' || text == '0') {
+      return null;
+    }
     return text;
+  }
+
+  static String? _photoField(Map<String, dynamic> json) {
+    for (final key in [
+      'avatar_file',
+      'profile_image',
+      'avatar',
+      'photo',
+      'profile_photo',
+    ]) {
+      final parsed = _photoValue(json[key]);
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  static String? _photoValue(dynamic value) {
+    if (value == null) return null;
+    if (value is Map) {
+      return _photoValue(
+        value['path'] ??
+            value['url'] ??
+            value['file'] ??
+            value['avatar_file'] ??
+            value['photo'] ??
+            value['src'],
+      );
+    }
+    return _normalizeTextField(value);
   }
 
 
   Map<String, dynamic> toJson() {
     return {
       if (candidateId != null) 'cand_id': candidateId,
-      if (name != null) 'name': name,
-      if (email != null) 'email': email,
+      if (name != null) 'candidate_name': name,
       if (phone != null) 'phone': phone,
       if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
       if (gender != null) 'gender': gender,
       if (maritalStatus != null) 'marital_status': maritalStatus,
       if (visaStatus != null) 'visa_status': visaStatus,
       if (visaExpDate != null) 'visa_exp_date': visaExpDate,
-      if (nationality != null) 'nationality': nationality,
       if (currentLocation != null) 'current_location': currentLocation,
       if (provinceState != null) 'province_state': provinceState,
       if (addressLocal != null) 'address_local': addressLocal,
-      if (nationalityCountryId != null)
+      if (nationalityCountryId != null && nationalityCountryId! > 0)
         'nationality_country_id': nationalityCountryId,
-      if (nationalityCountryId != null) 'nationality_id': nationalityCountryId,
-      if (currentCountryId != null) 'current_country_id': currentCountryId,
+      if (currentCountryId != null && currentCountryId! > 0)
+        'current_country_id': currentCountryId,
       if (experienceYears != null) 'experience_years': experienceYears,
       if (uaeExperienceYears != null) 'uae_experience_years': uaeExperienceYears,
       if (otherExperienceYears != null)
@@ -173,12 +196,8 @@ class ProfileModel {
       if (govtIssueDetails != null) 'govt_issue_details': govtIssueDetails,
       if (referencePermissionYn != null)
         'reference_permission_yn': referencePermissionYn! ? 1 : 0,
-      if (portalVisibility != null)
-        'portal_visibility': portalVisibility! ? 1 : 0,
       if (noticePeriod != null) 'notice_period': noticePeriod,
       if (preferredPosition != null) 'preferred_position': preferredPosition,
-      if (avatarFile != null) 'avatar_file': avatarFile,
-      if (cvFile != null) 'cv_file': cvFile,
     };
   }
 
@@ -257,14 +276,46 @@ class ProfileModel {
   }
 }
 
+int? _careersRecordId(Map<String, dynamic> json, String altKey) {
+  final raw = json['id'] ?? json[altKey];
+  if (raw is int) return raw;
+  return int.tryParse(raw?.toString() ?? '');
+}
+
+/// Parses `*_yn` flags from GET payloads (`1`/`0`, bool, or `"1"`/`"0"`).
+bool? parseCareersYn(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final text = value.toString().trim().toLowerCase();
+  if (text.isEmpty) return null;
+  if (text == '1' || text == 'true' || text == 'yes' || text == 'y') {
+    return true;
+  }
+  if (text == '0' || text == 'false' || text == 'no' || text == 'n') {
+    return false;
+  }
+  return null;
+}
+
+List<T> mapCareersSectionRows<T>(
+  dynamic raw,
+  T Function(Map<String, dynamic>) fromJson,
+) {
+  if (raw is! List) return [];
+  return raw
+      .whereType<Map>()
+      .map((row) => fromJson(Map<String, dynamic>.from(row)))
+      .toList();
+}
+
 class EducationRecord {
   final int? id;
   final String? qualification;
   final String? institution;
   final String? fieldOfStudy;
   final String? graduationYear;
-  final double? gpa;
-  final String? grade;
+  final String? percentage;
 
   EducationRecord({
     this.id,
@@ -272,31 +323,34 @@ class EducationRecord {
     this.institution,
     this.fieldOfStudy,
     this.graduationYear,
-    this.gpa,
-    this.grade,
+    this.percentage,
   });
+
+  bool get isValidForApi {
+    return (qualification?.trim().isNotEmpty ?? false) &&
+        (institution?.trim().isNotEmpty ?? false);
+  }
 
   factory EducationRecord.fromJson(Map<String, dynamic> json) {
     return EducationRecord(
-      id: json['id'],
-      qualification: json['qualification'] ?? json['grade_course'],
-      institution: json['institution'] ?? json['board_univ'],
-      fieldOfStudy: json['field_of_study'] ?? json['main_subject'],
+      id: _careersRecordId(json, 'edu_id'),
+      qualification:
+          json['grade_course'] ?? json['edu_course'] ?? json['qualification'],
+      institution: json['board_univ'] ?? json['edu_board'] ?? json['institution'],
+      fieldOfStudy:
+          json['main_subject'] ?? json['edu_subject'] ?? json['field_of_study'],
       graduationYear:
-          json['graduation_year'] ?? json['year_passing']?.toString(),
-      gpa: json['gpa'] != null
-          ? double.tryParse(json['gpa'].toString())
-          : (json['percentage'] != null
-                ? double.tryParse(json['percentage'].toString())
-                : null),
-      grade: json['grade'] ?? json['percentage']?.toString(),
+          json['year_passing']?.toString() ??
+          json['edu_year']?.toString() ??
+          json['graduation_year']?.toString(),
+      percentage:
+          json['percentage']?.toString() ?? json['edu_percent']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     final year = int.tryParse(graduationYear ?? '');
     return {
-      if (id != null) 'id': id,
       if (qualification != null && qualification!.isNotEmpty)
         'grade_course': qualification,
       if (institution != null && institution!.isNotEmpty)
@@ -305,10 +359,7 @@ class EducationRecord {
         'main_subject': fieldOfStudy,
       if (graduationYear != null && graduationYear!.isNotEmpty)
         'year_passing': year ?? graduationYear,
-      if (gpa != null)
-        'percentage': gpa.toString()
-      else if (grade != null && grade!.isNotEmpty)
-        'percentage': grade,
+      if (percentage != null && percentage!.isNotEmpty) 'percentage': percentage,
     };
   }
 }
@@ -334,35 +385,44 @@ class ExperienceRecord {
     this.jobDescription,
   });
 
+  bool get isValidForApi => companyName?.trim().isNotEmpty ?? false;
+
   factory ExperienceRecord.fromJson(Map<String, dynamic> json) {
     return ExperienceRecord(
-      id: json['id'],
-      companyName: json['company_name'] ?? json['organization'],
-      position: json['position'] ?? json['designation'],
+      id: _careersRecordId(json, 'exp_id'),
+      companyName:
+          json['organization'] ?? json['ex_org'] ?? json['company_name'],
+      position: json['designation'] ?? json['ex_designation'] ?? json['position'],
       location: json['location'] ?? json['ex_location'],
-      startDate: json['start_date'] ?? json['from_date'],
-      endDate: json['end_date'] ?? json['to_date'],
+      startDate: CareersApiDates.normalizeFromApi(
+        json['from_date'] ?? json['ex_from'] ?? json['start_date'],
+      ),
+      endDate: CareersApiDates.normalizeFromApi(
+        json['to_date'] ?? json['ex_to'] ?? json['end_date'],
+      ),
       isCurrent:
-          json['is_current'] == 1 ||
-          json['is_current'] == true ||
-          json['current_role_yn'] == 1 ||
-          json['current_role_yn'] == true,
-      jobDescription: json['job_description'] ?? json['job_desc'],
+          parseCareersYn(json['current_role_yn']) ??
+          parseCareersYn(json['ex_current']) ??
+          parseCareersYn(json['is_current']) ??
+          false,
+      jobDescription: json['job_desc'] ?? json['ex_desc'] ?? json['job_description'],
     );
   }
 
   Map<String, dynamic> toJson() {
+    final current = isCurrent == true;
     return {
-      if (id != null) 'id': id,
       if (companyName != null && companyName!.isNotEmpty)
         'organization': companyName,
       if (position != null && position!.isNotEmpty) 'designation': position,
       if (location != null && location!.isNotEmpty) 'location': location,
-      if (startDate != null && startDate!.isNotEmpty) 'from_date': startDate,
-      if (endDate != null && endDate!.isNotEmpty) 'to_date': endDate,
+      if (startDate != null && startDate!.isNotEmpty)
+        'from_date': CareersApiDates.formatForApi(startDate) ?? startDate,
+      if (!current && endDate != null && endDate!.isNotEmpty)
+        'to_date': CareersApiDates.formatForApi(endDate) ?? endDate,
       if (jobDescription != null && jobDescription!.isNotEmpty)
         'job_desc': jobDescription,
-      'current_role_yn': isCurrent == true ? 1 : 0,
+      'current_role_yn': current ? 1 : 0,
     };
   }
 }
@@ -384,33 +444,38 @@ class FamilyMember {
     this.dependentYn,
   });
 
+  bool get isValidForApi {
+    return (name?.trim().isNotEmpty ?? false) &&
+        (relationship?.trim().isNotEmpty ?? false);
+  }
+
   factory FamilyMember.fromJson(Map<String, dynamic> json) {
     return FamilyMember(
-      id: json['id'],
+      id: _careersRecordId(json, 'fam_id'),
       name: json['name'] ?? json['fam_name'],
-      relationship: json['relationship'] ?? json['relation'],
-      occupation: json['occupation'] ?? json['profession'],
+      relationship: json['relation'] ?? json['fam_relation'] ?? json['relationship'],
+      occupation: json['profession'] ?? json['fam_profession'] ?? json['occupation'],
       age: json['age'] is int
           ? json['age'] as int
-          : int.tryParse(json['age']?.toString() ?? ''),
+          : int.tryParse(
+              (json['age'] ?? json['fam_age'])?.toString() ?? '',
+            ),
       dependentYn:
-          json['dependent_yn'] == 1 ||
-          json['dependent_yn'] == true ||
-          json['fam_dependent'] == 1 ||
-          json['fam_dependent'] == true,
+          parseCareersYn(json['dependent_yn']) ??
+          parseCareersYn(json['fam_dependent']) ??
+          false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
       if (name != null && name!.isNotEmpty) 'name': name,
       if (relationship != null && relationship!.isNotEmpty)
         'relation': relationship,
       if (occupation != null && occupation!.isNotEmpty)
         'profession': occupation,
       if (age != null) 'age': age,
-      if (dependentYn != null) 'dependent_yn': dependentYn! ? 1 : 0,
+      'dependent_yn': dependentYn == true ? 1 : 0,
     };
   }
 }
@@ -430,19 +495,20 @@ class Reference {
     this.phone,
   });
 
+  bool get isValidForApi => name?.trim().isNotEmpty ?? false;
+
   factory Reference.fromJson(Map<String, dynamic> json) {
     return Reference(
-      id: json['id'],
-      name: json['name'] ?? json['ref_name'],
-      position: json['position'] ?? json['designation'],
+      id: _careersRecordId(json, 'ref_id'),
+      name: json['ref_name'] ?? json['name'],
+      position: json['designation'] ?? json['ref_designation'] ?? json['position'],
       address: json['address'] ?? json['ref_address'],
-      phone: json['phone'] ?? json['contact_no'] ?? json['ref_contact'],
+      phone: json['contact_no'] ?? json['ref_contact'] ?? json['phone'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
       if (name != null && name!.isNotEmpty) 'ref_name': name,
       if (position != null && position!.isNotEmpty) 'designation': position,
       if (address != null && address!.isNotEmpty) 'address': address,
@@ -468,24 +534,25 @@ class ProfessionalProgram {
     this.yearPassing,
   });
 
+  bool get isValidForApi => programName?.trim().isNotEmpty ?? false;
+
   factory ProfessionalProgram.fromJson(Map<String, dynamic> json) {
     return ProfessionalProgram(
-      id: json['id'],
-      programName: json['program_name'] ?? json['course_name'] ?? json['pp_course'],
-      institution: json['institution'] ?? json['institute'] ?? json['pp_institute'],
+      id: _careersRecordId(json, 'prog_id'),
+      programName:
+          json['course_name'] ?? json['pp_course'] ?? json['program_name'],
+      institution:
+          json['institute'] ?? json['pp_institute'] ?? json['institution'],
       durationText: json['duration_txt'] ?? json['pp_duration'],
       place: json['place'] ?? json['pp_place'],
       yearPassing:
-          json['year_passing']?.toString() ??
-          json['completion_date'] ??
-          json['pp_year']?.toString(),
+          json['year_passing']?.toString() ?? json['pp_year']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     final year = int.tryParse(yearPassing ?? '');
     return {
-      if (id != null) 'id': id,
       if (programName != null && programName!.isNotEmpty)
         'course_name': programName,
       if (institution != null && institution!.isNotEmpty)
@@ -519,31 +586,26 @@ class FullProfileResponse {
   factory FullProfileResponse.fromJson(Map<String, dynamic> json) {
     return FullProfileResponse(
       candidate: ProfileModel.fromJson(json['candidate'] ?? {}),
-      educationRecords:
-          (json['education_records'] as List<dynamic>?)
-              ?.map((e) => EducationRecord.fromJson(e))
-              .toList() ??
-          [],
-      experienceRecords:
-          (json['experience_records'] as List<dynamic>?)
-              ?.map((e) => ExperienceRecord.fromJson(e))
-              .toList() ??
-          [],
-      familyMembers:
-          (json['family_members'] as List<dynamic>?)
-              ?.map((e) => FamilyMember.fromJson(e))
-              .toList() ??
-          [],
-      references:
-          (json['references'] as List<dynamic>?)
-              ?.map((e) => Reference.fromJson(e))
-              .toList() ??
-          [],
-      professionalPrograms:
-          (json['professional_programs'] as List<dynamic>?)
-              ?.map((e) => ProfessionalProgram.fromJson(e))
-              .toList() ??
-          [],
+      educationRecords: mapCareersSectionRows(
+        json['education_records'],
+        EducationRecord.fromJson,
+      ),
+      experienceRecords: mapCareersSectionRows(
+        json['experience_records'],
+        ExperienceRecord.fromJson,
+      ),
+      familyMembers: mapCareersSectionRows(
+        json['family_members'],
+        FamilyMember.fromJson,
+      ),
+      references: mapCareersSectionRows(
+        json['references'],
+        Reference.fromJson,
+      ),
+      professionalPrograms: mapCareersSectionRows(
+        json['professional_programs'],
+        ProfessionalProgram.fromJson,
+      ),
     );
   }
 }
@@ -571,31 +633,26 @@ class CompleteProfileModel {
     return CompleteProfileModel(
       candidateId: json['candidate_id'] ?? json['cand_id'],
       profile: ProfileModel.fromJson(json['candidate'] ?? json),
-      educationRecords:
-          (json['education_records'] as List<dynamic>?)
-              ?.map((e) => EducationRecord.fromJson(e))
-              .toList() ??
-          [],
-      experienceRecords:
-          (json['experience_records'] as List<dynamic>?)
-              ?.map((e) => ExperienceRecord.fromJson(e))
-              .toList() ??
-          [],
-      familyMembers:
-          (json['family_members'] as List<dynamic>?)
-              ?.map((e) => FamilyMember.fromJson(e))
-              .toList() ??
-          [],
-      references:
-          (json['references'] as List<dynamic>?)
-              ?.map((e) => Reference.fromJson(e))
-              .toList() ??
-          [],
-      professionalPrograms:
-          (json['professional_programs'] as List<dynamic>?)
-              ?.map((e) => ProfessionalProgram.fromJson(e))
-              .toList() ??
-          [],
+      educationRecords: mapCareersSectionRows(
+        json['education_records'],
+        EducationRecord.fromJson,
+      ),
+      experienceRecords: mapCareersSectionRows(
+        json['experience_records'],
+        ExperienceRecord.fromJson,
+      ),
+      familyMembers: mapCareersSectionRows(
+        json['family_members'],
+        FamilyMember.fromJson,
+      ),
+      references: mapCareersSectionRows(
+        json['references'],
+        Reference.fromJson,
+      ),
+      professionalPrograms: mapCareersSectionRows(
+        json['professional_programs'],
+        ProfessionalProgram.fromJson,
+      ),
     );
   }
 
@@ -619,9 +676,8 @@ class CompleteProfileModel {
       'experience_records': experienceRecords.map((e) => e.toJson()).toList(),
       'family_members': familyMembers.map((e) => e.toJson()).toList(),
       'references': references.map((e) => e.toJson()).toList(),
-      'professional_programs': professionalPrograms
-          .map((e) => e.toJson())
-          .toList(),
+      'professional_programs':
+          professionalPrograms.map((e) => e.toJson()).toList(),
     };
   }
 }

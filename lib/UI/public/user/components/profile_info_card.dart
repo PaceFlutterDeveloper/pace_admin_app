@@ -17,7 +17,6 @@ class ProfileInfoCard extends StatelessWidget {
       _InfoRowData(CupertinoIcons.person, 'Full Name', profile.name),
       _InfoRowData(CupertinoIcons.mail, 'Email', profile.email),
       _InfoRowData(CupertinoIcons.phone, 'Phone Number', profile.phone),
-      _InfoRowData(CupertinoIcons.flag, 'Nationality', profile.nationality),
       _InfoRowData(
         CupertinoIcons.location,
         'Current Location',

@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:admin_app/UI/public/user/components/careers_profile_image.dart';
-import 'package:admin_app/UI/public/user/utils/careers_avatar_cache.dart';
 import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,7 +10,6 @@ class ProfileHeaderCard extends StatelessWidget {
   final String name;
   final String email;
   final String? avatarUrl;
-  final File? localAvatarFile;
 
   /// API-driven completion state; null while unknown.
   final bool? isComplete;
@@ -24,7 +20,6 @@ class ProfileHeaderCard extends StatelessWidget {
     required this.name,
     required this.email,
     this.avatarUrl,
-    this.localAvatarFile,
     this.isComplete,
     this.completionPercentage,
   });
@@ -36,7 +31,6 @@ class ProfileHeaderCard extends StatelessWidget {
         children: [
           CareersProfileImage(
             remoteSource: avatarUrl,
-            localFile: localAvatarFile ?? CareersAvatarCache.getCachedFile(),
             size: AppSizes.avatarXl,
           ),
           AppSpacing.vGapMd,

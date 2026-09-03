@@ -17,8 +17,10 @@
 	<key>CFBundleName</key>
 	<string>Smart PACE</string>
 	<!-- Allow picking photos from the library -->
-<key>NSPhotoLibraryUsageDescription</key>
-<string>This app needs access to your photo library to attach images to tickets.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to set your profile photo and attach images to tickets.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs permission to save cropped profile photos to your library.</string>
 
 <!-- If you ever capture new photos/videos -->
 <key>NSCameraUsageDescription</key>
@@ -55,6 +57,27 @@
 	<string>This app needs NFC access to read student NFC cards for attendance and mapping.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

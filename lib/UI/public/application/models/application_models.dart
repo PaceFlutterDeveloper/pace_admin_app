@@ -109,8 +109,15 @@ class ApplicationJobSummary {
       location: json['location'] ?? '',
       employmentType: json['employment_type'] ?? '',
       salaryRange: json['salary_range'] ?? '',
-      school: json['school'] ?? '',
+      school: _schoolName(json['school']),
     );
+  }
+
+  static String _schoolName(dynamic value) {
+    if (value is Map) {
+      return (value['name'] ?? value['school_name'] ?? '').toString();
+    }
+    return value?.toString() ?? '';
   }
 }
 

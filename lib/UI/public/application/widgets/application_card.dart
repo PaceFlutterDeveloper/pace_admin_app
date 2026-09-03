@@ -175,12 +175,6 @@ class ApplicationCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           _buildDetailRow(
-            icon: Icons.description,
-            label: 'CV File',
-            value: application.application.cvFile,
-          ),
-          SizedBox(height: 8.h),
-          _buildDetailRow(
             icon: Icons.check_circle,
             label: 'Availability',
             value: application.application.availabilityOk

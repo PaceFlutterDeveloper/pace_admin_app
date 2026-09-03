@@ -5,6 +5,7 @@ import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
 import 'package:admin_app/UI/public/user/services/auth_api_service.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
+import 'package:admin_app/core/error/error_exception.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Bloc for candidate (careers) authentication: login, signup, logout,
@@ -41,7 +42,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     await result.fold(
       (error) async {
         log('UserBloc: Login failed - ${error.message}');
-        emit(LoginError(message: error.message));
+        if (error.key == AppError.forbidden) {
+          // API v2: 403 on login means the email is not verified yet.
+          emit(
+            LoginEmailNotVerified(email: event.email, message: error.message),
+          );
+        } else {
+          emit(LoginError(message: error.message));
+        }
       },
       (data) async {
         final userJson = data['user'];

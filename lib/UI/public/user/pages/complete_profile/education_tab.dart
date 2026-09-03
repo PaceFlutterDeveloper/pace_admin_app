@@ -18,11 +18,14 @@ class EducationTab extends StatelessWidget {
       recordsOf: (state) => state is EducationLoaded ? state.records : null,
       titleOf: (record) => record.qualification ?? 'Qualification',
       detailsOf: (record) => [
-        if (record.institution != null) 'Institution: ${record.institution}',
-        if (record.fieldOfStudy != null) 'Field: ${record.fieldOfStudy}',
-        if (record.graduationYear != null) 'Year: ${record.graduationYear}',
-        if (record.gpa != null) 'GPA: ${record.gpa}',
-        if (record.grade != null) 'Grade: ${record.grade}',
+        if (record.institution != null)
+          'Board / University: ${record.institution}',
+        if (record.fieldOfStudy != null)
+          'Main Subject: ${record.fieldOfStudy}',
+        if (record.graduationYear != null)
+          'Year of Passing: ${record.graduationYear}',
+        if (record.percentage != null && record.percentage!.isNotEmpty)
+          'Percentage: ${record.percentage}',
       ],
       editor: (context, existing) => showDialog<EducationRecord>(
         context: context,
@@ -48,8 +51,7 @@ class _EducationEditorDialogState extends State<_EducationEditorDialog> {
   late final TextEditingController _institution;
   late final TextEditingController _fieldOfStudy;
   late final TextEditingController _graduationYear;
-  late final TextEditingController _gpa;
-  late final TextEditingController _grade;
+  late final TextEditingController _percentage;
 
   @override
   void initState() {
@@ -59,8 +61,7 @@ class _EducationEditorDialogState extends State<_EducationEditorDialog> {
     _institution = TextEditingController(text: e?.institution ?? '');
     _fieldOfStudy = TextEditingController(text: e?.fieldOfStudy ?? '');
     _graduationYear = TextEditingController(text: e?.graduationYear ?? '');
-    _gpa = TextEditingController(text: e?.gpa?.toString() ?? '');
-    _grade = TextEditingController(text: e?.grade ?? '');
+    _percentage = TextEditingController(text: e?.percentage ?? '');
   }
 
   @override
@@ -69,8 +70,7 @@ class _EducationEditorDialogState extends State<_EducationEditorDialog> {
     _institution.dispose();
     _fieldOfStudy.dispose();
     _graduationYear.dispose();
-    _gpa.dispose();
-    _grade.dispose();
+    _percentage.dispose();
     super.dispose();
   }
 
@@ -80,10 +80,15 @@ class _EducationEditorDialogState extends State<_EducationEditorDialog> {
         id: widget.existing?.id,
         qualification: _qualification.text.trim(),
         institution: _institution.text.trim(),
-        fieldOfStudy: _fieldOfStudy.text.trim(),
-        graduationYear: _graduationYear.text.trim(),
-        gpa: _gpa.text.isNotEmpty ? double.tryParse(_gpa.text) : null,
-        grade: _grade.text.trim().isNotEmpty ? _grade.text.trim() : null,
+        fieldOfStudy: _fieldOfStudy.text.trim().isNotEmpty
+            ? _fieldOfStudy.text.trim()
+            : null,
+        graduationYear: _graduationYear.text.trim().isNotEmpty
+            ? _graduationYear.text.trim()
+            : null,
+        percentage: _percentage.text.trim().isNotEmpty
+            ? _percentage.text.trim()
+            : null,
       ),
     );
   }
@@ -96,30 +101,26 @@ class _EducationEditorDialogState extends State<_EducationEditorDialog> {
       onSave: _save,
       fields: [
         ProfileTextField(
-          label: 'Qualification',
+          label: 'Course / Qualification',
           controller: _qualification,
           isRequired: true,
         ),
         ProfileTextField(
-          label: 'Institution',
+          label: 'Board / University',
           controller: _institution,
           isRequired: true,
         ),
         ProfileTextField(
-          label: 'Field of Study',
+          label: 'Main Subject',
           controller: _fieldOfStudy,
-          isRequired: true,
         ),
         ProfileTextField(
-          label: 'Graduation Year',
+          label: 'Year of Passing',
           controller: _graduationYear,
-          isRequired: true,
           keyboardType: TextInputType.number,
           maxLength: 4,
           validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Please enter Graduation Year';
-            }
+            if (value == null || value.trim().isEmpty) return null;
             final year = int.tryParse(value);
             final currentYear = DateTime.now().year;
             if (value.length != 4 ||
@@ -131,8 +132,11 @@ class _EducationEditorDialogState extends State<_EducationEditorDialog> {
             return null;
           },
         ),
-        ProfileNumericField(label: 'GPA', controller: _gpa, maxValue: 4.0),
-        ProfileTextField(label: 'Grade', controller: _grade),
+        ProfileTextField(
+          label: 'Percentage',
+          controller: _percentage,
+          helperText: 'e.g. 85%',
+        ),
       ],
     );
   }

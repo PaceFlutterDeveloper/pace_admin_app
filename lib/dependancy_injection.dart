@@ -32,6 +32,7 @@ import 'package:admin_app/UI/students/cubit/students_cubit.dart';
 import 'package:admin_app/UI/students/repository/students_repository.dart';
 import 'package:admin_app/core/const/db_names.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
+import 'package:admin_app/core/services/api_post_logger.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/services/authentication_service.dart';
 import 'package:admin_app/core/services/careers_session_expired_handler.dart';
@@ -59,6 +60,7 @@ Future<void> serviceLocators() async {
 
   // Register Dio instance
   final dio = Dio();
+  dio.interceptors.add(ApiPostLogger.interceptor);
   locator.registerSingleton<Dio>(dio);
 
   // Register ApiService

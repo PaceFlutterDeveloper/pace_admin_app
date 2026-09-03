@@ -1,10 +1,8 @@
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_states.dart';
 import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
-import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
 import 'package:admin_app/UI/public/user/repository/careers_profile_repository.dart';
 import 'package:admin_app/UI/public/user/utils/careers_api_dates.dart';
-import 'package:admin_app/UI/public/user/utils/careers_avatar_cache.dart';
 import 'package:admin_app/UI/public/user/utils/careers_media_url.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_multipart.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
@@ -47,7 +45,6 @@ class CareersProfileBloc
     }
 
     final merged = ProfileFilePaths.mergeWithCachedFiles(result.right);
-    await _cacheEmbeddedAvatarIfNeeded(merged.avatarFile);
     emit(ProfileLoaded(profile: merged));
   }
 
@@ -58,27 +55,7 @@ class CareersProfileBloc
     emit(const ProfileSaving(ProfileSection.basic));
 
     final profileData = Map<String, dynamic>.from(event.profileData);
-
-    try {
-      await ProfileFileMultipart.ensureReadable(
-        avatarFilePath: event.avatarFilePath,
-        cvFilePath: event.cvFilePath,
-      );
-    } catch (e) {
-      emit(
-        ProfileSaveError(
-          ProfileSection.basic,
-          message: 'Failed to read selected files: $e',
-        ),
-      );
-      return;
-    }
-
-    final result = await _repository.updateProfile(
-      profileData,
-      avatarFilePath: event.avatarFilePath,
-      cvFilePath: event.cvFilePath,
-    );
+    final result = await _repository.updateProfile(profileData);
     if (result.isLeft) {
       emit(
         ProfileSaveError(
@@ -90,10 +67,6 @@ class CareersProfileBloc
     }
 
     final data = result.right;
-    if (event.avatarFilePath != null && event.avatarFilePath!.isNotEmpty) {
-      await CareersAvatarCache.saveFromFile(event.avatarFilePath!);
-    }
-
     var normalized = data.isNotEmpty
         ? ProfileFilePaths.normalizeUploadData(
             Map<String, dynamic>.from(data),
@@ -106,8 +79,7 @@ class CareersProfileBloc
     );
 
     if (normalized.isNotEmpty) {
-      await _syncUploadedFilesToCache(normalized);
-      _emitUploadedProfileFiles(normalized, emit);
+      await _syncServerAvatarToSession(normalized);
     }
 
     await _cacheAvailableFromIfNeeded(profileData, normalized);
@@ -267,10 +239,7 @@ class CareersProfileBloc
   ) async {
     emit(const ProfileFilesUploading());
 
-    if (!ProfileFileMultipart.hasFiles(
-      avatarFilePath: event.avatarFilePath,
-      cvFilePath: event.cvFilePath,
-    )) {
+    if (!ProfileFileMultipart.hasFiles(avatarFilePath: event.avatarFilePath)) {
       emit(
         const ProfileFilesUploadError(
           message: 'No files selected for upload',
@@ -282,7 +251,6 @@ class CareersProfileBloc
     try {
       await ProfileFileMultipart.ensureReadable(
         avatarFilePath: event.avatarFilePath,
-        cvFilePath: event.cvFilePath,
       );
     } catch (e) {
       emit(
@@ -295,7 +263,6 @@ class CareersProfileBloc
 
     final result = await _repository.uploadProfileFiles(
       avatarFilePath: event.avatarFilePath,
-      cvFilePath: event.cvFilePath,
     );
     if (result.isLeft) {
       emit(ProfileFilesUploadError(message: result.left.message));
@@ -303,69 +270,26 @@ class CareersProfileBloc
     }
 
     final data = result.right;
-    if (event.avatarFilePath != null && event.avatarFilePath!.isNotEmpty) {
-      await CareersAvatarCache.saveFromFile(event.avatarFilePath!);
-    }
 
     var normalized = ProfileFilePaths.normalizeUploadData(
       Map<String, dynamic>.from(data),
     );
     normalized = _applyOptimisticSavePayload(normalized, const {});
-    await _syncUploadedFilesToCache(normalized);
+    await _syncServerAvatarToSession(normalized);
     emit(ProfileFilesUploaded(uploadData: normalized));
-    _emitUploadedProfileFiles(normalized, emit);
     add(const LoadProfileEvent());
     add(const CheckProfileCompletionEvent());
   }
 
-  void _emitUploadedProfileFiles(
-    Map<String, dynamic> data,
-    Emitter<CareersProfileState> emit,
-  ) {
-    final candidate = ProfileFilePaths.extractCandidateMap(data);
-    if (candidate == null) return;
-
-    final uploaded = ProfileModel.fromJson(candidate);
-    final current = state;
-    if (current is ProfileLoaded) {
-      emit(
-        ProfileLoaded(
-          profile: current.profile.copyWith(
-            avatarFile: uploaded.avatarFile ?? current.profile.avatarFile,
-            cvFile: uploaded.cvFile ?? current.profile.cvFile,
-          ),
-        ),
-      );
-      return;
-    }
-
-    emit(ProfileLoaded(profile: uploaded));
-  }
-
-  Future<void> _syncUploadedFilesToCache(Map<String, dynamic> data) async {
+  Future<void> _syncServerAvatarToSession(Map<String, dynamic> data) async {
     final candidate = ProfileFilePaths.extractCandidateMap(data);
     if (candidate == null) return;
 
     final avatar = ProfileFilePaths.extractAvatarPath(candidate);
-    final cv = ProfileFilePaths.extractCvPath(candidate);
+    if (avatar == null || CareersMediaUrl.isLocalFilePath(avatar)) return;
+    if (CareersMediaUrl.isEmbeddedFileData(avatar)) return;
 
-    if (avatar != null && CareersMediaUrl.isEmbeddedFileData(avatar)) {
-      await CareersAvatarCache.saveFromBase64(avatar);
-    } else if (avatar != null) {
-      await CareersUserManager.updateProfile(profileImage: avatar);
-    }
-
-    final remoteCv = cv != null && !CareersMediaUrl.isEmbeddedFileData(cv)
-        ? cv
-        : null;
-    if (remoteCv != null) {
-      await CareersUserManager.updateProfile(resumeUrl: remoteCv);
-    }
-  }
-
-  Future<void> _cacheEmbeddedAvatarIfNeeded(String? avatar) async {
-    if (avatar == null || !CareersMediaUrl.isEmbeddedFileData(avatar)) return;
-    await CareersAvatarCache.saveFromBase64(avatar);
+    await CareersUserManager.updateProfile(profileImage: avatar);
   }
 
   Map<String, dynamic> _applyOptimisticSavePayload(

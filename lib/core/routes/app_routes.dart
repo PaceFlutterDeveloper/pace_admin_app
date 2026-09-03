@@ -29,7 +29,6 @@ import 'package:admin_app/UI/public/jobs/pages/jobs_page.dart';
 import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile_page.dart';
-import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/UI/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
@@ -254,17 +253,11 @@ class AppRoute {
 
               final apiService = locator<ApiService>();
               final jobsApiService = JobsApiService(apiService: apiService);
-              final token = locator<CareersUserService>()
-                  .getCurrentCareersUser()
-                  ?.sessionToken;
 
               return MultiBlocProvider(
                 providers: [
                   BlocProvider<JobsBloc>(
-                    create: (_) => JobsBloc(
-                      jobsApiService: jobsApiService,
-                      token: token,
-                    ),
+                    create: (_) => JobsBloc(jobsApiService: jobsApiService),
                   ),
                   BlocProvider<ApplicationBloc>(
                     create: (_) => locator<ApplicationBloc>(),
@@ -284,17 +277,11 @@ class AppRoute {
               final jobId = state.extra as int;
               final apiService = locator<ApiService>();
               final jobsApiService = JobsApiService(apiService: apiService);
-              final token = locator<CareersUserService>()
-                  .getCurrentCareersUser()
-                  ?.sessionToken;
 
               return MultiBlocProvider(
                 providers: [
                   BlocProvider<JobsBloc>(
-                    create: (_) => JobsBloc(
-                      jobsApiService: jobsApiService,
-                      token: token,
-                    ),
+                    create: (_) => JobsBloc(jobsApiService: jobsApiService),
                   ),
                   BlocProvider<ApplicationBloc>(
                     create: (_) => locator<ApplicationBloc>(),
