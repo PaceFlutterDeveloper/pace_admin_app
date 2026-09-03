@@ -29,7 +29,17 @@ class ProfileFilePaths {
 
     final candidate = data['candidate'];
     if (candidate is Map) {
-      return Map<String, dynamic>.from(candidate);
+      final nested = Map<String, dynamic>.from(candidate);
+      // GET /get-profile sometimes puts scalar flags on `data` while file
+      // fields live under `data.candidate`. Fill any keys the nested map
+      // does not already have.
+      data.forEach((key, value) {
+        if (key == 'candidate') return;
+        if (!_hasValue(nested[key]) && _hasValue(value)) {
+          nested[key] = value;
+        }
+      });
+      return nested;
     }
 
     if (data.containsKey('avatar_file') ||

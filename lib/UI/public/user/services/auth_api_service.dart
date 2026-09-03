@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:admin_app/core/error/error_exception.dart';
 import 'package:admin_app/core/services/api_service.dart';
@@ -16,13 +17,23 @@ class AuthApiService {
   Future<Either<MyError, Map<String, dynamic>>> login({
     required String email,
     required String password,
+    String? fcmToken,
   }) async {
     try {
       log('AuthApiService: Attempting login for email: $email');
 
+      final body = <String, dynamic>{
+        'email': email,
+        'password': password,
+      };
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        body['fcm_token'] = fcmToken;
+        body['platform'] = _devicePlatform();
+      }
+
       final result = await _apiService.postAPI(
         url: ApiConstants.authLoginUrl,
-        body: {'email': email, 'password': password},
+        body: body,
       );
 
       return result.fold(
@@ -336,4 +347,6 @@ class AuthApiService {
       );
     }
   }
+
+  static String _devicePlatform() => Platform.isIOS ? 'ios' : 'android';
 }

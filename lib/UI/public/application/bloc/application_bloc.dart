@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../services/application_api_service.dart';
@@ -16,7 +17,7 @@ class ApplicationBloc extends Bloc<ApplicationEvent, ApplicationState> {
   }) : _applicationApiService = applicationApiService,
        _token = token,
        super(ApplicationInitial()) {
-    on<LoadApplicationsEvent>(_onLoadApplications);
+    on<LoadApplicationsEvent>(_onLoadApplications, transformer: droppable());
     on<LoadMoreApplicationsEvent>(_onLoadMoreApplications);
     on<RefreshApplicationsEvent>(_onRefreshApplications);
     on<FilterApplicationsByStatusEvent>(_onFilterApplicationsByStatus);
@@ -176,13 +177,12 @@ class ApplicationBloc extends Bloc<ApplicationEvent, ApplicationState> {
             ? List<String>.from(error.data!['missing_fields'] as List)
             : <String>[];
         emit(
-          JobApplyError(
-            message: error.message,
-            missingFields: missingFields,
-          ),
+          JobApplyError(message: error.message, missingFields: missingFields),
         );
       },
-      (response) => emit(JobApplySuccess(response: response)),
+      (response) {
+        emit(JobApplySuccess(response: response));
+      },
     );
   }
 

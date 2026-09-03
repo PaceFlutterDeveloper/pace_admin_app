@@ -52,6 +52,13 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>();
 
+int? _jobIdFromGoState(GoRouterState state) {
+  final extra = state.extra;
+  if (extra is int) return extra;
+  if (extra is String) return int.tryParse(extra);
+  return int.tryParse(state.uri.queryParameters['job_id'] ?? '');
+}
+
 class AppRoute {
   static late BuildContext context;
 
@@ -273,8 +280,14 @@ class AppRoute {
           GoRoute(
             path: Routes.jobDetail.path,
             name: Routes.jobDetail.name,
+            redirect: (_, state) {
+              if (_jobIdFromGoState(state) == null) {
+                return Routes.careers.path;
+              }
+              return null;
+            },
             builder: (context, state) {
-              final jobId = state.extra as int;
+              final jobId = _jobIdFromGoState(state)!;
               final apiService = locator<ApiService>();
               final jobsApiService = JobsApiService(apiService: apiService);
 

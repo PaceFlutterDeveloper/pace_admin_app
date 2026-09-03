@@ -69,6 +69,10 @@ class SignupError extends UserState {
 }
 
 // Logout states
+class LogoutLoading extends UserState {
+  const LogoutLoading();
+}
+
 class LogoutSuccess extends UserState {
   const LogoutSuccess();
 }

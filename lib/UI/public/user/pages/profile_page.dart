@@ -54,10 +54,21 @@ class _CareersProfilePageState extends State<CareersProfilePage>
   @override
   void initState() {
     super.initState();
-    _load();
+    if (locator<CareersUserService>().isCareersUserLoggedIn()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    } else {
+      _loading = false;
+    }
   }
 
   void _load() {
+    if (!mounted) return;
+    if (!locator<CareersUserService>().isCareersUserLoggedIn()) {
+      setState(_resetLocalProfile);
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -65,6 +76,13 @@ class _CareersProfilePageState extends State<CareersProfilePage>
     final bloc = context.read<CareersProfileBloc>();
     bloc.add(const LoadProfileEvent());
     bloc.add(const CheckProfileCompletionEvent());
+  }
+
+  void _resetLocalProfile() {
+    _profile = null;
+    _completion = null;
+    _loading = false;
+    _error = null;
   }
 
   Future<void> _openCompleteProfile() async {
@@ -112,10 +130,16 @@ class _CareersProfilePageState extends State<CareersProfilePage>
       listeners: [
         BlocListener<UserBloc, UserState>(
           listener: (context, state) {
-            if (state is LogoutSuccess) {
+            if (state is LoginSuccess) {
+              _load();
+              widget.onAuthChanged?.call();
+            } else if (state is LogoutSuccess) {
+              setState(_resetLocalProfile);
               widget.onAuthChanged?.call();
               if (!widget.embedded) {
-                Navigator.of(context).pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) Navigator.of(context).pop();
+                });
               }
             }
           },
@@ -261,7 +285,14 @@ class _CareersProfilePageState extends State<CareersProfilePage>
                         builder: (context) => const LoginPage(),
                       ),
                     )
-                    .then((_) => widget.onAuthChanged?.call());
+                    .then((_) {
+                      widget.onAuthChanged?.call();
+                      if (mounted &&
+                          locator<CareersUserService>()
+                              .isCareersUserLoggedIn()) {
+                        _load();
+                      }
+                    });
               },
             ),
           ],

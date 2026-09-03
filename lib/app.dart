@@ -8,7 +8,9 @@ import 'package:admin_app/UI/employee/tickets/tickets/cubit/tickets_cubit.dart';
 import 'package:admin_app/UI/employee/transport/nfc_mappy/provider/nfc_provider.dart';
 import 'package:admin_app/UI/home/cubit/home_cubit.dart';
 import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
+import 'package:admin_app/UI/notification/services/firebase_service.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
+import 'package:admin_app/UI/public/user/components/logout_dialog.dart';
 import 'package:admin_app/UI/students/bloc/student_attendance_bloc.dart';
 import 'package:admin_app/UI/students/cubit/students_cubit.dart';
 import 'package:admin_app/config/themes/app_theme.dart';
@@ -16,7 +18,6 @@ import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/features/attendance/presentation/bloc/attendance_bloc.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -30,46 +31,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Future<void> setupInteractedMessage() async {
-    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-
-    if (initialMessage != null) {
-      _handleMessage(initialMessage);
-    }
-
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
-  }
-
-  void _handleMessage(RemoteMessage msg) {
-    final data = msg.data;
-
-    final page = data['data_page']?.toString();
-    final ticketId = int.tryParse(data['ticket_id']?.toString() ?? '');
-    if (page == null) return;
-    if (page == Routes.manageTicketDetailPage.path) {
-      if (ticketId != null) {
-        AppRoute.router.goNamed(
-          Routes.manageTicketDetailPage.name,
-          extra: ticketId,
-        );
-      }
-    } else if (page == Routes.ticketDetailPage.path) {
-      if (ticketId != null) {
-        AppRoute.router.goNamed(Routes.ticketDetailPage.name, extra: ticketId);
-      }
-    } else {
-      AppRoute.router.goNamed(Routes.getNotifications.name);
-    }
-  }
-
   @override
   void initState() {
-    // setupInteractedMessage();
-
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FirebaseService.handlePendingInitialMessage();
+      FirebaseService.restoreCareersTopics();
+    });
   }
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -111,7 +81,9 @@ class _MyAppState extends State<MyApp> {
                 );
                 return MediaQuery(
                   data: mediaQuery.copyWith(textScaler: clampedTextScaler),
-                  child: child ?? const SizedBox.shrink(),
+                  child: LogoutLoadingOverlay(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 );
               },
             );

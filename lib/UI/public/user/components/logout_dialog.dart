@@ -1,67 +1,106 @@
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_events.dart';
+import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/core/widgets/app_dialogs.dart';
+import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class LogoutDialog extends StatelessWidget {
-  const LogoutDialog({super.key});
+class LogoutDialog {
+  LogoutDialog._();
+
+  static Future<void> show(BuildContext context) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: 'Logout',
+      message: 'Are you sure you want to logout?',
+      confirmLabel: 'Logout',
+      isDestructive: true,
+    );
+    if (confirmed != true || !context.mounted) return;
+    context.read<UserBloc>().add(const LogoutEvent());
+  }
+}
+
+/// Full-screen blocking overlay shown while [UserBloc] is in [LogoutLoading].
+class LogoutLoadingOverlay extends StatelessWidget {
+  final Widget child;
+
+  const LogoutLoadingOverlay({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<UserBloc, UserState>(
+      listenWhen: (previous, current) => current is LogoutError,
+      listener: (context, state) {
+        if (state is LogoutError) {
+          AppToast.error(context, state.message);
+        }
+      },
+      child: BlocBuilder<UserBloc, UserState>(
+        buildWhen: (previous, current) =>
+            previous is LogoutLoading || current is LogoutLoading,
+        builder: (context, state) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              child,
+              if (state is LogoutLoading) const _LogoutBarrier(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _LogoutBarrier extends StatelessWidget {
+  const _LogoutBarrier();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final dangerColor = isDark ? AppColors.iosRedDark : AppColors.iosRed;
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      title: Text(
-        'Logout',
-        style: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: theme.colorScheme.onSurface,
-        ),
-      ),
-      content: Text(
-        'Are you sure you want to logout?',
-        style: GoogleFonts.inter(
-          fontSize: 15,
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Cancel',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+    return Positioned.fill(
+      child: PopScope(
+        canPop: false,
+        child: AbsorbPointer(
+          child: ColoredBox(
+            color: Colors.black.withValues(alpha: 0.35),
+            child: Center(
+              child: Material(
+                color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                borderRadius: AppRadius.borderRadiusLg,
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl,
+                    vertical: AppSpacing.lg,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator.adaptive(),
+                      AppSpacing.vGapMd,
+                      Text(
+                        'Signing out...',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            context.read<UserBloc>().add(const LogoutEvent());
-          },
-          child: Text(
-            'Logout',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: dangerColor,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
-  }
-
-  static void show(BuildContext context) {
-    showDialog(context: context, builder: (context) => const LogoutDialog());
   }
 }

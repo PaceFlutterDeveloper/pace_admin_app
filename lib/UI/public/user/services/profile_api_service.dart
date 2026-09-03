@@ -69,7 +69,13 @@ class ProfileApiService {
               final candidate =
                   ProfileFilePaths.extractCandidateMap(normalized) ??
                   const <String, dynamic>{};
-              final profile = ProfileModel.fromJson(candidate);
+              // Nested `candidate` can omit flags that the API puts on `data`.
+              // FCM topics are a sibling of `data` on the get-profile payload.
+              final profile = ProfileModel.fromJson({
+                ...data,
+                ...candidate,
+                'topics': response['topics'] ?? data['topics'],
+              });
               _logGetProfilePhoto(candidate, data, profile.avatarFile);
               return Right(profile);
             } else {

@@ -6,6 +6,7 @@ import 'package:admin_app/UI/public/user/utils/careers_api_dates.dart';
 import 'package:admin_app/UI/public/user/utils/careers_media_url.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_multipart.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Bloc for the candidate (careers) profile.
@@ -20,17 +21,23 @@ class CareersProfileBloc
   CareersProfileBloc({required CareersProfileRepository repository})
     : _repository = repository,
       super(const ProfileInitial()) {
-    on<LoadProfileEvent>(_onLoadProfile);
-    on<SaveBasicInfoEvent>(_onSaveBasicInfo);
-    on<LoadProfileSectionEvent>(_onLoadSection);
-    on<SaveEducationEvent>(_onSaveEducation);
-    on<SaveExperienceEvent>(_onSaveExperience);
-    on<SaveFamilyEvent>(_onSaveFamily);
-    on<SaveReferencesEvent>(_onSaveReferences);
-    on<SaveProfessionalProgramsEvent>(_onSaveProfessionalPrograms);
-    on<CheckProfileCompletionEvent>(_onCheckProfileCompletion);
-    on<LoadCountriesEvent>(_onLoadCountries);
-    on<UploadProfileFilesEvent>(_onUploadProfileFiles);
+    on<LoadProfileEvent>(_onLoadProfile, transformer: droppable());
+    on<SaveBasicInfoEvent>(_onSaveBasicInfo, transformer: sequential());
+    on<LoadProfileSectionEvent>(_onLoadSection, transformer: sequential());
+    on<SaveEducationEvent>(_onSaveEducation, transformer: sequential());
+    on<SaveExperienceEvent>(_onSaveExperience, transformer: sequential());
+    on<SaveFamilyEvent>(_onSaveFamily, transformer: sequential());
+    on<SaveReferencesEvent>(_onSaveReferences, transformer: sequential());
+    on<SaveProfessionalProgramsEvent>(
+      _onSaveProfessionalPrograms,
+      transformer: sequential(),
+    );
+    on<CheckProfileCompletionEvent>(
+      _onCheckProfileCompletion,
+      transformer: droppable(),
+    );
+    on<LoadCountriesEvent>(_onLoadCountries, transformer: droppable());
+    on<UploadProfileFilesEvent>(_onUploadProfileFiles, transformer: sequential());
   }
 
   Future<void> _onLoadProfile(

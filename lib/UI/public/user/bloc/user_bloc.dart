@@ -1,11 +1,15 @@
+import 'dart:async';
 import 'dart:developer';
 
+import 'package:admin_app/UI/public/notification/careers_fcm_service.dart';
 import 'package:admin_app/UI/public/user/bloc/user_events.dart';
 import 'package:admin_app/UI/public/user/bloc/user_states.dart';
+import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
 import 'package:admin_app/UI/public/user/services/auth_api_service.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/core/error/error_exception.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Bloc for candidate (careers) authentication: login, signup, logout,
@@ -24,7 +28,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
        super(const UserInitial()) {
     on<LoginEvent>(_onLogin);
     on<SignupEvent>(_onSignup);
-    on<LogoutEvent>(_onLogout);
+    on<LogoutEvent>(_onLogout, transformer: droppable());
     on<ForgotPasswordEvent>(_onForgotPassword);
     on<ResetPasswordEvent>(_onResetPassword);
     on<ResendVerificationEvent>(_onResendVerification);
@@ -34,9 +38,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   Future<void> _onLogin(LoginEvent event, Emitter<UserState> emit) async {
     emit(const LoginLoading());
 
+    final fcmToken = await CareersFcmService.getFcmToken();
     final result = await _authApiService.login(
       email: event.email,
       password: event.password,
+      fcmToken: fcmToken,
     );
 
     await result.fold(
@@ -58,8 +64,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         final user = CareersUserModel.fromJson(userJson);
         await _careersUserService.setCurrentCareersUser(user);
         await _careersUserService.updateLastLogin();
-
         emit(LoginSuccess(user: user));
+        unawaited(CareersFcmService.syncFromProfile(user: user));
       },
     );
   }
@@ -82,12 +88,18 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> _onLogout(LogoutEvent event, Emitter<UserState> emit) async {
+    emit(const LogoutLoading());
     try {
-      await _careersUserService.clearCurrentCareersUser();
+      await CareersUserManager.logoutUser();
       emit(const LogoutSuccess());
     } catch (e) {
       log('UserBloc: Logout error - $e');
-      emit(LogoutError(message: 'Logout failed: ${e.toString()}'));
+      try {
+        await _careersUserService.clearCurrentCareersUser();
+        emit(const LogoutSuccess());
+      } catch (clearError) {
+        emit(LogoutError(message: 'Logout failed: ${clearError.toString()}'));
+      }
     }
   }
 

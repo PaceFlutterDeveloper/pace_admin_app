@@ -22,6 +22,7 @@ import 'package:admin_app/UI/public/application/bloc/application_bloc.dart';
 import 'package:admin_app/UI/public/application/services/application_api_service.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
+import 'package:admin_app/UI/public/user/bloc/user_events.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
 import 'package:admin_app/UI/public/user/repository/careers_profile_repository.dart';
 import 'package:admin_app/UI/public/user/services/auth_api_service.dart';
@@ -193,7 +194,7 @@ Future<void> serviceLocators() async {
   locator.registerLazySingleton<CareersUserService>(() => CareersUserService());
 
   CareersSessionExpiredHandler.onExpired = () async {
-    await locator<CareersUserService>().clearCurrentCareersUser();
+    locator<UserBloc>().add(const LogoutEvent());
     AppRoute.router.go(Routes.careers.path);
   };
 

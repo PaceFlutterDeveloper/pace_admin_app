@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:admin_app/UI/public/notification/careers_fcm_service.dart';
 import 'package:admin_app/UI/public/user/models/country_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
@@ -46,8 +49,19 @@ class CareersProfileRepository {
 
   Future<Either<MyError, ProfileModel>> getProfile() {
     return _withCandidate(
-      (candidateId, token) =>
-          _profileApiService.getProfile(candidateId: candidateId, token: token),
+      (candidateId, token) async {
+        final result = await _profileApiService.getProfile(
+          candidateId: candidateId,
+          token: token,
+        );
+        result.fold(
+          (_) {},
+          (profile) => unawaited(
+            CareersFcmService.subscribeToTopics(profile.topics),
+          ),
+        );
+        return result;
+      },
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:admin_app/UI/public/notification/careers_fcm_service.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:get_it/get_it.dart';
@@ -17,9 +18,13 @@ class CareersUserManager {
     await _careersUserService.updateLastLogin();
   }
 
-  // Logout careers user
+  /// Clears the local session and unsubscribes this device from FCM topics.
+  /// Used by both explicit logout and session-expiry handling.
   static Future<void> logoutUser() async {
-    await _careersUserService.clearCurrentCareersUser();
+    await Future.wait([
+      CareersFcmService.unsubscribeForCurrentUser(),
+      _careersUserService.clearCurrentCareersUser(),
+    ]);
   }
 
   // Check if user is logged in

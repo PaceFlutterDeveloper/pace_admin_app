@@ -35,6 +35,7 @@ class ProfileModel {
   final String? preferredPosition;
   final String? avatarFile;
   final String? cvFile;
+  final List<String> topics;
 
   ProfileModel({
     this.candidateId,
@@ -71,6 +72,7 @@ class ProfileModel {
     this.preferredPosition,
     this.avatarFile,
     this.cvFile,
+    this.topics = const [],
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -122,7 +124,16 @@ class ProfileModel {
       cvFile: _normalizeTextField(
         json['cv_file'] ?? json['resume_url'] ?? json['cv'],
       ),
+      topics: parseFcmTopics(json['topics']),
     );
+  }
+
+  static List<String> parseFcmTopics(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw
+        .map((value) => value.toString().trim())
+        .where((topic) => topic.isNotEmpty)
+        .toList();
   }
 
   static bool? _parseBool(dynamic value) => parseCareersYn(value);
@@ -236,6 +247,7 @@ class ProfileModel {
     String? preferredPosition,
     String? avatarFile,
     String? cvFile,
+    List<String>? topics,
   }) {
     return ProfileModel(
       candidateId: candidateId ?? this.candidateId,
@@ -262,16 +274,18 @@ class ProfileModel {
       expectedCtc: expectedCtc ?? this.expectedCtc,
       availableFrom: availableFrom ?? this.availableFrom,
       reasonLeaving: reasonLeaving ?? this.reasonLeaving,
-      convictionYn: convictionYn,
+      convictionYn: convictionYn ?? this.convictionYn,
       convictionDetails: convictionDetails ?? this.convictionDetails,
-      govtIssueYn: govtIssueYn,
+      govtIssueYn: govtIssueYn ?? this.govtIssueYn,
       govtIssueDetails: govtIssueDetails ?? this.govtIssueDetails,
-      referencePermissionYn: referencePermissionYn,
-      portalVisibility: portalVisibility,
+      referencePermissionYn:
+          referencePermissionYn ?? this.referencePermissionYn,
+      portalVisibility: portalVisibility ?? this.portalVisibility,
       noticePeriod: noticePeriod ?? this.noticePeriod,
       preferredPosition: preferredPosition ?? this.preferredPosition,
       avatarFile: avatarFile ?? this.avatarFile,
       cvFile: cvFile ?? this.cvFile,
+      topics: topics ?? this.topics,
     );
   }
 }

@@ -6,6 +6,8 @@ import 'package:admin_app/UI/public/application/widgets/application_card.dart';
 import 'package:admin_app/UI/public/application/widgets/application_empty_state.dart';
 import 'package:admin_app/UI/public/application/widgets/application_loading_state.dart';
 import 'package:admin_app/UI/public/application/widgets/status_filter_chip.dart';
+import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
+import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
@@ -70,13 +72,27 @@ class _ApplicationsTabState extends State<ApplicationsTab>
   Widget build(BuildContext context) {
     super.build(context);
 
+    return BlocListener<UserBloc, UserState>(
+      listener: (context, state) {
+        if (state is LoginSuccess || state is LogoutSuccess) {
+          _loadedForCandidateId = null;
+          setState(() {});
+        }
+      },
+      child: _buildBody(context),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
     final user = locator<CareersUserService>().getCurrentCareersUser();
     if (user == null) {
+      _loadedForCandidateId = null;
       return _buildLoginPrompt(context);
     }
 
     final candidateId = int.tryParse(user.id);
     if (candidateId == null) {
+      _loadedForCandidateId = null;
       return _buildLoginPrompt(context);
     }
 
@@ -235,11 +251,15 @@ class _ApplicationsTabState extends State<ApplicationsTab>
               label: 'Login',
               isFullWidth: false,
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) => const LoginPage(),
-                  ),
-                );
+                Navigator.of(context)
+                    .push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const LoginPage(),
+                      ),
+                    )
+                    .then((_) {
+                      if (mounted) setState(() => _loadedForCandidateId = null);
+                    });
               },
             ),
           ],
