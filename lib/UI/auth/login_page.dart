@@ -73,6 +73,10 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _backToCareers() {
+    secretAdminLoginOpen.value = false;
+  }
+
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       if (_selectedSchool == null) {
@@ -96,14 +100,24 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: isDark
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(CupertinoIcons.back, color: theme.colorScheme.onSurface),
+          onPressed: _backToCareers,
+        ),
+      ),
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             state.maybeWhen(
               loginFailure: (msg) => AppToast.error(context, msg),
               loginSuccess: () {
+                secretAdminLoginOpen.value = false;
                 context.read<HomeCubit>().getMenu();
-                context.goNamed(Routes.root.name);
+                context.go(Routes.home.path);
               },
               orElse: () {},
             );
@@ -129,14 +143,15 @@ class _LoginPageState extends State<LoginPage> {
                     minHeight:
                         MediaQuery.sizeOf(context).height -
                         MediaQuery.paddingOf(context).top -
-                        MediaQuery.paddingOf(context).bottom,
+                        MediaQuery.paddingOf(context).bottom -
+                        kToolbarHeight,
                   ),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: AppSpacing.xxl),
+                        const SizedBox(height: AppSpacing.md),
 
                         // Logo
                         Center(
@@ -263,7 +278,7 @@ class _LoginPageState extends State<LoginPage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.pushNamed(Routes.careers.name),
+        onTap: _backToCareers,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),

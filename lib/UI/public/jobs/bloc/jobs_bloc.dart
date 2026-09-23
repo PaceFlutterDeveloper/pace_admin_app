@@ -68,7 +68,10 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
   }
 
   void _onFetchJobs(FetchJobsEvent event, Emitter<JobsState> emit) async {
-    emit(JobsLoading());
+    final keepList = event.silent && state is JobsLoaded;
+    if (!keepList) {
+      emit(JobsLoading());
+    }
 
     final result = await _jobsApiService.fetchJobs(
       search: event.searchQuery,
@@ -77,7 +80,10 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       page: 1,
       limit: 10,    );
 
-    result.fold((error) => emit(JobsError(error.message)), (response) {
+    result.fold((error) {
+      if (keepList) return;
+      emit(JobsError(error.message));
+    }, (response) {
       if (response.data.isNotEmpty) {
         List<JobModel> filteredJobs = _applyClientFilters(
           response.data,
@@ -173,6 +179,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
         filterBy: event.filterBy,
         schoolId: event.schoolId,
         location: event.location,
+        silent: state is JobsLoaded,
       ),
     );
   }

@@ -29,11 +29,13 @@ import 'package:go_router/go_router.dart';
 /// header while the API loads or fails.
 class CareersProfilePage extends StatefulWidget {
   final bool embedded;
+  final bool isActive;
   final VoidCallback? onAuthChanged;
 
   const CareersProfilePage({
     super.key,
     this.embedded = false,
+    this.isActive = true,
     this.onAuthChanged,
   });
 
@@ -54,12 +56,22 @@ class _CareersProfilePageState extends State<CareersProfilePage>
   @override
   void initState() {
     super.initState();
-    if (locator<CareersUserService>().isCareersUserLoggedIn()) {
+    final shouldLoad = !widget.embedded || widget.isActive;
+    if (shouldLoad &&
+        locator<CareersUserService>().isCareersUserLoggedIn()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _load();
       });
     } else {
       _loading = false;
+    }
+  }
+
+  @override
+  void didUpdateWidget(CareersProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _load();
     }
   }
 

@@ -7,11 +7,15 @@ class FetchJobsEvent extends JobsEvent {
   final int? schoolId;
   final String? location;
 
+  /// Keeps the current job list on screen while a newer request runs.
+  final bool silent;
+
   FetchJobsEvent({
     this.searchQuery,
     this.filterBy,
     this.schoolId,
     this.location,
+    this.silent = false,
   });
 }
 

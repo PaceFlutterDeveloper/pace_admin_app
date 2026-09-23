@@ -20,8 +20,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 class ApplicationsTab extends StatefulWidget {
   final VoidCallback? onBrowseJobs;
+  final bool isActive;
 
-  const ApplicationsTab({super.key, this.onBrowseJobs});
+  const ApplicationsTab({super.key, this.onBrowseJobs, this.isActive = true});
 
   @override
   State<ApplicationsTab> createState() => _ApplicationsTabState();
@@ -39,6 +40,37 @@ class _ApplicationsTabState extends State<ApplicationsTab>
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
+    if (widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _onShown();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(ApplicationsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _onShown();
+    }
+  }
+
+  void _onShown() {
+    final user = locator<CareersUserService>().getCurrentCareersUser();
+    final candidateId = int.tryParse(user?.id ?? '');
+    if (candidateId == null) {
+      _loadedForCandidateId = null;
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final bloc = context.read<ApplicationBloc>();
+    final silent =
+        _loadedForCandidateId == candidateId && bloc.state is ApplicationLoaded;
+    _loadedForCandidateId = candidateId;
+    bloc.add(
+      LoadApplicationsEvent(candId: candidateId, silent: silent),
+    );
   }
 
   @override
@@ -60,14 +92,6 @@ class _ApplicationsTabState extends State<ApplicationsTab>
     }
   }
 
-  void _loadIfNeeded(int candidateId) {
-    if (_loadedForCandidateId == candidateId) return;
-    _loadedForCandidateId = candidateId;
-    context.read<ApplicationBloc>().add(
-      LoadApplicationsEvent(candId: candidateId),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -76,7 +100,11 @@ class _ApplicationsTabState extends State<ApplicationsTab>
       listener: (context, state) {
         if (state is LoginSuccess || state is LogoutSuccess) {
           _loadedForCandidateId = null;
-          setState(() {});
+          if (widget.isActive) {
+            _onShown();
+          } else if (mounted) {
+            setState(() {});
+          }
         }
       },
       child: _buildBody(context),
@@ -96,11 +124,9 @@ class _ApplicationsTabState extends State<ApplicationsTab>
       return _buildLoginPrompt(context);
     }
 
-    _loadIfNeeded(candidateId);
-
     return BlocBuilder<ApplicationBloc, ApplicationState>(
       builder: (context, state) {
-        if (state is ApplicationLoading) {
+        if (state is ApplicationLoading || state is ApplicationInitial) {
           return const ApplicationLoadingState();
         }
 
@@ -258,7 +284,7 @@ class _ApplicationsTabState extends State<ApplicationsTab>
                       ),
                     )
                     .then((_) {
-                      if (mounted) setState(() => _loadedForCandidateId = null);
+                      if (mounted) _onShown();
                     });
               },
             ),

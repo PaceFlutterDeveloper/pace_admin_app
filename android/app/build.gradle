@@ -46,12 +46,18 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
         }
     }
 }
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // uCrop (image_cropper) calls OkHttp; include it so R8 does not fail
+    // the release minify step on missing okhttp3.* classes.
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
 flutter {

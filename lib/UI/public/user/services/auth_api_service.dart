@@ -153,7 +153,7 @@ class AuthApiService {
           final response = json.decode(responseData);
           if (response['status'] == true) {
             log('AuthApiService: Forgot password request successful');
-            return Right(response['data']);
+            return Right(_successBody(response));
           } else {
             log(
               'AuthApiService: Forgot password failed - ${response['message']}',
@@ -210,7 +210,7 @@ class AuthApiService {
           final response = json.decode(responseData);
           if (response['status'] == true) {
             log('AuthApiService: Password reset successful');
-            return Right(response['data']);
+            return Right(_successBody(response));
           } else {
             log(
               'AuthApiService: Password reset failed - ${response['message']}',
@@ -263,7 +263,7 @@ class AuthApiService {
           final response = json.decode(responseData);
           if (response['status'] == true) {
             log('AuthApiService: Resend verification successful');
-            return Right(response['data']);
+            return Right(_successBody(response));
           } else {
             log(
               'AuthApiService: Resend verification failed - ${response['message']}',
@@ -316,7 +316,7 @@ class AuthApiService {
           final response = json.decode(responseData);
           if (response['status'] == true) {
             log('AuthApiService: Email verification successful');
-            return Right(response['data']);
+            return Right(_successBody(response));
           } else {
             log(
               'AuthApiService: Email verification failed - ${response['message']}',
@@ -349,4 +349,17 @@ class AuthApiService {
   }
 
   static String _devicePlatform() => Platform.isIOS ? 'ios' : 'android';
+
+  /// Auth action endpoints often return `data: null` with only a message.
+  Map<String, dynamic> _successBody(dynamic response) {
+    final data = response is Map ? response['data'] : null;
+    final body = data is Map<String, dynamic>
+        ? Map<String, dynamic>.from(data)
+        : <String, dynamic>{};
+    final message = response is Map ? response['message'] : null;
+    if (message is String && message.isNotEmpty) {
+      body.putIfAbsent('message', () => message);
+    }
+    return body;
+  }
 }

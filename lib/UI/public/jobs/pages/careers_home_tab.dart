@@ -16,7 +16,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CareersHomeTab extends StatefulWidget {
-  const CareersHomeTab({super.key});
+  final bool isActive;
+
+  const CareersHomeTab({super.key, this.isActive = true});
 
   @override
   State<CareersHomeTab> createState() => _CareersHomeTabState();
@@ -40,6 +42,25 @@ class _CareersHomeTabState extends State<CareersHomeTab>
     super.initState();
     context.read<JobsBloc>().add(FetchJobsEvent());
     context.read<JobsBloc>().add(FetchSchoolsEvent());
+  }
+
+  @override
+  void didUpdateWidget(CareersHomeTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _refresh();
+    }
+  }
+
+  void _refresh() {
+    context.read<JobsBloc>().add(
+      RefreshJobsEvent(
+        searchQuery: _searchQuery,
+        filterBy: 'All',
+        schoolId: _selectedSchool?.id,
+        location: _location,
+      ),
+    );
   }
 
   @override

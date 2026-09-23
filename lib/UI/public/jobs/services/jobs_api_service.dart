@@ -11,8 +11,10 @@ import 'package:either_dart/either.dart';
 
 class JobsApiService {
   final ApiService _apiService;
+  final void Function(Map<String, dynamic> payload)? onJobsPayload;
 
-  JobsApiService({required ApiService apiService}) : _apiService = apiService;
+  JobsApiService({required ApiService apiService, this.onJobsPayload})
+    : _apiService = apiService;
 
   // Jobs, job details and schools are public endpoints (API v2) — no
   // session token is sent.
@@ -49,6 +51,12 @@ class JobsApiService {
           final Map<String, dynamic> jsonData = json.decode(responseData);
 
           if (jsonData['status'] == true) {
+            try {
+              onJobsPayload?.call(jsonData);
+            } catch (e) {
+              log('App version check failed open: $e');
+            }
+
             final List<dynamic> jobsData = jsonData['data'] ?? [];
             final List<JobModel> jobs = jobsData
                 .map((job) => JobModel.fromMap(job))
@@ -137,33 +145,30 @@ class JobsApiService {
         null,
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (responseData) {
-          try {
-            final Map<String, dynamic> jsonData = json.decode(responseData);
+      return result.fold((error) => Left(error), (responseData) {
+        try {
+          final Map<String, dynamic> jsonData = json.decode(responseData);
 
-            if (jsonData['status'] == true) {
-              final schoolResponse = SchoolResponseModel.fromMap(jsonData);
-              return Right(schoolResponse);
-            } else {
-              return Left(
-                MyError(
-                  key: AppError.unknown,
-                  message: careersApiErrorMessage(jsonData),
-                ),
-              );
-            }
-          } catch (e) {
+          if (jsonData['status'] == true) {
+            final schoolResponse = SchoolResponseModel.fromMap(jsonData);
+            return Right(schoolResponse);
+          } else {
             return Left(
               MyError(
                 key: AppError.unknown,
-                message: 'Failed to parse schools data: $e',
+                message: careersApiErrorMessage(jsonData),
               ),
             );
           }
-        },
-      );
+        } catch (e) {
+          return Left(
+            MyError(
+              key: AppError.unknown,
+              message: 'Failed to parse schools data: $e',
+            ),
+          );
+        }
+      });
     } catch (e) {
       return Left(
         MyError(key: AppError.unknown, message: 'Failed to fetch schools: $e'),
@@ -212,10 +217,7 @@ class JobsApiService {
           .toList();
 
       return Right(
-        JobResponseModel(
-          data: filteredJobs,
-          pagination: response.pagination,
-        ),
+        JobResponseModel(data: filteredJobs, pagination: response.pagination),
       );
     });
   }

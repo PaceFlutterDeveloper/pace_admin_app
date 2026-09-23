@@ -214,19 +214,13 @@ class _BasicInfoTabState extends State<BasicInfoTab>
       final path = await ImageProcessingHelper.pickAndProcessImage(context);
       if (!mounted) return;
       if (path != null) {
-        if (mounted) {
-          setState(() {
-            _pickedAvatarPath = path;
-            _isProcessingImage = false;
-          });
-        }
-      } else {
-        setState(() => _isProcessingImage = false);
+        setState(() => _pickedAvatarPath = path);
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isProcessingImage = false);
       AppToast.error(context, 'Failed to process image: $e');
+    } finally {
+      if (mounted) setState(() => _isProcessingImage = false);
     }
   }
 

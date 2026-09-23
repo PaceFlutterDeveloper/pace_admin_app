@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -9,15 +10,15 @@ import 'application_states.dart';
 
 class ApplicationBloc extends Bloc<ApplicationEvent, ApplicationState> {
   final ApplicationApiService _applicationApiService;
-  final String? _token;
+  final CareersUserService _careersUserService;
 
   ApplicationBloc({
     required ApplicationApiService applicationApiService,
-    String? token,
+    required CareersUserService careersUserService,
   }) : _applicationApiService = applicationApiService,
-       _token = token,
+       _careersUserService = careersUserService,
        super(ApplicationInitial()) {
-    on<LoadApplicationsEvent>(_onLoadApplications, transformer: droppable());
+    on<LoadApplicationsEvent>(_onLoadApplications, transformer: restartable());
     on<LoadMoreApplicationsEvent>(_onLoadMoreApplications);
     on<RefreshApplicationsEvent>(_onRefreshApplications);
     on<FilterApplicationsByStatusEvent>(_onFilterApplicationsByStatus);
@@ -26,11 +27,20 @@ class ApplicationBloc extends Bloc<ApplicationEvent, ApplicationState> {
     on<ResetJobApplyStateEvent>(_onResetJobApplyState);
   }
 
+  String? get _token =>
+      _careersUserService.getCurrentCareersUser()?.sessionToken;
+
   Future<void> _onLoadApplications(
     LoadApplicationsEvent event,
     Emitter<ApplicationState> emit,
   ) async {
-    emit(ApplicationLoading());
+    final previous = state is ApplicationLoaded
+        ? state as ApplicationLoaded
+        : null;
+    final keepVisible = event.silent && previous != null;
+    if (!keepVisible) {
+      emit(ApplicationLoading());
+    }
 
     final result = await _applicationApiService.getMyApplications(
       candId: event.candId,
@@ -38,10 +48,12 @@ class ApplicationBloc extends Bloc<ApplicationEvent, ApplicationState> {
       limit: event.limit,
       token: _token,
     );
+    if (emit.isDone) return;
 
     result.fold(
       (error) {
         log('Error loading applications: ${error.message}');
+        if (keepVisible) return;
         emit(ApplicationError(message: error.message));
       },
       (response) {
@@ -55,6 +67,7 @@ class ApplicationBloc extends Bloc<ApplicationEvent, ApplicationState> {
             pagination: response.data.pagination,
             currentPage: 1,
             hasReachedMax: !response.data.pagination.hasNext,
+            selectedStatus: previous?.selectedStatus,
           ),
         );
       },

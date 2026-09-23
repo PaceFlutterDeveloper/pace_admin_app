@@ -113,9 +113,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     result.fold(
       (error) => emit(ForgotPasswordError(message: error.message)),
-      (_) => emit(
-        const ForgotPasswordSuccess(
-          message: 'Password reset link sent to your email',
+      (data) => emit(
+        ForgotPasswordSuccess(
+          message:
+              data['message'] as String? ??
+              'If an account with this email exists, a password reset link has been sent.',
         ),
       ),
     );
@@ -135,9 +137,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     result.fold(
       (error) => emit(ResetPasswordError(message: error.message)),
-      (_) => emit(
-        const ResetPasswordSuccess(
-          message: 'Password has been reset successfully',
+      (data) => emit(
+        ResetPasswordSuccess(
+          message:
+              data['message'] as String? ??
+              'Password has been reset successfully',
         ),
       ),
     );
@@ -153,9 +157,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     result.fold(
       (error) => emit(ResendVerificationError(message: error.message)),
-      (_) => emit(
-        const ResendVerificationSuccess(
-          message: 'Verification email sent to your inbox',
+      (data) => emit(
+        ResendVerificationSuccess(
+          message:
+              data['message'] as String? ??
+              'Verification email sent to your inbox',
         ),
       ),
     );
@@ -171,7 +177,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     await result.fold(
       (error) async => emit(VerifyEmailError(message: error.message)),
-      (_) async {
+      (data) async {
         final currentUser = _careersUserService.getCurrentCareersUser();
         if (currentUser != null) {
           await _careersUserService.updateCurrentCareersUser(
@@ -179,8 +185,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           );
         }
         emit(
-          const VerifyEmailSuccess(
-            message: 'Email has been verified successfully',
+          VerifyEmailSuccess(
+            message:
+                data['message'] as String? ??
+                'Email has been verified successfully',
           ),
         );
       },

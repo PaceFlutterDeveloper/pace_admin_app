@@ -8,5 +8,9 @@
 	<array>
 		<string>TAG</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:paceeducation.com</string>
+	</array>
 </dict>
 </plist>

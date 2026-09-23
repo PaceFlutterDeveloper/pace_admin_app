@@ -1,8 +1,8 @@
 import 'package:admin_app/UI/public/jobs/components/shared/card_decoration.dart';
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
+import 'package:admin_app/UI/public/jobs/utils/job_share.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class JobHeaderCard extends StatelessWidget {
   final JobModel job;
@@ -246,29 +246,10 @@ class JobHeaderCard extends StatelessWidget {
   }
 
   void _shareJob(BuildContext context) {
-    final shareText =
-        '''
-${job.title} at ${job.schoolName}
-Location: ${job.location}
-Employment Type: ${job.employmentType}
-Salary: ${job.salaryRange.isNotEmpty ? job.salaryRange : 'Not specified'}
-
-${job.description}
-
-Apply now!
-''';
-
-    Clipboard.setData(ClipboardData(text: shareText));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Job details copied to clipboard',
-          style: TextStyle(fontSize: 14),
-        ),
-        backgroundColor: ConstColors.primary,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (onShare != null) {
+      onShare!();
+      return;
+    }
+    JobShare.share(context, job);
   }
 }

@@ -126,12 +126,45 @@ class ImageProcessingHelper {
     }
   }
 
+  /// Copies the picker temp file so it still exists after the gallery
+  /// sheet dismisses. iOS can delete `image_picker_*` files immediately.
+  static Future<String?> _copyToStableTempFile(String sourcePath) async {
+    try {
+      final source = File(sourcePath);
+      if (!await source.exists()) {
+        DebugLogger.log('[Image Processing] Source missing: $sourcePath');
+        return null;
+      }
+      final tempDir = await getTemporaryDirectory();
+      final ext = _extension(sourcePath);
+      final safeExt = allowedExtensions.contains(ext) ? ext : 'jpg';
+      final destPath =
+          '${tempDir.path}/profile_src_${DateTime.now().millisecondsSinceEpoch}.$safeExt';
+      await source.copy(destPath);
+      return destPath;
+    } catch (e) {
+      DebugLogger.log('[Image Processing] Copy to temp failed: $e');
+      return sourcePath;
+    }
+  }
+
+  /// Lets the system picker finish dismissing before the cropper is presented.
+  /// Presenting too early is dropped silently on iOS and [cropImage] never
+  /// returns, which leaves the profile-photo loader spinning forever.
+  static Future<void> _waitForPickerDismissal() async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (Platform.isIOS) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
   /// Crops to UAE passport ratio 3.5 : 4.5 with a locked aspect-ratio UI.
   static Future<String?> cropImage(
     String imagePath,
     BuildContext context,
   ) async {
     try {
+      DebugLogger.log('[Image Processing] Opening cropper: $imagePath');
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: imagePath,
         aspectRatio: const CropAspectRatio(
@@ -161,6 +194,7 @@ class ImageProcessingHelper {
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
             aspectRatioLockDimensionSwapEnabled: false,
+            aspectRatioPickerButtonHidden: true,
             rotateButtonsHidden: false,
             rotateClockwiseButtonHidden: false,
             hidesNavigationBar: false,
@@ -170,6 +204,11 @@ class ImageProcessingHelper {
             showCancelConfirmationDialog: false,
           ),
         ],
+      );
+      DebugLogger.log(
+        croppedFile == null
+            ? '[Image Processing] Crop cancelled'
+            : '[Image Processing] Crop done: ${croppedFile.path}',
       );
       return croppedFile?.path;
     } catch (e) {
@@ -257,7 +296,11 @@ class ImageProcessingHelper {
       if (imagePath == null) return null;
       if (!isValidImageFormat(imagePath)) return null;
 
-      final croppedPath = await cropImage(imagePath, context);
+      final stablePath = await _copyToStableTempFile(imagePath) ?? imagePath;
+      await _waitForPickerDismissal();
+      if (!context.mounted) return null;
+
+      final croppedPath = await cropImage(stablePath, context);
       if (croppedPath == null) return null;
 
       return await compressImage(croppedPath) ?? croppedPath;

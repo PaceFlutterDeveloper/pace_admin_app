@@ -1,4 +1,5 @@
 import 'package:admin_app/UI/auth/cubit/auth_cubit.dart';
+import 'package:admin_app/UI/auth/login_page.dart';
 import 'package:admin_app/UI/class_attendance/cubit/grade_attendance_cubit.dart';
 import 'package:admin_app/UI/employee/attendance/cubit/attendance_cubit.dart';
 import 'package:admin_app/UI/employee/profile/cubit/profile_cubit.dart';
@@ -15,6 +16,9 @@ import 'package:admin_app/UI/students/bloc/student_attendance_bloc.dart';
 import 'package:admin_app/UI/students/cubit/students_cubit.dart';
 import 'package:admin_app/config/themes/app_theme.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
+import 'package:admin_app/core/services/deep_link_service.dart';
+import 'package:admin_app/core/update/app_update_controller.dart';
+import 'package:admin_app/core/update/force_update_screen.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/features/attendance/presentation/bloc/attendance_bloc.dart';
@@ -35,9 +39,17 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      locator<AppUpdateController>().check();
       FirebaseService.handlePendingInitialMessage();
       FirebaseService.restoreCareersTopics();
+      DeepLinkService.instance.start();
     });
+  }
+
+  @override
+  void dispose() {
+    DeepLinkService.instance.dispose();
+    super.dispose();
   }
 
   @override
@@ -79,10 +91,37 @@ class _MyAppState extends State<MyApp> {
                 final clampedTextScaler = TextScaler.linear(
                   mediaQuery.textScaler.scale(1.0).clamp(0.8, 1.2),
                 );
+                final updateController = locator<AppUpdateController>();
                 return MediaQuery(
                   data: mediaQuery.copyWith(textScaler: clampedTextScaler),
-                  child: LogoutLoadingOverlay(
-                    child: child ?? const SizedBox.shrink(),
+                  child: ListenableBuilder(
+                    listenable: updateController,
+                    builder: (context, _) {
+                      if (updateController.updateRequired) {
+                        return Navigator(
+                          onGenerateRoute: (settings) =>
+                              MaterialPageRoute<void>(
+                                settings: settings,
+                                builder: (_) => const ForceUpdateScreen(),
+                              ),
+                        );
+                      }
+                      return LogoutLoadingOverlay(
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: secretAdminLoginOpen,
+                          child: child ?? const SizedBox.shrink(),
+                          builder: (context, open, navigator) {
+                            return Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                navigator!,
+                                if (open) const LoginPage(),
+                              ],
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                 );
               },

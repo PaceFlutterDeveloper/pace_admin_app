@@ -32,6 +32,7 @@ import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile
 import 'package:admin_app/UI/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
+import 'package:admin_app/core/update/app_update_controller.dart';
 import 'package:admin_app/core/utils/go_router_refresh_stream.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/features/attendance/presentation/pages/attendance_page.dart';
@@ -49,8 +50,20 @@ final List<String> globalPaths = [
   Routes.updatePassword.path,
 ];
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Shows the admin login over careers without changing the route.
+/// The careers shell and the root navigator share keys, so a route change
+/// between them throws a duplicate GlobalKey error.
+final ValueNotifier<bool> secretAdminLoginOpen = ValueNotifier(false);
 final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>();
+
+JobsApiService _careersJobsApiService() {
+  return JobsApiService(
+    apiService: locator<ApiService>(),
+    onJobsPayload: locator<AppUpdateController>().evaluate,
+  );
+}
 
 int? _jobIdFromGoState(GoRouterState state) {
   final extra = state.extra;
@@ -258,13 +271,11 @@ class AppRoute {
               if (tabParam == 'applications') initialTab = 1;
               if (tabParam == 'profile') initialTab = 2;
 
-              final apiService = locator<ApiService>();
-              final jobsApiService = JobsApiService(apiService: apiService);
-
               return MultiBlocProvider(
                 providers: [
                   BlocProvider<JobsBloc>(
-                    create: (_) => JobsBloc(jobsApiService: jobsApiService),
+                    create: (_) =>
+                        JobsBloc(jobsApiService: _careersJobsApiService()),
                   ),
                   BlocProvider<ApplicationBloc>(
                     create: (_) => locator<ApplicationBloc>(),
@@ -278,6 +289,18 @@ class AppRoute {
             },
           ),
           GoRoute(
+            path: '${Routes.jobShare.path}/:jobId',
+            name: Routes.jobShare.name,
+            redirect: (_, state) {
+              final jobId = state.pathParameters['jobId'];
+              if (jobId == null || int.tryParse(jobId) == null) {
+                return Routes.careers.path;
+              }
+              return '${Routes.jobDetail.path}?job_id=$jobId';
+            },
+            builder: (_, __) => const SizedBox.shrink(),
+          ),
+          GoRoute(
             path: Routes.jobDetail.path,
             name: Routes.jobDetail.name,
             redirect: (_, state) {
@@ -288,13 +311,12 @@ class AppRoute {
             },
             builder: (context, state) {
               final jobId = _jobIdFromGoState(state)!;
-              final apiService = locator<ApiService>();
-              final jobsApiService = JobsApiService(apiService: apiService);
 
               return MultiBlocProvider(
                 providers: [
                   BlocProvider<JobsBloc>(
-                    create: (_) => JobsBloc(jobsApiService: jobsApiService),
+                    create: (_) =>
+                        JobsBloc(jobsApiService: _careersJobsApiService()),
                   ),
                   BlocProvider<ApplicationBloc>(
                     create: (_) => locator<ApplicationBloc>(),
@@ -356,7 +378,7 @@ class AppRoute {
       // Determine if there is an active user
       bool hasActiveUser = loginBox.values.any((login) => login.isActive);
 
-      // Case 1: Admin login is hidden — always land on careers instead
+      // Case 1: Admin login is hidden — always land on careers instead.
       if (state.matchedLocation == Routes.loginPage.path) {
         log("Admin login is hidden. Redirecting to careers.");
         return Routes.careers.path;
@@ -364,6 +386,7 @@ class AppRoute {
 
       // Case 1.5: Allow direct access to Jobs-related pages for non-logged-in users
       if (state.matchedLocation == Routes.careers.path ||
+          state.matchedLocation.startsWith(Routes.jobShare.path) ||
           state.matchedLocation.startsWith(Routes.jobDetail.path) ||
           state.matchedLocation.startsWith(Routes.careersProfile.path) ||
           state.matchedLocation.startsWith(
@@ -416,6 +439,7 @@ enum Routes {
   ticketDetailPage('/ticketDetailPage'),
   nfcMapping("/nfcMapping"),
   careers('/careers'),
+  jobShare('/careers/jobs'),
   jobDetail('/job-detail'),
   careersProfile('/careers-profile'),
   careersCompleteProfile('/careers-complete-profile'),

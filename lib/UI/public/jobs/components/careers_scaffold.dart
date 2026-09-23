@@ -8,6 +8,7 @@ class CareersScaffold extends StatelessWidget {
   final List<Widget>? actions;
   final Widget? bottomNavigationBar;
   final bool centerTitle;
+  final VoidCallback? onTitleTap;
 
   const CareersScaffold({
     super.key,
@@ -16,6 +17,7 @@ class CareersScaffold extends StatelessWidget {
     this.actions,
     this.bottomNavigationBar,
     this.centerTitle = false,
+    this.onTitleTap,
   });
 
   @override
@@ -26,14 +28,10 @@ class CareersScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurface,
-            letterSpacing: -0.3,
-          ),
+        title: _Title(
+          title: title,
+          color: theme.colorScheme.onSurface,
+          onTap: onTitleTap,
         ),
         centerTitle: centerTitle,
         backgroundColor: isDark
@@ -47,6 +45,33 @@ class CareersScaffold extends StatelessWidget {
       ),
       body: body,
       bottomNavigationBar: bottomNavigationBar,
+    );
+  }
+}
+
+class _Title extends StatelessWidget {
+  final String title;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _Title({required this.title, required this.color, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(
+      title,
+      style: GoogleFonts.inter(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: color,
+        letterSpacing: -0.3,
+      ),
+    );
+    if (onTap == null) return text;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: text,
     );
   }
 }

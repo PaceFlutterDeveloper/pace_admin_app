@@ -2,10 +2,12 @@ import 'package:admin_app/UI/public/application/pages/applications_tab.dart';
 import 'package:admin_app/UI/public/jobs/components/careers_bottom_nav.dart';
 import 'package:admin_app/UI/public/jobs/components/careers_scaffold.dart';
 import 'package:admin_app/UI/public/jobs/pages/careers_home_tab.dart';
+import 'package:admin_app/UI/public/jobs/utils/secret_title_tap.dart';
 import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/pages/profile_page.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,6 +24,7 @@ class JobsPage extends StatefulWidget {
 class _JobsPageState extends State<JobsPage> {
   late int _currentNavIndex;
   bool _isLoggedIn = false;
+  final _secretTitleTap = SecretTitleTap();
 
   static const _titles = ['Pace Careers', 'Applications', 'Profile'];
 
@@ -51,6 +54,11 @@ class _JobsPageState extends State<JobsPage> {
 
   void _goToHomeTab() {
     setState(() => _currentNavIndex = 0);
+  }
+
+  void _onPaceCareersTitleTap() {
+    if (!_secretTitleTap.register(DateTime.now())) return;
+    secretAdminLoginOpen.value = true;
   }
 
   List<Widget>? _buildAppBarActions(BuildContext context) {
@@ -85,10 +93,7 @@ class _JobsPageState extends State<JobsPage> {
           ),
           child: Text(
             'Login',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ),
       ),
@@ -99,6 +104,7 @@ class _JobsPageState extends State<JobsPage> {
   Widget build(BuildContext context) {
     return CareersScaffold(
       title: _titles[_currentNavIndex],
+      onTitleTap: _currentNavIndex == 0 ? _onPaceCareersTitleTap : null,
       actions: _buildAppBarActions(context),
       bottomNavigationBar: CareersBottomNav(
         currentIndex: _currentNavIndex,
@@ -107,10 +113,14 @@ class _JobsPageState extends State<JobsPage> {
       body: IndexedStack(
         index: _currentNavIndex,
         children: [
-          const CareersHomeTab(),
-          ApplicationsTab(onBrowseJobs: _goToHomeTab),
+          CareersHomeTab(isActive: _currentNavIndex == 0),
+          ApplicationsTab(
+            onBrowseJobs: _goToHomeTab,
+            isActive: _currentNavIndex == 1,
+          ),
           CareersProfilePage(
             embedded: true,
+            isActive: _currentNavIndex == 2,
             onAuthChanged: _checkAuthStatus,
           ),
         ],

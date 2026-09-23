@@ -35,6 +35,7 @@ import 'package:admin_app/core/const/db_names.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/services/api_post_logger.dart';
 import 'package:admin_app/core/services/api_service.dart';
+import 'package:admin_app/core/update/app_update_controller.dart';
 import 'package:admin_app/core/services/authentication_service.dart';
 import 'package:admin_app/core/services/careers_session_expired_handler.dart';
 import 'package:admin_app/features/attendance/data/datasources/attendance_remote_datasource.dart';
@@ -69,6 +70,9 @@ Future<void> serviceLocators() async {
     () => ApiService(
       dio: locator<Dio>(), // Use registered Dio instance
     ),
+  );
+  locator.registerLazySingleton<AppUpdateController>(
+    () => AppUpdateController(apiService: locator<ApiService>()),
   );
 
   // Register authuntication Service
@@ -235,13 +239,12 @@ Future<void> serviceLocators() async {
     () => ApplicationApiService(apiService: locator<ApiService>()),
   );
 
-  // Register ApplicationBloc as factory: reads session token at creation time.
+  // Register ApplicationBloc as factory. Token is read per request so a
+  // login that happens after the screen opens is picked up.
   locator.registerFactory<ApplicationBloc>(
     () => ApplicationBloc(
       applicationApiService: locator<ApplicationApiService>(),
-      token: locator<CareersUserService>()
-          .getCurrentCareersUser()
-          ?.sessionToken,
+      careersUserService: locator<CareersUserService>(),
     ),
   );
 }

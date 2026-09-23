@@ -6,9 +6,13 @@ class LoadApplicationsEvent extends ApplicationEvent {
   final int candId;
   final int limit;
 
+  /// Keeps the current list on screen while a newer request runs.
+  final bool silent;
+
   LoadApplicationsEvent({
     required this.candId,
     this.limit = 20,
+    this.silent = false,
   });
 }
 
