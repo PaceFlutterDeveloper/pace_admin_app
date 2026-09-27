@@ -15,18 +15,14 @@ import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/widgets/app_badge.dart';
-import 'package:admin_app/core/widgets/app_dialogs.dart';
 import 'package:admin_app/core/widgets/app_error_state.dart';
 import 'package:admin_app/core/widgets/app_section_header.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
-import 'package:admin_app/features/attendance/utils/attendance_permissions_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 ({TodayAttendanceSummary today, MonthlyAttendanceSummary month})
 _attendanceDashboardPlaceholder() {
@@ -49,7 +45,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with RouteAware {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _scheduledMarkAttendancePermissionIntro = false;
 
   @override
   void initState() {
@@ -96,47 +91,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     await _fetchMenu();
   }
 
-  Future<void> _maybeMarkAttendancePermissionIntro() async {
-    if (!mounted) return;
-    if (await AttendancePermissionsPrefs.isIntroCompleted()) return;
-    if (await areMarkAttendancePermissionsGranted()) {
-      await AttendancePermissionsPrefs.setIntroCompleted();
-      return;
-    }
-    if (!mounted) return;
-
-    final go = await showAppConfirmDialog(
-      context: context,
-      title: 'Mark Attendance',
-      message:
-          'Location and camera are used to confirm you are on campus and to verify '
-          'your identity. You can enable them now, or later from Mark attendance in the menu.',
-      confirmLabel: 'Continue',
-      cancelLabel: 'Not now',
-    );
-
-    if (!mounted) return;
-    if (go == true) {
-      await requestMarkAttendancePermissions();
-    }
-    await AttendancePermissionsPrefs.setIntroCompleted();
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<HomeCubit, HomeState>(
       listener: (context, state) {
         state.whenOrNull(
           error: (msg) => AppToast.error(context, msg),
-          success: (_) {
-            if (_scheduledMarkAttendancePermissionIntro) return;
-            _scheduledMarkAttendancePermissionIntro = true;
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _maybeMarkAttendancePermissionIntro();
-              }
-            });
-          },
         );
       },
       child: Scaffold(
@@ -267,7 +227,7 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
                               .person_crop_circle_badge_checkmark,
                           iconColor: const Color(0xFF2E7D32),
                           title: 'Mark Attendance',
-                          subtitle: 'Face + location',
+                          subtitle: 'Unavailable in this version',
                           badge: const AppBadge.success(label: 'Ready'),
                           onTap: () => pushMenuPage(
                             context,
@@ -316,33 +276,6 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
                   const AppSectionHeader(
                     title: 'Tools',
                     padding: EdgeInsets.zero,
-                  ),
-                  const Gap(AppSpacing.sm),
-                  WideCard(
-                    iconBg: const Color(0xFFE0F7FA),
-                    iconData: CupertinoIcons.radiowaves_right,
-                    iconColor: const Color(0xFF00838F),
-                    title: 'NFC Mapping',
-                    subtitle: 'Configure NFC tags & access points',
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm + 2,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8EAF6),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Text(
-                        'Admin',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF3949AB),
-                        ),
-                      ),
-                    ),
-                    onTap: () => context.push(Routes.nfcMapping.path),
                   ),
                   const Gap(AppSpacing.sm),
                   WideCard(

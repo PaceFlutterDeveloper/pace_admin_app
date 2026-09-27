@@ -54,15 +54,10 @@ post_install do |installer|
 
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-    # permission_handler: enable permission APIs at compile time (otherwise requests no-op on iOS).
+    # permission_handler location and camera macros are omitted from this
+    # careers store build. Restore PERMISSION_CAMERA=1 and PERMISSION_LOCATION=1
+    # when admin attendance ships. See docs/restore-location-services.md.
     target.build_configurations.each do |config|
-      defs = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
-      if defs.nil?
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = ['$(inherited)', 'PERMISSION_CAMERA=1', 'PERMISSION_LOCATION=1']
-      elsif defs.is_a?(Array)
-        defs << 'PERMISSION_CAMERA=1' unless defs.any? { |d| d.to_s.include?('PERMISSION_CAMERA') }
-        defs << 'PERMISSION_LOCATION=1' unless defs.any? { |d| d.to_s.include?('PERMISSION_LOCATION') }
-      end
       if Gem::Version.new($iOSVersion) > Gem::Version.new(config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] || '0')
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
       end

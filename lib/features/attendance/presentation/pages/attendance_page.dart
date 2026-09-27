@@ -117,9 +117,9 @@ class _AttendancePageState extends State<AttendancePage> {
       },
       onCancel: () =>
           context.read<AttendanceBloc>().add(const CheckLocationEvent()),
-      onCapture: (file, sensorOrientation) => context
-          .read<AttendanceBloc>()
-          .add(FaceCapturedEvent(file, sensorOrientation: sensorOrientation)),
+      onCapture: (file, sensorOrientation) => context.read<AttendanceBloc>().add(
+            FaceCapturedEvent(file, sensorOrientation: sensorOrientation),
+          ),
     );
   }
 

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:admin_app/UI/auth/data_source/auth_data.dart';
@@ -14,7 +13,6 @@ import 'package:admin_app/features/attendance/domain/repositories/attendance_rep
 import 'package:admin_app/features/attendance/utils/attendance_logger.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:geolocator/geolocator.dart';
 
 class AttendanceRepositoryImpl implements AttendanceRepository {
   final AttendanceRemoteDataSource remoteDataSource;
@@ -94,76 +92,14 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
   @override
   Future<Either<Failure, GeofenceCheckResult>> checkGeofence() async {
-    final configResult = await getGeofenceConfig();
-    return await configResult.fold(
-      (failure) async {
-        AttendanceLogger.log(
-          'checkGeofence: config failure kind=${failure.kind} msg=${failure.message}',
-        );
-        return Left(failure);
-      },
-      (config) async {
-        try {
-          final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-          if (!serviceEnabled) {
-            AttendanceLogger.log(
-              'checkGeofence: location services disabled at OS level',
-            );
-            return const Left(
-              Failure(
-                'Location service is disabled',
-                kind: FailureKind.locationServiceDisabled,
-              ),
-            );
-          }
-
-          final position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              timeLimit: Duration(seconds: 15),
-            ),
-          ).timeout(
-            const Duration(seconds: 22),
-            onTimeout: () => throw TimeoutException(
-              'GPS fix exceeded 22s',
-              const Duration(seconds: 22),
-            ),
-          );
-          final distanceMeters = Geolocator.distanceBetween(
-            config.centerLatitude,
-            config.centerLongitude,
-            position.latitude,
-            position.longitude,
-          );
-          final inside = distanceMeters <= config.radiusMeters;
-          return Right(
-            GeofenceCheckResult(
-              config: config,
-              distanceMeters: distanceMeters,
-              isInside: inside,
-              latitude: position.latitude,
-              longitude: position.longitude,
-            ),
-          );
-        } on TimeoutException {
-          AttendanceLogger.log('checkGeofence: GPS timeout');
-          return const Left(
-            Failure(
-              'Getting your location timed out. Try again.',
-              kind: FailureKind.locationTimeout,
-            ),
-          );
-        } catch (e, st) {
-          AttendanceLogger.log('checkGeofence: GPS/other error: $e');
-          AttendanceLogger.log('checkGeofence stack: $st');
-          return const Left(
-            Failure(
-              'Failed to get your current location',
-              kind: FailureKind.locationUnavailable,
-            ),
-          );
-        }
-      },
+    AttendanceLogger.log(
+      'checkGeofence: location services omitted from this release',
+    );
+    return const Left(
+      Failure(
+        'Location services are not available in this version.',
+        kind: FailureKind.locationUnavailable,
+      ),
     );
   }
 

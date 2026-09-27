@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:admin_app/core/error/failures.dart';
 import 'package:admin_app/features/attendance/domain/usecases/capture_and_verify_face_usecase.dart';
 import 'package:admin_app/features/attendance/domain/usecases/check_geofence_usecase.dart';
@@ -10,21 +8,16 @@ import 'package:admin_app/features/attendance/utils/attendance_logger.dart';
 import 'package:admin_app/features/attendance/utils/attendance_permissions_helper.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
 
 class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final CheckGeofenceUseCase checkGeofenceUseCase;
   final CaptureAndVerifyFaceUseCase captureAndVerifyFaceUseCase;
   final SubmitAttendanceUseCase submitAttendanceUseCase;
 
-  StreamSubscription<Position>? _positionStream;
   bool _useAutoCapture = true;
   double _distance = 0;
   String _schoolName = 'School Campus';
   bool _insideGeofence = false;
-
-  /// Limits how often the GPS [Position] stream triggers a geofence refresh.
-  DateTime? _lastStreamGeofenceAt;
 
   AttendanceBloc({
     required this.checkGeofenceUseCase,
@@ -156,11 +149,11 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     Emitter<AttendanceState> emit,
   ) async {
     AttendanceLogger.log(
-      'event: FaceCaptured → verifying face (path segments: ${event.image.path.split('/').last})',
+      'event: FaceCaptured → verifying face (path segments: ${event.imagePath.split('/').last})',
     );
-    emit(AttendanceVerifyingFace(event.image.path));
+    emit(AttendanceVerifyingFace(event.imagePath));
     final verification = await captureAndVerifyFaceUseCase(
-      event.image,
+      event.imagePath,
       sensorOrientation: event.sensorOrientation,
     );
     await verification.fold(
@@ -324,34 +317,10 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     return AttendanceFailureType.unknown;
   }
 
-  static const Duration _streamGeofenceThrottle = Duration(seconds: 45);
-
-  void _startBackgroundLocationMonitoring() {
-    AttendanceLogger.log(
-      'location stream: subscribing (balanced accuracy, distanceFilter 25m, '
-      'throttle ${_streamGeofenceThrottle.inSeconds}s, silent refresh)',
-    );
-    _positionStream?.cancel();
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.medium,
-        distanceFilter: 25,
-      ),
-    ).listen((_) {
-      final now = DateTime.now();
-      if (_lastStreamGeofenceAt != null &&
-          now.difference(_lastStreamGeofenceAt!) < _streamGeofenceThrottle) {
-        return;
-      }
-      _lastStreamGeofenceAt = now;
-      add(const CheckLocationEvent(showLoading: false));
-    });
-  }
+  void _startBackgroundLocationMonitoring() {}
 
   @override
   Future<void> close() {
-    AttendanceLogger.log('bloc close: cancel location stream');
-    _positionStream?.cancel();
     return super.close();
   }
 }

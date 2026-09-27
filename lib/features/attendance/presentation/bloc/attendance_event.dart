@@ -1,4 +1,3 @@
-import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class AttendanceEvent extends Equatable {
@@ -28,18 +27,18 @@ class StartFaceCaptureEvent extends AttendanceEvent {
 }
 
 class FaceCapturedEvent extends AttendanceEvent {
-  final XFile image;
+  final String imagePath;
 
-  /// [CameraDescription.sensorOrientation] from the active camera (0/90/180/270).
+  /// Sensor orientation from the active camera (0/90/180/270).
   final int sensorOrientation;
 
-  FaceCapturedEvent(
-    this.image, {
+  const FaceCapturedEvent(
+    this.imagePath, {
     this.sensorOrientation = 0,
   });
 
   @override
-  List<Object?> get props => [image.path, sensorOrientation];
+  List<Object?> get props => [imagePath, sensorOrientation];
 }
 
 class RetryAttendanceEvent extends AttendanceEvent {

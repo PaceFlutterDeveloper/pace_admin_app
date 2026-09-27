@@ -1,9 +1,7 @@
 import 'package:admin_app/UI/components/button_component.dart';
 import 'package:admin_app/UI/employee/transport/nfc_mappy/provider/nfc_provider.dart';
-import 'package:admin_app/UI/employee/transport/nfc_mappy/widgets/barcode_scanner_page.dart';
 import 'package:admin_app/core/utils/utils.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class NfcAvailable extends StatefulWidget {
@@ -17,41 +15,10 @@ class _NfcAvailableState extends State<NfcAvailable> {
   final _formKey = GlobalKey<FormState>();
 
   Future<void> _scanStudentCode() async {
-    // Ensure camera permission before opening the scanner.
-    var status = await Permission.camera.status;
-    if (!status.isGranted) {
-      status = await Permission.camera.request();
-    }
-    if (!status.isGranted) {
-      if (!mounted) return;
-      showSnackbar(
-        context,
-        status.isPermanentlyDenied
-            ? 'Camera permission is required. Enable it in Settings.'
-            : 'Camera permission is required to scan barcodes.',
-      );
-      if (status.isPermanentlyDenied) {
-        await openAppSettings();
-      }
-      return;
-    }
-
-    if (!mounted) return;
-    final raw = await Navigator.push<String>(
+    showSnackbar(
       context,
-      MaterialPageRoute(builder: (_) => const BarcodeScannerPage()),
+      'Barcode scanning is not available in this version. Enter the student code manually.',
     );
-    if (raw == null) return;
-
-    // Digits-only transform: strip every non-numeric character.
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (!mounted) return;
-    if (digits.isEmpty) {
-      showSnackbar(context, 'No numeric value found in the scanned barcode.');
-      return;
-    }
-    context.read<NfcProvider>().studCodeController.text = digits;
-    showSnackbar(context, 'Student code captured.');
   }
 
   @override

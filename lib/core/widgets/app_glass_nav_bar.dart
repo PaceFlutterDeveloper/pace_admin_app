@@ -55,11 +55,6 @@ List<NavTab> buildGlassNavTabs({
       activeIcon: CupertinoIcons.person_crop_circle_badge_checkmark,
       label: 'Attendance',
     ),
-    const NavTab(
-      icon: CupertinoIcons.antenna_radiowaves_left_right,
-      activeIcon: CupertinoIcons.dot_radiowaves_left_right,
-      label: 'NFC',
-    ),
     NavTab(
       icon: CupertinoIcons.bell,
       activeIcon: CupertinoIcons.bell_fill,
@@ -97,15 +92,15 @@ double glassNavBarBodyOverlap(BuildContext context) {
 /// Resolves which shell tab is active for [uri].
 int glassShellTabIndex(Uri uri) {
   final p = uri.path;
-  if (p == Routes.userProfile.path) return 7;
-  if (p == Routes.getNotifications.path) return 4;
+  if (p == Routes.userProfile.path) return 6;
+  if (p == Routes.getNotifications.path) return 3;
   if (p.startsWith(Routes.tickets.path) ||
       p.startsWith(Routes.manageTickets.path)) {
     return 1;
   }
   if (p == Routes.navAttendance.path) return 2;
-  if (p == Routes.navReports.path) return 5;
-  if (p == Routes.navSchedule.path) return 6;
+  if (p == Routes.navReports.path) return 4;
+  if (p == Routes.navSchedule.path) return 5;
   return 0;
 }
 
@@ -121,18 +116,15 @@ void glassShellOnTabTap(BuildContext context, int index) {
       context.go(Routes.navAttendance.path);
       break;
     case 3:
-      context.push(Routes.nfcMapping.path);
-      break;
-    case 4:
       context.go(Routes.getNotifications.path);
       break;
-    case 5:
+    case 4:
       context.go(Routes.navReports.path);
       break;
-    case 6:
+    case 5:
       context.go(Routes.navSchedule.path);
       break;
-    case 7:
+    case 6:
       context.go(Routes.userProfile.path);
       break;
   }

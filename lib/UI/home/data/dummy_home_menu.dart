@@ -54,16 +54,6 @@ List<MenuModel> kDebugDummyHomeMenu() {
           parentId: 'dummy-hub',
           subMenu: const [],
         ),
-        MenuModel(
-          id: 'dummy-nfc',
-          menuKey: 'dummy_nfc',
-          menuVal: 'nfc_mapping',
-          menuName: 'NFC mapping',
-          page: 'nfcMapping',
-          iconUrl: '',
-          parentId: 'dummy-hub',
-          subMenu: const [],
-        ),
       ],
     ),
   ];
