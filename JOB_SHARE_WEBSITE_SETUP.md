@@ -4,6 +4,13 @@ This document is only for **paceeducation.com**. The Flutter app will share HTTP
 
 App work (Associated Domains, App Links intent-filters, `app_links`) is separate and is not covered here.
 
+**Checked 29 Sep 2026:** both association files are missing, so Android opens Chrome and iOS opens Safari.
+
+- `https://paceeducation.com/.well-known/assetlinks.json` → **404**
+- `https://paceeducation.com/.well-known/apple-app-site-association` → **404**
+
+Google’s checker reports `ERROR_CODE_FETCH_ERROR`. Deploy sections 4 and 5 first; the job page itself is already live.
+
 ---
 
 ## 1. What we are building
@@ -11,13 +18,13 @@ App work (Associated Domains, App Links intent-filters, `app_links`) is separate
 One public URL per job:
 
 ```text
-https://paceeducation.com/careers/jobs/{jobId}
+https://paceeducation.com/careers/index.php?page=job&id={jobId}
 ```
 
 Example:
 
 ```text
-https://paceeducation.com/careers/jobs/123
+https://paceeducation.com/careers/index.php?page=job&id=116
 ```
 
 | Situation | What should happen |
@@ -32,7 +39,7 @@ There is **no deferred deep link**. After a first install from the store, the ne
 The website must do three things:
 
 1. Host association files so Apple and Google trust this domain for the app.
-2. Serve a landing page at `/careers/jobs/{id}` for when the app does not open.
+2. Serve a landing page at `/careers/index.php?page=job&id=` for when the app does not open.
 3. Serve those files with the exact HTTP rules below. Wrong headers or a redirect will silently break verification.
 
 ---
@@ -46,7 +53,7 @@ The website must do three things:
 | iOS bundle ID | Known: `com.paceEducation.erp` | AASA `appIDs` | Xcode / App Store Connect |
 | Apple Team ID | In the iOS project: `KL76YZPXR4` | AASA `appIDs` | [Apple Developer → Membership](https://developer.apple.com/account). Confirm it is the team that ships the App Store build. |
 | Play signing SHA-256 | **You must paste this** | `assetlinks.json` | Play Console → app → **App integrity** / **App signing** → **App signing key certificate** → SHA-256 |
-| Upload / local keystore SHA-256 | Optional but recommended | `assetlinks.json` (local release APKs) | `keytool -list -v -keystore android/pace_key.jks -alias pace` → SHA256 line |
+| Upload / local keystore SHA-256 | Known from `android/pace_key.jks`: `02:08:BC:B7:E4:13:59:F3:58:62:F2:D4:7D:A2:18:62:DA:6A:E6:54:90:F5:B2:65:A7:55:77:E1:42:D7:6A:2E` | `assetlinks.json` (local / upload-signed APKs) | `keytool -list -v -keystore android/pace_key.jks -alias pace` |
 | App Store numeric ID | **You must paste this** | Landing page App Store button | App Store Connect → the app → **App Information** → **Apple ID** (numbers only, e.g. `1234567890`) |
 
 Play SHA-256 must be the **app signing** certificate (the one Google uses on Play Store builds), not only the upload key, unless you do not use Play App Signing.
@@ -76,7 +83,7 @@ Do not put association files only under `/careers/`. They must be at site root:
 |---|---|---|
 | Apple AASA | `https://paceeducation.com/.well-known/apple-app-site-association` | **No** `.json` extension |
 | Android Digital Asset Links | `https://paceeducation.com/.well-known/assetlinks.json` | Exact name |
-| Job landing page | `https://paceeducation.com/careers/jobs/{jobId}` | Same path the app will claim |
+| Job landing page | `https://paceeducation.com/careers/index.php?page=job&id={jobId}` | Same path the app claims |
 
 ---
 
@@ -97,7 +104,7 @@ Team ID below is from the current iOS project. Confirm before production.
         ],
         "components": [
           {
-            "path": "/careers/jobs/*"
+            "path": "/careers/index.php*"
           }
         ]
       }
@@ -106,7 +113,7 @@ Team ID below is from the current iOS project. Confirm before production.
 }
 ```
 
-`appIDs` is `TEAM_ID` + `.` + `BUNDLE_ID`. Only `/careers/jobs/*` is claimed so the rest of the marketing site stays in the browser.
+`appIDs` is `TEAM_ID` + `.` + `BUNDLE_ID`. Only `/careers/index.php*` is claimed so the rest of the marketing site stays in the browser.
 
 ### HTTP requirements (Apple)
 
@@ -125,7 +132,7 @@ Apple caches AASA after install / update. Fixing the file does not always update
 
 **Path on disk:** `/.well-known/assetlinks.json`
 
-Replace the first fingerprint with Play Console **App signing** SHA-256. Add the upload/keystore SHA-256 if you also install locally signed release builds.
+Include the local release keystore SHA-256 below. If the Play Store build uses Play App Signing, **also** add the Play Console **App signing** SHA-256.
 
 ```json
 [
@@ -135,14 +142,14 @@ Replace the first fingerprint with Play Console **App signing** SHA-256. Add the
       "namespace": "android_app",
       "package_name": "com.paceEducation.erp",
       "sha256_cert_fingerprints": [
-        "PASTE_PLAY_APP_SIGNING_SHA256_HERE"
+        "02:08:BC:B7:E4:13:59:F3:58:62:F2:D4:7D:A2:18:62:DA:6A:E6:54:90:F5:B2:65:A7:55:77:E1:42:D7:6A:2E"
       ]
     }
   }
 ]
 ```
 
-With both Play and local release keys:
+With Play App Signing as well:
 
 ```json
 [
@@ -153,7 +160,7 @@ With both Play and local release keys:
       "package_name": "com.paceEducation.erp",
       "sha256_cert_fingerprints": [
         "PASTE_PLAY_APP_SIGNING_SHA256_HERE",
-        "PASTE_PACE_KEY_JKS_SHA256_HERE"
+        "02:08:BC:B7:E4:13:59:F3:58:62:F2:D4:7D:A2:18:62:DA:6A:E6:54:90:F5:B2:65:A7:55:77:E1:42:D7:6A:2E"
       ]
     }
   }
@@ -246,19 +253,19 @@ An HTTP → HTTPS redirect on `http://` is acceptable. The **HTTPS** URL must no
 
 ---
 
-## 7. Landing page at `/careers/jobs/{id}`
+## 7. Landing page at `/careers/index.php?page=job&id=`
 
-This is the page the OS loads when the app is missing, or when an in-app browser skips Universal Links / App Links.
+This is the page the OS loads when the app is missing, or when an in-app browser skips Universal Links / App Links. It is already live; add **Open in app** (`paceerp://jobs/{id}`) if it is not on the page yet.
 
 ### URL
 
 ```text
-GET https://paceeducation.com/careers/jobs/{jobId}
+GET https://paceeducation.com/careers/index.php?page=job&id={jobId}
 ```
 
 `jobId` is the numeric `job_id` from careers API v2 (same id the mobile app uses).
 
-Do **not** use a different path (for example `/careers/job.php?id=`). The association files and the app will only claim `/careers/jobs/*`.
+The association files and the app claim `/careers/index.php` only.
 
 ### Data source (existing public API)
 
@@ -314,11 +321,11 @@ Crawlers do not run much JavaScript. Render these tags in the **initial HTML**.
 <meta property="og:site_name" content="Smart PACE Careers" />
 <meta property="og:title" content="{job.title} — {school.name}" />
 <meta property="og:description" content="{location} · {employment_type} · Apply in Smart PACE" />
-<meta property="og:url" content="https://paceeducation.com/careers/jobs/{jobId}" />
+<meta property="og:url" content="https://paceeducation.com/careers/index.php?page=job&id={jobId}" />
 <meta property="og:image" content="https://paceeducation.com/careers/{static-share-image.png}" />
 <meta name="twitter:card" content="summary_large_image" />
 <title>{job.title} at {school.name}</title>
-<link rel="canonical" href="https://paceeducation.com/careers/jobs/{jobId}" />
+<link rel="canonical" href="https://paceeducation.com/careers/index.php?page=job&id={jobId}" />
 ```
 
 Use a fixed careers/share image if jobs have no poster image. WhatsApp needs an absolute `https` image URL.
@@ -375,7 +382,7 @@ A practical split:
 1. **Static files** in the **site root** (not inside `/careers/`):
    - `/.well-known/apple-app-site-association`
    - `/.well-known/assetlinks.json`
-2. **Route** `/careers/jobs/{id}` in the careers front controller or a small PHP page that:
+2. **Keep** the existing job page at `/careers/index.php?page=job&id=` and add store + open-in-app buttons if they are missing.
    - Reads `{id}`
    - `file_get_contents` / curl to `.../job-details?id=`
    - Renders HTML + OG tags
@@ -384,7 +391,7 @@ A practical split:
 Example route sketch (illustrative):
 
 ```php
-// GET /careers/jobs/123
+// GET /careers/index.php?page=job&id=123
 $jobId = (int) $id;
 $url = 'https://paceeducation.com/careers/erp-api/index.php/job-details?id=' . $jobId;
 $payload = json_decode(file_get_contents($url), true);
@@ -408,9 +415,9 @@ ANDROID_PACKAGE=com.paceEducation.erp
 PLAY_STORE_URL=https://play.google.com/store/apps/details?id=com.paceEducation.erp
 APPLE_APP_ID=          # numeric, from App Store Connect
 PLAY_SIGNING_SHA256=   # from Play Console
-UPLOAD_KEY_SHA256=     # optional, from pace_key.jks
+UPLOAD_KEY_SHA256=02:08:BC:B7:E4:13:59:F3:58:62:F2:D4:7D:A2:18:62:DA:6A:E6:54:90:F5:B2:65:A7:55:77:E1:42:D7:6A:2E
 CUSTOM_SCHEME=paceerp
-JOB_PATH_PREFIX=/careers/jobs
+JOB_PAGE=https://paceeducation.com/careers/index.php?page=job&id=
 ```
 
 ---
@@ -424,11 +431,11 @@ Do this **before** expecting the mobile app to open links.
 - [ ] `https://paceeducation.com/.well-known/assetlinks.json` → 200 JSON, no redirect
 - [ ] `assetlinks.json` SHA-256 matches Play **app signing** certificate
 - [ ] `https://www.paceeducation.com/.well-known/...` either 200 same JSON or 301 to apex **and** you never share `www` URLs — prefer hosting files on both
-- [ ] `https://paceeducation.com/careers/jobs/123` loads for a real job id
+- [ ] `https://paceeducation.com/careers/index.php?page=job&id=116` loads for a real job id
 - [ ] View-source shows `og:title`, `og:description`, `og:image` (not empty)
 - [ ] WhatsApp preview shows job title, not a bare URL
 - [ ] Android Play Integrity / Digital Asset Links list API returns the statement
-- [ ] iOS: [Apple AASA validator](https://search.developer.apple.com/appsearch-validation-tool/) against `https://paceeducation.com/careers/jobs/123`
+- [ ] iOS: [Apple AASA validator](https://search.developer.apple.com/appsearch-validation-tool/) against `https://paceeducation.com/careers/index.php?page=job&id=116`
 - [ ] Landing page **Open in app** uses `paceerp://jobs/{id}`
 - [ ] iOS store button uses numeric App Store ID
 - [ ] Android store button uses `com.paceEducation.erp`
@@ -436,7 +443,7 @@ Do this **before** expecting the mobile app to open links.
 
 When the Flutter side is released, extra checks (not website work):
 
-- Android: `adb shell am start -a android.intent.action.VIEW -d "https://paceeducation.com/careers/jobs/{id}"`
+- Android: `adb shell am start -a android.intent.action.VIEW -d "https://paceeducation.com/careers/index.php?page=job&id={id}"`
 - iOS: tap the URL from Notes (not from WhatsApp for the first Universal Link test)
 - App installed → job detail
 - App uninstalled → landing page → store
@@ -464,5 +471,5 @@ Ship this, in this order:
 1. Confirm Apple Team ID `KL76YZPXR4` and collect Play signing SHA-256 + App Store numeric ID.
 2. Publish AASA and `assetlinks.json` at `/.well-known/` with the JSON in sections 4 and 5.
 3. Prove both URLs with `curl` (section 6).
-4. Add `/careers/jobs/{id}` landing page using `job-details?id=` (section 7).
-5. Tell the mobile team the files are live so they can finish Associated Domains / App Links and share `https://paceeducation.com/careers/jobs/{jobId}`.
+4. Confirm `/careers/index.php?page=job&id=` shows job details and add **Open in app** (`paceerp://jobs/{id}`) if missing.
+5. Tell the mobile team the `.well-known` files are live so they can reinstall the app and share `https://paceeducation.com/careers/index.php?page=job&id={jobId}`.

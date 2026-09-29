@@ -62,7 +62,16 @@
                 <data
                     android:scheme="https"
                     android:host="paceeducation.com"
-                    android:pathPrefix="/careers/jobs"/>
+                    android:pathPrefix="/careers/index.php"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="www.paceeducation.com"
+                    android:pathPrefix="/careers/index.php"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

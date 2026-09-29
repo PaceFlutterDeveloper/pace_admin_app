@@ -289,11 +289,15 @@ class AppRoute {
             },
           ),
           GoRoute(
-            path: '${Routes.jobShare.path}/:jobId',
+            path: Routes.jobShare.path,
             name: Routes.jobShare.name,
             redirect: (_, state) {
-              final jobId = state.pathParameters['jobId'];
+              final page = state.uri.queryParameters['page'];
+              final jobId = state.uri.queryParameters['id'];
               if (jobId == null || int.tryParse(jobId) == null) {
+                return Routes.careers.path;
+              }
+              if (page != null && page != 'job') {
                 return Routes.careers.path;
               }
               return '${Routes.jobDetail.path}?job_id=$jobId';
@@ -439,7 +443,7 @@ enum Routes {
   ticketDetailPage('/ticketDetailPage'),
   nfcMapping("/nfcMapping"),
   careers('/careers'),
-  jobShare('/careers/jobs'),
+  jobShare('/careers/index.php'),
   jobDetail('/job-detail'),
   careersProfile('/careers-profile'),
   careersCompleteProfile('/careers-complete-profile'),
