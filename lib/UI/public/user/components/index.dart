@@ -1,4 +1,5 @@
 // Profile Components
+export 'appearance_selector.dart';
 export 'logout_dialog.dart';
 export 'profile_completion_button.dart';
 export 'profile_header_card.dart';

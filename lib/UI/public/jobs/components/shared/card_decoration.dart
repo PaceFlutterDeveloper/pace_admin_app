@@ -8,24 +8,22 @@ class CardDecoration {
   const CardDecoration._();
 
   static BoxDecoration build(BuildContext context) {
-    return const BoxDecoration(
-      color: CareersColors.surface,
+    final palette = context.careers;
+    return BoxDecoration(
+      color: palette.surface,
       borderRadius: CareersRadius.cardAll,
-      border: Border.fromBorderSide(
-        BorderSide(color: CareersColors.border),
-      ),
-      boxShadow: CareersShadows.card,
+      border: Border.fromBorderSide(BorderSide(color: palette.border)),
+      boxShadow: palette.cardShadow,
     );
   }
 
   /// Flat variant for cards nested inside another card or a coloured section.
   static BoxDecoration nested(BuildContext context) {
-    return const BoxDecoration(
-      color: CareersColors.surfaceMuted,
+    final palette = context.careers;
+    return BoxDecoration(
+      color: palette.surfaceMuted,
       borderRadius: CareersRadius.chipAll,
-      border: Border.fromBorderSide(
-        BorderSide(color: CareersColors.divider),
-      ),
+      border: Border.fromBorderSide(BorderSide(color: palette.divider)),
     );
   }
 }

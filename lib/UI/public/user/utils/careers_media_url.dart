@@ -115,8 +115,10 @@ class CareersMediaUrl {
     if (value.length < 64) return false;
     if (value.contains(' ') || value.contains('\n')) return false;
     if (value.startsWith('uploads/') || value.contains('.php')) return false;
-    if (RegExp(r'\.(jpg|jpeg|png|gif|webp|pdf|doc|docx)$', caseSensitive: false)
-        .hasMatch(value)) {
+    if (RegExp(
+      r'\.(jpg|jpeg|png|gif|webp|pdf|doc|docx)$',
+      caseSensitive: false,
+    ).hasMatch(value)) {
       return false;
     }
     return RegExp(r'^[A-Za-z0-9+/=\r\n]+$').hasMatch(value);

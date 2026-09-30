@@ -45,8 +45,9 @@ class ProfileCompletionMapper {
         .split('_')
         .where((part) => part.isNotEmpty)
         .map(
-          (part) =>
-              part.length == 1 ? part.toUpperCase() : '${part[0].toUpperCase()}${part.substring(1)}',
+          (part) => part.length == 1
+              ? part.toUpperCase()
+              : '${part[0].toUpperCase()}${part.substring(1)}',
         )
         .join(' ');
   }
@@ -89,11 +90,7 @@ class ProfileCompletionMapper {
     ])) {
       return ProfileSection.family;
     }
-    if (_matchesAny(normalized, [
-      'references',
-      'ref_',
-      'ref_name',
-    ])) {
+    if (_matchesAny(normalized, ['references', 'ref_', 'ref_name'])) {
       return ProfileSection.references;
     }
     if (_matchesAny(normalized, [

@@ -81,9 +81,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(58),
             child: DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: CareersColors.divider),
+                  bottom: BorderSide(color: context.careers.divider),
                 ),
               ),
               child: TabBar(
@@ -98,15 +98,13 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
                   vertical: 4,
                 ),
                 labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                overlayColor: const WidgetStatePropertyAll(
-                  Colors.transparent,
-                ),
+                overlayColor: const WidgetStatePropertyAll(Colors.transparent),
                 indicator: const BoxDecoration(
                   color: CareersColors.primary,
                   borderRadius: CareersRadius.pillAll,
                 ),
                 labelColor: CareersColors.onPrimary,
-                unselectedLabelColor: CareersColors.textSecondary,
+                unselectedLabelColor: context.careers.textSecondary,
                 labelStyle: const TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
@@ -118,9 +116,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
                 tabs: List.generate(_tabLabels.length, (index) {
                   final needsAttention =
                       ProfileCompletionMapper.isSectionIncomplete(
-                    _tabSections[index],
-                    _completion,
-                  );
+                        _tabSections[index],
+                        _completion,
+                      );
                   return Tab(
                     height: 40,
                     child: Padding(

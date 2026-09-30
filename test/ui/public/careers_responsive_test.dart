@@ -33,10 +33,27 @@ final _job = JobModel(
   status: 'open',
 );
 
+late ThemeData _theme;
+
+void main() {
+  final themes = <String, ThemeData>{
+    'light': CareersTheme.light,
+    'dark': CareersTheme.dark,
+  };
+
+  themes.forEach((themeLabel, theme) {
+    group('$themeLabel theme', () {
+      setUp(() => _theme = theme);
+      _defineLayoutTests();
+    });
+  });
+}
+
 Future<void> _pumpAt(
   WidgetTester tester,
   Size size,
   Widget child, {
+
   /// Shimmer skeletons animate forever, so they cannot be settled.
   bool settle = true,
 }) async {
@@ -46,7 +63,7 @@ Future<void> _pumpAt(
 
   await tester.pumpWidget(
     MaterialApp(
-      theme: CareersTheme.light,
+      theme: _theme,
       home: Scaffold(body: SingleChildScrollView(child: child)),
     ),
   );
@@ -57,7 +74,7 @@ Future<void> _pumpAt(
   }
 }
 
-void main() {
+void _defineLayoutTests() {
   _sizes.forEach((label, size) {
     group('at $label', () {
       testWidgets('job card lays out without overflow', (tester) async {
@@ -79,12 +96,10 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            theme: CareersTheme.light,
+            theme: _theme,
             home: const Scaffold(
               body: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(child: JobCardSkeletonList()),
-                ],
+                slivers: [SliverToBoxAdapter(child: JobCardSkeletonList())],
               ),
             ),
           ),
@@ -101,7 +116,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            theme: CareersTheme.light,
+            theme: _theme,
             home: Scaffold(
               body: const SizedBox.expand(),
               bottomNavigationBar: ApplyBottomBar(job: _job),
@@ -182,7 +197,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            theme: CareersTheme.light,
+            theme: _theme,
             home: CareersAuthScaffold(
               title: 'Welcome back',
               subtitle: 'Sign in to continue your job search.',

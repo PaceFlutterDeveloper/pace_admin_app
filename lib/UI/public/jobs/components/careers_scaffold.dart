@@ -30,8 +30,10 @@ class CareersScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
+
     return Scaffold(
-      backgroundColor: CareersColors.background,
+      backgroundColor: palette.background,
       appBar: showAppBar
           ? AppBar(
               title: _Title(
@@ -41,18 +43,15 @@ class CareersScaffold extends StatelessWidget {
               ),
               centerTitle: centerTitle,
               titleSpacing: CareersSpacing.screenH,
-              backgroundColor: CareersColors.surface,
+              backgroundColor: palette.surface,
               elevation: 0,
               scrolledUnderElevation: 0,
               surfaceTintColor: Colors.transparent,
-              systemOverlayStyle: SystemUiOverlayStyle.dark,
-              iconTheme: const IconThemeData(
-                color: CareersColors.textPrimary,
-                size: 22,
-              ),
-              shape: const Border(
-                bottom: BorderSide(color: CareersColors.divider),
-              ),
+              systemOverlayStyle: palette.isDark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark,
+              iconTheme: IconThemeData(color: palette.textPrimary, size: 22),
+              shape: Border(bottom: BorderSide(color: palette.divider)),
               actions: [
                 ...?actions,
                 const SizedBox(width: CareersSpacing.screenH - 8),

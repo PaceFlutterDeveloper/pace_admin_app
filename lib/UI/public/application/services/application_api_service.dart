@@ -13,7 +13,7 @@ class ApplicationApiService {
   final ApiService _apiService;
 
   ApplicationApiService({required ApiService apiService})
-      : _apiService = apiService;
+    : _apiService = apiService;
 
   Future<Either<MyError, MyApplicationsResponse>> getMyApplications({
     required int candId,
@@ -29,35 +29,28 @@ class ApplicationApiService {
       final result = await _apiService.getRequest(
         ApiConstants.myApplicationsUrl,
         token,
-        queryParameters: {
-          'cand_id': candId,
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: {'cand_id': candId, 'page': page, 'limit': limit},
         useSessionToken: true,
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (data) {
-          try {
-            final parsed = json.decode(data) as Map<String, dynamic>;
-            final response = MyApplicationsResponse.fromJson(parsed);
-            log(
-              'Successfully fetched ${response.data.applications.length} applications',
-            );
-            return Right(response);
-          } catch (e) {
-            log('Error parsing applications response: $e');
-            return Left(
-              MyError(
-                key: AppError.apiError,
-                message: 'Failed to parse applications data: $e',
-              ),
-            );
-          }
-        },
-      );
+      return result.fold((error) => Left(error), (data) {
+        try {
+          final parsed = json.decode(data) as Map<String, dynamic>;
+          final response = MyApplicationsResponse.fromJson(parsed);
+          log(
+            'Successfully fetched ${response.data.applications.length} applications',
+          );
+          return Right(response);
+        } catch (e) {
+          log('Error parsing applications response: $e');
+          return Left(
+            MyError(
+              key: AppError.apiError,
+              message: 'Failed to parse applications data: $e',
+            ),
+          );
+        }
+      });
     } catch (e) {
       log('Error fetching applications: $e');
       return Left(
@@ -82,41 +75,35 @@ class ApplicationApiService {
       final result = await _apiService.getRequest(
         ApiConstants.checkApplicationUrl,
         token,
-        queryParameters: {
-          'job_id': jobId,
-          'cand_id': candId,
-        },
+        queryParameters: {'job_id': jobId, 'cand_id': candId},
         useSessionToken: true,
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (data) {
-          try {
-            final parsed = json.decode(data) as Map<String, dynamic>;
-            if (parsed['status'] == true) {
-              return Right(
-                CheckApplicationResponse.fromJson(
-                  (parsed['data'] as Map<String, dynamic>?) ?? const {},
-                ),
-              );
-            }
-            return Left(
-              MyError(
-                key: AppError.apiError,
-                message: careersApiErrorMessage(parsed),
-              ),
-            );
-          } catch (e) {
-            return Left(
-              MyError(
-                key: AppError.apiError,
-                message: 'Failed to parse check-application response: $e',
+      return result.fold((error) => Left(error), (data) {
+        try {
+          final parsed = json.decode(data) as Map<String, dynamic>;
+          if (parsed['status'] == true) {
+            return Right(
+              CheckApplicationResponse.fromJson(
+                (parsed['data'] as Map<String, dynamic>?) ?? const {},
               ),
             );
           }
-        },
-      );
+          return Left(
+            MyError(
+              key: AppError.apiError,
+              message: careersApiErrorMessage(parsed),
+            ),
+          );
+        } catch (e) {
+          return Left(
+            MyError(
+              key: AppError.apiError,
+              message: 'Failed to parse check-application response: $e',
+            ),
+          );
+        }
+      });
     } catch (e) {
       return Left(
         MyError(
@@ -141,10 +128,7 @@ class ApplicationApiService {
 
       // The profile itself serves as the CV; the backend no longer requires
       // a cv_file on apply.
-      final body = <String, dynamic>{
-        'cand_id': candId,
-        'job_id': jobId,
-      };
+      final body = <String, dynamic>{'cand_id': candId, 'job_id': jobId};
       if (coverLetter != null && coverLetter.isNotEmpty) {
         body['cover_letter'] = coverLetter;
       }
@@ -157,55 +141,49 @@ class ApplicationApiService {
         useSessionToken: true,
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (data) {
-          try {
-            final parsed = json.decode(data) as Map<String, dynamic>;
-            if (parsed['status'] == true) {
-              return Right(
-                ApplyJobResponse.fromJson(
-                  (parsed['data'] as Map<String, dynamic>?) ?? const {},
-                ),
-              );
-            }
-
-            final errorData = parsed['data'] is Map<String, dynamic>
-                ? ApplyJobErrorData.fromJson(
-                    parsed['data'] as Map<String, dynamic>,
-                  )
-                : null;
-
-            return Left(
-              MyError(
-                key: AppError.badRequest,
-                message: careersApiErrorMessage(parsed),
-                data: errorData != null
-                    ? {
-                        'profile_completion': errorData.profileCompletion,
-                        'required_completion': errorData.requiredCompletion,
-                        'is_fresher': errorData.isFresher,
-                        'missing_fields': errorData.missingFields,
-                      }
-                    : null,
-              ),
-            );
-          } catch (e) {
-            return Left(
-              MyError(
-                key: AppError.apiError,
-                message: 'Failed to parse apply-job response: $e',
+      return result.fold((error) => Left(error), (data) {
+        try {
+          final parsed = json.decode(data) as Map<String, dynamic>;
+          if (parsed['status'] == true) {
+            return Right(
+              ApplyJobResponse.fromJson(
+                (parsed['data'] as Map<String, dynamic>?) ?? const {},
               ),
             );
           }
-        },
-      );
+
+          final errorData = parsed['data'] is Map<String, dynamic>
+              ? ApplyJobErrorData.fromJson(
+                  parsed['data'] as Map<String, dynamic>,
+                )
+              : null;
+
+          return Left(
+            MyError(
+              key: AppError.badRequest,
+              message: careersApiErrorMessage(parsed),
+              data: errorData != null
+                  ? {
+                      'profile_completion': errorData.profileCompletion,
+                      'required_completion': errorData.requiredCompletion,
+                      'is_fresher': errorData.isFresher,
+                      'missing_fields': errorData.missingFields,
+                    }
+                  : null,
+            ),
+          );
+        } catch (e) {
+          return Left(
+            MyError(
+              key: AppError.apiError,
+              message: 'Failed to parse apply-job response: $e',
+            ),
+          );
+        }
+      });
     } catch (e) {
       return Left(
-        MyError(
-          key: AppError.apiError,
-          message: 'Failed to apply for job: $e',
-        ),
+        MyError(key: AppError.apiError, message: 'Failed to apply for job: $e'),
       );
     }
   }

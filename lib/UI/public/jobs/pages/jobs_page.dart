@@ -3,6 +3,7 @@ import 'package:admin_app/UI/public/jobs/components/careers_bottom_nav.dart';
 import 'package:admin_app/UI/public/jobs/components/careers_scaffold.dart';
 import 'package:admin_app/UI/public/jobs/pages/careers_home_tab.dart';
 import 'package:admin_app/UI/public/jobs/utils/secret_title_tap.dart';
+import 'package:admin_app/UI/public/user/components/appearance_selector.dart';
 import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/pages/profile_page.dart';
 import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
@@ -60,6 +61,10 @@ class _JobsPageState extends State<JobsPage> {
   }
 
   List<Widget>? _buildAppBarActions(BuildContext context) {
+    if (_currentNavIndex == 2) {
+      return const [AppearanceAppBarButton()];
+    }
+
     if (_currentNavIndex != 0 || _isLoggedIn) return null;
 
     return [
@@ -75,8 +80,8 @@ class _JobsPageState extends State<JobsPage> {
                 .then((_) => _checkAuthStatus());
           },
           style: TextButton.styleFrom(
-            foregroundColor: CareersColors.primary,
-            backgroundColor: CareersColors.primarySoft,
+            foregroundColor: context.careers.accentText,
+            backgroundColor: context.careers.primarySoft,
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),

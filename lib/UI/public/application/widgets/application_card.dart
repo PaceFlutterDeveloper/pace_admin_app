@@ -94,7 +94,7 @@ class ApplicationCard extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.bodySmall?.copyWith(
-                      color: CareersColors.textSecondary,
+                      color: context.careers.textSecondary,
                     ),
                   ),
                 ],
@@ -120,7 +120,7 @@ class ApplicationCard extends StatelessWidget {
                   icon: CupertinoIcons.checkmark_circle,
                   valueColor: details.availabilityOk
                       ? CareersColors.success
-                      : CareersColors.textSecondary,
+                      : context.careers.textSecondary,
                 ),
               ),
             ],
@@ -152,9 +152,9 @@ class _SalaryChip extends StatelessWidget {
           Text(
             range,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: CareersColors.success,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: CareersColors.success,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -182,7 +182,7 @@ class _Fact extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 15, color: CareersColors.textTertiary),
+        Icon(icon, size: 15, color: context.careers.textTertiary),
         const SizedBox(width: 8),
         Expanded(
           child: Column(

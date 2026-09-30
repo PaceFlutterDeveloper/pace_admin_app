@@ -37,7 +37,10 @@ class CareersProfileBloc
       transformer: droppable(),
     );
     on<LoadCountriesEvent>(_onLoadCountries, transformer: droppable());
-    on<UploadProfileFilesEvent>(_onUploadProfileFiles, transformer: sequential());
+    on<UploadProfileFilesEvent>(
+      _onUploadProfileFiles,
+      transformer: sequential(),
+    );
   }
 
   Future<void> _onLoadProfile(
@@ -65,25 +68,17 @@ class CareersProfileBloc
     final result = await _repository.updateProfile(profileData);
     if (result.isLeft) {
       emit(
-        ProfileSaveError(
-          ProfileSection.basic,
-          message: result.left.message,
-        ),
+        ProfileSaveError(ProfileSection.basic, message: result.left.message),
       );
       return;
     }
 
     final data = result.right;
     var normalized = data.isNotEmpty
-        ? ProfileFilePaths.normalizeUploadData(
-            Map<String, dynamic>.from(data),
-          )
+        ? ProfileFilePaths.normalizeUploadData(Map<String, dynamic>.from(data))
         : <String, dynamic>{};
 
-    normalized = _applyOptimisticSavePayload(
-      normalized,
-      profileData,
-    );
+    normalized = _applyOptimisticSavePayload(normalized, profileData);
 
     if (normalized.isNotEmpty) {
       await _syncServerAvatarToSession(normalized);
@@ -248,9 +243,7 @@ class CareersProfileBloc
 
     if (!ProfileFileMultipart.hasFiles(avatarFilePath: event.avatarFilePath)) {
       emit(
-        const ProfileFilesUploadError(
-          message: 'No files selected for upload',
-        ),
+        const ProfileFilesUploadError(message: 'No files selected for upload'),
       );
       return;
     }
@@ -261,9 +254,7 @@ class CareersProfileBloc
       );
     } catch (e) {
       emit(
-        ProfileFilesUploadError(
-          message: 'Failed to read selected files: $e',
-        ),
+        ProfileFilesUploadError(message: 'Failed to read selected files: $e'),
       );
       return;
     }

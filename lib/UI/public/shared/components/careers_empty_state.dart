@@ -43,11 +43,14 @@ class CareersEmptyState extends StatelessWidget {
                 gradient: CareersGradients.accentWash,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 30, color: CareersColors.primary),
+              child: Icon(icon, size: 30, color: context.careers.accentText),
             ),
             CareersSpacing.gap16,
-            Text(title, textAlign: TextAlign.center,
-                style: textTheme.headlineSmall),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: textTheme.headlineSmall,
+            ),
             const SizedBox(height: 6),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 320),

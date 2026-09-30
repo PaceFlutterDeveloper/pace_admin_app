@@ -15,8 +15,9 @@ class StatusFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
     return Material(
-      color: isSelected ? CareersColors.primary : CareersColors.surface,
+      color: isSelected ? CareersColors.primary : palette.surface,
       borderRadius: CareersRadius.pillAll,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -26,17 +27,17 @@ class StatusFilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: CareersRadius.pillAll,
             border: Border.all(
-              color: isSelected ? CareersColors.primary : CareersColors.border,
+              color: isSelected ? CareersColors.primary : palette.border,
             ),
           ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: isSelected
-                      ? CareersColors.onPrimary
-                      : CareersColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
+              color: isSelected
+                  ? CareersColors.onPrimary
+                  : palette.textSecondary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            ),
           ),
         ),
       ),

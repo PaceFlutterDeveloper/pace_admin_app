@@ -86,8 +86,5 @@ class JobApplyError extends ApplicationState {
   final String message;
   final List<String> missingFields;
 
-  JobApplyError({
-    required this.message,
-    this.missingFields = const [],
-  });
+  JobApplyError({required this.message, this.missingFields = const []});
 }

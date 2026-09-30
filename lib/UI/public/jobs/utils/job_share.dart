@@ -6,8 +6,9 @@ import 'package:share_plus/share_plus.dart';
 /// Native share sheet payload for a listed job.
 class JobShare {
   static String message(JobModel job) {
-    final salary =
-        job.salaryRange.isNotEmpty ? job.salaryRange : 'Not specified';
+    final salary = job.salaryRange.isNotEmpty
+        ? job.salaryRange
+        : 'Not specified';
     return '''
 ${job.title} at ${job.schoolName}
 Location: ${job.location}
@@ -16,7 +17,8 @@ Salary: $salary
 
 Apply in the Pace Careers app:
 ${JobShareLinks.httpsUrl(job.jobId)}
-'''.trim();
+'''
+        .trim();
   }
 
   static Future<void> share(BuildContext context, JobModel job) async {

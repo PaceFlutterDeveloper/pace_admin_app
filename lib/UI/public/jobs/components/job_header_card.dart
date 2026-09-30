@@ -168,7 +168,7 @@ class _SchoolMonogram extends StatelessWidget {
               errorBuilder: (_, __, ___) => Text(
                 initial,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: CareersColors.primary,
+                  color: context.careers.accentText,
                   fontSize: 22,
                 ),
               ),

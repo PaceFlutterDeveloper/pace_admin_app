@@ -17,15 +17,19 @@ class CareersBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
+
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: CareersColors.surface,
-        border: Border(top: BorderSide(color: CareersColors.divider)),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        border: Border(top: BorderSide(color: palette.divider)),
         boxShadow: [
           BoxShadow(
-            color: Color(0x0A0F172A),
+            color: palette.isDark
+                ? const Color(0x59000000)
+                : const Color(0x0A0F172A),
             blurRadius: 18,
-            offset: Offset(0, -4),
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -87,16 +91,16 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = currentIndex == index;
-    final color =
-        isSelected ? CareersColors.primary : CareersColors.textTertiary;
+    final palette = context.careers;
+    final color = isSelected ? palette.accentText : palette.textTertiary;
 
     return Expanded(
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onTap(index),
-          splashColor: CareersColors.primarySoft,
-          highlightColor: CareersColors.primarySoft,
+          splashColor: palette.primarySoft,
+          highlightColor: palette.primarySoft,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -108,9 +112,7 @@ class _NavItem extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? CareersColors.primarySoft
-                      : Colors.transparent,
+                  color: isSelected ? palette.primarySoft : Colors.transparent,
                   borderRadius: CareersRadius.pillAll,
                 ),
                 child: Icon(

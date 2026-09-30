@@ -86,11 +86,11 @@ class _MissingFieldsCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(CareersSpacing.cardPadding),
-      decoration: const BoxDecoration(
-        color: CareersColors.surface,
+      decoration: BoxDecoration(
+        color: context.careers.surface,
         borderRadius: CareersRadius.cardAll,
         border: Border.fromBorderSide(
-          BorderSide(color: CareersColors.border),
+          BorderSide(color: context.careers.border),
         ),
       ),
       child: Column(
@@ -117,7 +117,7 @@ class _MissingFieldsCard extends StatelessWidget {
                     child: Text(
                       item,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: CareersColors.textSecondary,
+                        color: context.careers.textSecondary,
                       ),
                     ),
                   ),
@@ -172,7 +172,7 @@ class _StatusBanner extends StatelessWidget {
                 Text(
                   message,
                   style: textTheme.bodySmall?.copyWith(
-                    color: CareersColors.textSecondary,
+                    color: context.careers.textSecondary,
                     height: 1.45,
                   ),
                 ),

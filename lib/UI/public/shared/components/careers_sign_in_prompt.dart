@@ -33,10 +33,10 @@ class CareersSignInPrompt extends StatelessWidget {
               width: 84,
               height: 84,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                gradient: CareersGradients.hero,
+              decoration: BoxDecoration(
+                gradient: CareersGradients.heroFor(context.careers.brightness),
                 shape: BoxShape.circle,
-                boxShadow: CareersShadows.glass,
+                boxShadow: context.careers.glassShadow,
               ),
               child: const Icon(
                 CupertinoIcons.person_crop_circle,

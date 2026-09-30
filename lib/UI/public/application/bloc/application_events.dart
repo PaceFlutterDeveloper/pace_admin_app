@@ -20,10 +20,7 @@ class LoadMoreApplicationsEvent extends ApplicationEvent {
   final int candId;
   final int limit;
 
-  LoadMoreApplicationsEvent({
-    required this.candId,
-    this.limit = 20,
-  });
+  LoadMoreApplicationsEvent({required this.candId, this.limit = 20});
 }
 
 class RefreshApplicationsEvent extends ApplicationEvent {

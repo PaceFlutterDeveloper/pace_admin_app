@@ -127,7 +127,7 @@ class _CareersHomeTabState extends State<CareersHomeTab>
     return BlocListener<JobsBloc, JobsState>(
       listener: _handleSchoolsState,
       child: RefreshIndicator(
-        color: CareersColors.primary,
+        color: context.careers.accentText,
         onRefresh: () async => _refresh(),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -237,7 +237,7 @@ class _CareersHomeTabState extends State<CareersHomeTab>
       );
     }
 
-      if (state is JobsLoaded) {
+    if (state is JobsLoaded) {
       if (state.jobs.isEmpty) {
         return SliverToBoxAdapter(
           child: CareersEmptyState(
@@ -304,16 +304,16 @@ class _GreetingHero extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontSize: 21,
-                ),
+              color: Colors.white,
+              fontSize: 21,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Find your next opportunity in education.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.82),
-                ),
+              color: Colors.white.withValues(alpha: 0.82),
+            ),
           ),
         ],
       ),
@@ -353,14 +353,14 @@ class _SectionHeader extends StatelessWidget {
           const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: const BoxDecoration(
-              color: CareersColors.primarySoft,
+            decoration: BoxDecoration(
+              color: context.careers.primarySoft,
               borderRadius: CareersRadius.chipAll,
             ),
             child: Text(
               count == 1 ? '1 job' : '$count jobs',
               style: textTheme.labelSmall?.copyWith(
-                color: CareersColors.primary,
+                color: context.careers.accentText,
               ),
             ),
           ),

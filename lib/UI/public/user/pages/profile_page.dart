@@ -58,8 +58,7 @@ class _CareersProfilePageState extends State<CareersProfilePage>
   void initState() {
     super.initState();
     final shouldLoad = !widget.embedded || widget.isActive;
-    if (shouldLoad &&
-        locator<CareersUserService>().isCareersUserLoggedIn()) {
+    if (shouldLoad && locator<CareersUserService>().isCareersUserLoggedIn()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _load();
       });
@@ -172,6 +171,7 @@ class _CareersProfilePageState extends State<CareersProfilePage>
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
+          const AppearanceAppBarButton(),
           IconButton(
             icon: const Icon(CupertinoIcons.square_arrow_right),
             tooltip: 'Logout',
@@ -210,8 +210,8 @@ class _CareersProfilePageState extends State<CareersProfilePage>
             email: cachedUser.email,
             avatarUrl:
                 CareersMediaUrl.isDisplayableRemote(cachedUser.profileImage)
-                    ? cachedUser.profileImage
-                    : null,
+                ? cachedUser.profileImage
+                : null,
           ),
           CareersSpacing.gap16,
           AppInlineError(

@@ -14,10 +14,7 @@ class ProfileFileMultipart {
   static Future<void> ensureReadable({String? avatarFilePath}) async {
     if (!hasFiles(avatarFilePath: avatarFilePath)) return;
 
-    await buildFormData(
-      fields: const {},
-      avatarFilePath: avatarFilePath,
-    );
+    await buildFormData(fields: const {}, avatarFilePath: avatarFilePath);
   }
 
   static Future<FormData> buildFormData({

@@ -20,8 +20,7 @@ class EducationTab extends StatelessWidget {
       detailsOf: (record) => [
         if (record.institution != null)
           'Board / University: ${record.institution}',
-        if (record.fieldOfStudy != null)
-          'Main Subject: ${record.fieldOfStudy}',
+        if (record.fieldOfStudy != null) 'Main Subject: ${record.fieldOfStudy}',
         if (record.graduationYear != null)
           'Year of Passing: ${record.graduationYear}',
         if (record.percentage != null && record.percentage!.isNotEmpty)
@@ -110,10 +109,7 @@ class _EducationEditorDialogState extends State<_EducationEditorDialog> {
           controller: _institution,
           isRequired: true,
         ),
-        ProfileTextField(
-          label: 'Main Subject',
-          controller: _fieldOfStudy,
-        ),
+        ProfileTextField(label: 'Main Subject', controller: _fieldOfStudy),
         ProfileTextField(
           label: 'Year of Passing',
           controller: _graduationYear,

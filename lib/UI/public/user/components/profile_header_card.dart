@@ -93,8 +93,8 @@ class _CompletionStrip extends StatelessWidget {
     final label = isComplete
         ? 'Profile complete'
         : percentage != null
-            ? 'Profile $percentage% complete'
-            : 'Profile incomplete';
+        ? 'Profile $percentage% complete'
+        : 'Profile incomplete';
     final progress = ((percentage ?? (isComplete ? 100 : 0)) / 100).clamp(
       0.0,
       1.0,

@@ -104,7 +104,8 @@ class ProfileFilePaths {
 
     return profile.copyWith(
       cvFile: _nonEmpty(profile.cvFile) ?? _nonEmpty(cached?.resumeUrl),
-      availableFrom: _nonEmpty(profile.availableFrom) ??
+      availableFrom:
+          _nonEmpty(profile.availableFrom) ??
           CareersApiDates.normalizeFromApi(prefs['available_from']),
     );
   }

@@ -243,7 +243,7 @@ class _RecordCard<T> extends StatelessWidget {
                     child: Text(
                       detail,
                       style: textTheme.bodySmall?.copyWith(
-                        color: CareersColors.textSecondary,
+                        color: context.careers.textSecondary,
                         height: 1.45,
                       ),
                     ),

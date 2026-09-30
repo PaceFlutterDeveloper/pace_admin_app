@@ -34,7 +34,8 @@ class MyApplicationsData {
   factory MyApplicationsData.fromJson(Map<String, dynamic> json) {
     return MyApplicationsData(
       candidate: Candidate.fromJson(json['candidate'] ?? {}),
-      applications: (json['applications'] as List<dynamic>?)
+      applications:
+          (json['applications'] as List<dynamic>?)
               ?.map((e) => Application.fromJson(e))
               .toList() ??
           [],
@@ -50,11 +51,7 @@ class Candidate {
   final String name;
   final String email;
 
-  Candidate({
-    required this.id,
-    required this.name,
-    required this.email,
-  });
+  Candidate({required this.id, required this.name, required this.email});
 
   factory Candidate.fromJson(Map<String, dynamic> json) {
     return Candidate(
@@ -146,8 +143,8 @@ class ApplicationDetails {
       source: json['source'] ?? '',
       cvFile: json['cv_file'] ?? '',
       status: json['status'] ?? '',
-      availabilityOk: json['availability_ok'] == true ||
-          json['availability_ok'] == 1,
+      availabilityOk:
+          json['availability_ok'] == true || json['availability_ok'] == 1,
       appliedDate: json['applied_date'] ?? '',
       lastActivity: json['last_activity'] ?? '',
     );

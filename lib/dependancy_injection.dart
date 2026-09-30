@@ -20,6 +20,7 @@ import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/UI/notification/repository/notification_repository.dart';
 import 'package:admin_app/UI/public/application/bloc/application_bloc.dart';
 import 'package:admin_app/UI/public/application/services/application_api_service.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_theme_controller.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_events.dart';
@@ -84,7 +85,10 @@ Future<void> serviceLocators() async {
   Hive.registerAdapter(
     CareersUserModelAdapter(),
   ); // Register the CareersUserModel adapter
-  await Hive.openBox('settingsBox');
+  final settingsBox = await Hive.openBox('settingsBox');
+  locator.registerSingleton<CareersThemeController>(
+    CareersThemeController(box: settingsBox),
+  );
 
   // Open Hive Box for LoginModel and register it
   var loginBox = await Hive.openBox<AuthModel>(LoginBox);

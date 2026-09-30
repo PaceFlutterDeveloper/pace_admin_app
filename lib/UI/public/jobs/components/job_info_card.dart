@@ -57,8 +57,8 @@ class JobInfoCard extends StatelessWidget {
               label: 'Salary',
               value: job.salaryRange,
               valueColor: CareersColors.success,
-              leading: const AedCurrencyIcon(
-                color: CareersColors.primary,
+              leading: AedCurrencyIcon(
+                color: context.careers.accentText,
                 size: 16,
               ),
             ),

@@ -10,9 +10,10 @@ class ApplicationLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
     return Shimmer.fromColors(
-      baseColor: CareersColors.surfaceMuted,
-      highlightColor: CareersColors.surface,
+      baseColor: palette.surfaceMuted,
+      highlightColor: palette.surface,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(
           CareersSpacing.screenH,
@@ -37,9 +38,9 @@ class _ApplicationCardSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(CareersSpacing.cardPadding),
       decoration: BoxDecoration(
-        color: CareersColors.surface,
+        color: context.careers.surface,
         borderRadius: CareersRadius.cardAll,
-        border: Border.all(color: CareersColors.border),
+        border: Border.all(color: context.careers.border),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,11 +89,7 @@ class _Block extends StatelessWidget {
   final double height;
   final double radius;
 
-  const _Block({
-    required this.width,
-    required this.height,
-    this.radius = 6,
-  });
+  const _Block({required this.width, required this.height, this.radius = 6});
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +97,7 @@ class _Block extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: CareersColors.surfaceMuted,
+        color: context.careers.surfaceMuted,
         borderRadius: BorderRadius.circular(radius),
       ),
     );

@@ -36,11 +36,7 @@ class CareersStatusChip extends StatelessWidget {
   }
 
   /// Chip for a job vacancy status (`Open`, `Closed`, ...).
-  factory CareersStatusChip.job(
-    String status, {
-    Key? key,
-    bool dense = false,
-  }) {
+  factory CareersStatusChip.job(String status, {Key? key, bool dense = false}) {
     return CareersStatusChip(
       key: key,
       label: status,
@@ -51,6 +47,7 @@ class CareersStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final style = context.careers.status(this.style);
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 8 : 10,
@@ -70,10 +67,10 @@ class CareersStatusChip extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: style.foreground,
-                  fontSize: dense ? 10.5 : 11.5,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: style.foreground,
+              fontSize: dense ? 10.5 : 11.5,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -90,23 +87,21 @@ class CareersMetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: const BoxDecoration(
-        color: CareersColors.surfaceMuted,
+      decoration: BoxDecoration(
+        color: palette.surfaceMuted,
         borderRadius: CareersRadius.chipAll,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: CareersColors.textSecondary),
+            Icon(icon, size: 13, color: palette.textSecondary),
             const SizedBox(width: 5),
           ],
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium,
-          ),
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
         ],
       ),
     );

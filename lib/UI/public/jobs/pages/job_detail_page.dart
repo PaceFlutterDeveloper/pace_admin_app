@@ -235,8 +235,8 @@ class _JobDetailSkeleton extends StatelessWidget {
         CareersSpacing.section,
       ),
       child: Shimmer.fromColors(
-        baseColor: CareersColors.surfaceMuted,
-        highlightColor: CareersColors.surface,
+        baseColor: context.careers.surfaceMuted,
+        highlightColor: context.careers.surface,
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -263,7 +263,7 @@ class _SkeletonBlock extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: CareersColors.surfaceMuted,
+        color: context.careers.surfaceMuted,
         borderRadius: BorderRadius.circular(radius),
       ),
     );

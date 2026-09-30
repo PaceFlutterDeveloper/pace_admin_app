@@ -60,10 +60,7 @@ class ProfileCompletionModel {
     final rootMissing = _parseMissingFields(data['missing_fields']);
     final nestedMissing = _parseMissingFields(completionJson['missing_fields']);
 
-    final mergedMissing = <String>{
-      ...rootMissing,
-      ...nestedMissing,
-    }.toList();
+    final mergedMissing = <String>{...rootMissing, ...nestedMissing}.toList();
 
     final breakdown = <String, dynamic>{};
     final rootBreakdown = data['breakdown'];

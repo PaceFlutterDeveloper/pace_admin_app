@@ -132,7 +132,9 @@ class ProfileApiService {
       return '${text.length} chars: $sample';
     }
 
-    final buffer = StringBuffer('ProfileApiService: get-profile photo fields\n');
+    final buffer = StringBuffer(
+      'ProfileApiService: get-profile photo fields\n',
+    );
     for (final key in keys) {
       buffer.writeln('  data.$key = ${describe(data[key])}');
       buffer.writeln('  candidate.$key = ${describe(candidate[key])}');
@@ -156,10 +158,7 @@ class ProfileApiService {
 
       final url = ApiConstants.updateProfileUrl;
 
-      final body = <String, dynamic>{
-        'cand_id': candidateId,
-        ...profileData,
-      };
+      final body = <String, dynamic>{'cand_id': candidateId, ...profileData};
       _prepareUpdateProfileBody(body);
 
       log('ProfileApiService: Request URL: $url');
@@ -246,10 +245,7 @@ class ProfileApiService {
       );
       if (rows.isLeft) return Left(rows.left);
 
-      final body = {
-        'cand_id': candidateId,
-        'education_records': rows.right,
-      };
+      final body = {'cand_id': candidateId, 'education_records': rows.right};
 
       final result = await _apiService.postAPI(
         url: url,
@@ -316,15 +312,11 @@ class ProfileApiService {
         experienceRecords,
         isValid: (e) => e.isValidForApi,
         toJson: (e) => e.toJson(),
-        invalidMessage:
-            'Each experience record needs an organization.',
+        invalidMessage: 'Each experience record needs an organization.',
       );
       if (rows.isLeft) return Left(rows.left);
 
-      final body = {
-        'cand_id': candidateId,
-        'experience_records': rows.right,
-      };
+      final body = {'cand_id': candidateId, 'experience_records': rows.right};
 
       final result = await _apiService.postAPI(
         url: url,
@@ -391,15 +383,11 @@ class ProfileApiService {
         familyMembers,
         isValid: (e) => e.isValidForApi,
         toJson: (e) => e.toJson(),
-        invalidMessage:
-            'Each family member needs a name and relation.',
+        invalidMessage: 'Each family member needs a name and relation.',
       );
       if (rows.isLeft) return Left(rows.left);
 
-      final body = {
-        'cand_id': candidateId,
-        'family_members': rows.right,
-      };
+      final body = {'cand_id': candidateId, 'family_members': rows.right};
 
       final result = await _apiService.postAPI(
         url: url,
@@ -470,10 +458,7 @@ class ProfileApiService {
       );
       if (rows.isLeft) return Left(rows.left);
 
-      final body = {
-        'cand_id': candidateId,
-        'references': rows.right,
-      };
+      final body = {'cand_id': candidateId, 'references': rows.right};
 
       final result = await _apiService.postAPI(
         url: url,
@@ -1030,7 +1015,9 @@ class ProfileApiService {
     String? token,
   }) async {
     try {
-      log('ProfileApiService: Fetching full profile for candidate: $candidateId');
+      log(
+        'ProfileApiService: Fetching full profile for candidate: $candidateId',
+      );
 
       final result = await _apiService.getRequest(
         ApiConstants.profileUrl,
@@ -1039,34 +1026,31 @@ class ProfileApiService {
         useSessionToken: true,
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (responseData) {
-          try {
-            final response = json.decode(responseData);
-            if (response['status'] == true) {
-              return Right(
-                FullProfileResponse.fromJson(
-                  response['data'] as Map<String, dynamic>? ?? {},
-                ),
-              );
-            }
-            return Left(
-              MyError(
-                key: AppError.apiError,
-                message: response['message'] ?? 'Failed to get profile',
-              ),
-            );
-          } catch (e) {
-            return Left(
-              MyError(
-                key: AppError.unknown,
-                message: 'Failed to parse full profile data: $e',
+      return result.fold((error) => Left(error), (responseData) {
+        try {
+          final response = json.decode(responseData);
+          if (response['status'] == true) {
+            return Right(
+              FullProfileResponse.fromJson(
+                response['data'] as Map<String, dynamic>? ?? {},
               ),
             );
           }
-        },
-      );
+          return Left(
+            MyError(
+              key: AppError.apiError,
+              message: response['message'] ?? 'Failed to get profile',
+            ),
+          );
+        } catch (e) {
+          return Left(
+            MyError(
+              key: AppError.unknown,
+              message: 'Failed to parse full profile data: $e',
+            ),
+          );
+        }
+      });
     } catch (e) {
       return Left(
         MyError(
@@ -1091,35 +1075,31 @@ class ProfileApiService {
         useSessionToken: true,
       );
 
-      return result.fold(
-        (error) => Left(error),
-        (responseData) {
-          try {
-            final response = json.decode(responseData);
-            if (response['status'] == true) {
-              return Right(
-                ProfileCompletionResponse.fromJson(
-                  response['data'] as Map<String, dynamic>? ?? {},
-                ),
-              );
-            }
-            return Left(
-              MyError(
-                key: AppError.apiError,
-                message:
-                    response['message'] ?? 'Profile completion check failed',
-              ),
-            );
-          } catch (e) {
-            return Left(
-              MyError(
-                key: AppError.unknown,
-                message: 'Failed to parse profile completion data: $e',
+      return result.fold((error) => Left(error), (responseData) {
+        try {
+          final response = json.decode(responseData);
+          if (response['status'] == true) {
+            return Right(
+              ProfileCompletionResponse.fromJson(
+                response['data'] as Map<String, dynamic>? ?? {},
               ),
             );
           }
-        },
-      );
+          return Left(
+            MyError(
+              key: AppError.apiError,
+              message: response['message'] ?? 'Profile completion check failed',
+            ),
+          );
+        } catch (e) {
+          return Left(
+            MyError(
+              key: AppError.unknown,
+              message: 'Failed to parse profile completion data: $e',
+            ),
+          );
+        }
+      });
     } catch (e) {
       return Left(
         MyError(
@@ -1368,9 +1348,7 @@ class ProfileApiService {
     required String invalidMessage,
   }) {
     if (records.any((record) => !isValid(record))) {
-      return Left(
-        MyError(key: AppError.apiError, message: invalidMessage),
-      );
+      return Left(MyError(key: AppError.apiError, message: invalidMessage));
     }
     return Right(records.map(toJson).toList());
   }

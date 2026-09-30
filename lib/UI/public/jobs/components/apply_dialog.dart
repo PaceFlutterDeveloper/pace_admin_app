@@ -100,10 +100,10 @@ class _ApplyDialogState extends State<ApplyDialog> {
                 CareersSpacing.gap12,
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       CupertinoIcons.lock_shield,
                       size: 14,
-                      color: CareersColors.textTertiary,
+                      color: context.careers.textTertiary,
                     ),
                     const SizedBox(width: 6),
                     Expanded(

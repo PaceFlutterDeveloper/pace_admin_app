@@ -19,30 +19,31 @@ class CareersJobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final palette = context.careers;
     final postedLabel = JobDateFormat.relative(job.postedDate);
     final isClosed = !job.isActive;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           borderRadius: CareersRadius.cardAll,
-          boxShadow: CareersShadows.card,
+          boxShadow: palette.cardShadow,
         ),
         child: Material(
-          color: CareersColors.surface,
+          color: palette.surface,
           borderRadius: CareersRadius.cardAll,
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () =>
                 context.pushNamed(Routes.jobDetail.name, extra: job.jobId),
-            splashColor: CareersColors.primarySoft,
-            highlightColor: CareersColors.primarySoft,
+            splashColor: palette.primarySoft,
+            highlightColor: palette.primarySoft,
             child: Container(
               padding: const EdgeInsets.all(CareersSpacing.cardPadding),
               decoration: BoxDecoration(
                 borderRadius: CareersRadius.cardAll,
-                border: Border.all(color: CareersColors.border),
+                border: Border.all(color: palette.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,10 +87,10 @@ class CareersJobCard extends StatelessWidget {
                   if (job.location.isNotEmpty)
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           CupertinoIcons.location_solid,
                           size: 13,
-                          color: CareersColors.textTertiary,
+                          color: palette.textTertiary,
                         ),
                         const SizedBox(width: 5),
                         Expanded(
@@ -146,15 +147,18 @@ class _SchoolBadge extends StatelessWidget {
     final trimmed = name.trim();
     final initial = trimmed.isEmpty ? '#' : trimmed[0].toUpperCase();
     final url = logoUrl?.trim() ?? '';
+    final palette = context.careers;
 
     return Container(
       width: 46,
       height: 46,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: CareersColors.surface,
+        // School logos are usually dark artwork on transparency, so they
+        // keep a light plate in both themes.
+        color: palette.isDark ? Colors.white : palette.surface,
         borderRadius: BorderRadius.circular(CareersRadius.chip),
-        border: Border.all(color: CareersColors.border),
+        border: Border.all(color: palette.border),
       ),
       child: url.isEmpty
           ? _Initial(initial)
@@ -214,10 +218,10 @@ class _ShareButton extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
       tooltip: 'Share job',
       onPressed: () => JobShare.share(context, job),
-      icon: const Icon(
+      icon: Icon(
         Icons.share_outlined,
         size: 18,
-        color: CareersColors.textTertiary,
+        color: context.careers.textTertiary,
       ),
     );
   }
@@ -230,21 +234,24 @@ class _SalaryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.careers.isDark;
+    final accent = isDark ? const Color(0xFF6EE7B7) : CareersColors.success;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: CareersColors.success.withValues(alpha: 0.1),
+        color: accent.withValues(alpha: isDark ? 0.18 : 0.1),
         borderRadius: CareersRadius.chipAll,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const AedCurrencyIcon(color: CareersColors.success, size: 13),
+          AedCurrencyIcon(color: accent, size: 13),
           const SizedBox(width: 5),
           Text(
             job.salaryRange,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: CareersColors.success,
+              color: accent,
               fontWeight: FontWeight.w600,
             ),
           ),

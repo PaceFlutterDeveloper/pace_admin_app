@@ -32,7 +32,7 @@ class SectionCard extends StatelessWidget {
           Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18, color: CareersColors.primary),
+                Icon(icon, size: 18, color: context.careers.accentText),
                 const SizedBox(width: 8),
               ],
               Expanded(child: SectionTitle(title: title)),

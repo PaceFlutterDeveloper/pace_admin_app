@@ -9,17 +9,21 @@ class JobCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Shimmer.fromColors(
-        baseColor: CareersColors.surfaceMuted,
-        highlightColor: CareersColors.surface,
+        baseColor: palette.surfaceMuted,
+        highlightColor: palette.isDark
+            ? Color.lerp(palette.surfaceMuted, Colors.white, 0.08)!
+            : palette.surface,
         child: Container(
           padding: const EdgeInsets.all(CareersSpacing.cardPadding),
           decoration: BoxDecoration(
-            color: CareersColors.surface,
+            color: palette.surface,
             borderRadius: CareersRadius.cardAll,
-            border: Border.all(color: CareersColors.border),
+            border: Border.all(color: palette.border),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,10 +84,7 @@ class JobCardSkeletonList extends StatelessWidget {
     return Padding(
       padding: padding,
       child: Column(
-        children: List.generate(
-          itemCount,
-          (_) => const JobCardSkeleton(),
-        ),
+        children: List.generate(itemCount, (_) => const JobCardSkeleton()),
       ),
     );
   }
@@ -94,11 +95,7 @@ class _Block extends StatelessWidget {
   final double height;
   final double radius;
 
-  const _Block({
-    required this.width,
-    required this.height,
-    this.radius = 6,
-  });
+  const _Block({required this.width, required this.height, this.radius = 6});
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +103,7 @@ class _Block extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: CareersColors.surfaceMuted,
+        color: context.careers.surfaceMuted,
         borderRadius: BorderRadius.circular(radius),
       ),
     );

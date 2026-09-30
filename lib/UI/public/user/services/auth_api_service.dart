@@ -22,10 +22,7 @@ class AuthApiService {
     try {
       log('AuthApiService: Attempting login for email: $email');
 
-      final body = <String, dynamic>{
-        'email': email,
-        'password': password,
-      };
+      final body = <String, dynamic>{'email': email, 'password': password};
       if (fcmToken != null && fcmToken.isNotEmpty) {
         body['fcm_token'] = fcmToken;
         body['platform'] = _devicePlatform();

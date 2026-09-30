@@ -29,11 +29,12 @@ class CareersHeroSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: CareersGradients.hero,
+        gradient: CareersGradients.heroFor(palette.brightness),
         borderRadius: borderRadius,
-        boxShadow: showShadow ? CareersShadows.glass : CareersShadows.none,
+        boxShadow: showShadow ? palette.glassShadow : CareersShadows.none,
       ),
       child: ClipRRect(
         borderRadius: borderRadius,

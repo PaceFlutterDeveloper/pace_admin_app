@@ -175,7 +175,6 @@ class ProfileModel {
     return _normalizeTextField(value);
   }
 
-
   Map<String, dynamic> toJson() {
     return {
       if (candidateId != null) 'cand_id': candidateId,
@@ -194,7 +193,8 @@ class ProfileModel {
       if (currentCountryId != null && currentCountryId! > 0)
         'current_country_id': currentCountryId,
       if (experienceYears != null) 'experience_years': experienceYears,
-      if (uaeExperienceYears != null) 'uae_experience_years': uaeExperienceYears,
+      if (uaeExperienceYears != null)
+        'uae_experience_years': uaeExperienceYears,
       if (otherExperienceYears != null)
         'other_experience_years': otherExperienceYears,
       if (currentCtc != null) 'current_ctc': currentCtc,
@@ -350,7 +350,8 @@ class EducationRecord {
       id: _careersRecordId(json, 'edu_id'),
       qualification:
           json['grade_course'] ?? json['edu_course'] ?? json['qualification'],
-      institution: json['board_univ'] ?? json['edu_board'] ?? json['institution'],
+      institution:
+          json['board_univ'] ?? json['edu_board'] ?? json['institution'],
       fieldOfStudy:
           json['main_subject'] ?? json['edu_subject'] ?? json['field_of_study'],
       graduationYear:
@@ -373,7 +374,8 @@ class EducationRecord {
         'main_subject': fieldOfStudy,
       if (graduationYear != null && graduationYear!.isNotEmpty)
         'year_passing': year ?? graduationYear,
-      if (percentage != null && percentage!.isNotEmpty) 'percentage': percentage,
+      if (percentage != null && percentage!.isNotEmpty)
+        'percentage': percentage,
     };
   }
 }
@@ -406,7 +408,8 @@ class ExperienceRecord {
       id: _careersRecordId(json, 'exp_id'),
       companyName:
           json['organization'] ?? json['ex_org'] ?? json['company_name'],
-      position: json['designation'] ?? json['ex_designation'] ?? json['position'],
+      position:
+          json['designation'] ?? json['ex_designation'] ?? json['position'],
       location: json['location'] ?? json['ex_location'],
       startDate: CareersApiDates.normalizeFromApi(
         json['from_date'] ?? json['ex_from'] ?? json['start_date'],
@@ -419,7 +422,8 @@ class ExperienceRecord {
           parseCareersYn(json['ex_current']) ??
           parseCareersYn(json['is_current']) ??
           false,
-      jobDescription: json['job_desc'] ?? json['ex_desc'] ?? json['job_description'],
+      jobDescription:
+          json['job_desc'] ?? json['ex_desc'] ?? json['job_description'],
     );
   }
 
@@ -467,13 +471,13 @@ class FamilyMember {
     return FamilyMember(
       id: _careersRecordId(json, 'fam_id'),
       name: json['name'] ?? json['fam_name'],
-      relationship: json['relation'] ?? json['fam_relation'] ?? json['relationship'],
-      occupation: json['profession'] ?? json['fam_profession'] ?? json['occupation'],
+      relationship:
+          json['relation'] ?? json['fam_relation'] ?? json['relationship'],
+      occupation:
+          json['profession'] ?? json['fam_profession'] ?? json['occupation'],
       age: json['age'] is int
           ? json['age'] as int
-          : int.tryParse(
-              (json['age'] ?? json['fam_age'])?.toString() ?? '',
-            ),
+          : int.tryParse((json['age'] ?? json['fam_age'])?.toString() ?? ''),
       dependentYn:
           parseCareersYn(json['dependent_yn']) ??
           parseCareersYn(json['fam_dependent']) ??
@@ -501,13 +505,7 @@ class Reference {
   final String? address;
   final String? phone;
 
-  Reference({
-    this.id,
-    this.name,
-    this.position,
-    this.address,
-    this.phone,
-  });
+  Reference({this.id, this.name, this.position, this.address, this.phone});
 
   bool get isValidForApi => name?.trim().isNotEmpty ?? false;
 
@@ -515,7 +513,8 @@ class Reference {
     return Reference(
       id: _careersRecordId(json, 'ref_id'),
       name: json['ref_name'] ?? json['name'],
-      position: json['designation'] ?? json['ref_designation'] ?? json['position'],
+      position:
+          json['designation'] ?? json['ref_designation'] ?? json['position'],
       address: json['address'] ?? json['ref_address'],
       phone: json['contact_no'] ?? json['ref_contact'] ?? json['phone'],
     );
@@ -612,10 +611,7 @@ class FullProfileResponse {
         json['family_members'],
         FamilyMember.fromJson,
       ),
-      references: mapCareersSectionRows(
-        json['references'],
-        Reference.fromJson,
-      ),
+      references: mapCareersSectionRows(json['references'], Reference.fromJson),
       professionalPrograms: mapCareersSectionRows(
         json['professional_programs'],
         ProfessionalProgram.fromJson,
@@ -659,10 +655,7 @@ class CompleteProfileModel {
         json['family_members'],
         FamilyMember.fromJson,
       ),
-      references: mapCareersSectionRows(
-        json['references'],
-        Reference.fromJson,
-      ),
+      references: mapCareersSectionRows(json['references'], Reference.fromJson),
       professionalPrograms: mapCareersSectionRows(
         json['professional_programs'],
         ProfessionalProgram.fromJson,
@@ -690,8 +683,9 @@ class CompleteProfileModel {
       'experience_records': experienceRecords.map((e) => e.toJson()).toList(),
       'family_members': familyMembers.map((e) => e.toJson()).toList(),
       'references': references.map((e) => e.toJson()).toList(),
-      'professional_programs':
-          professionalPrograms.map((e) => e.toJson()).toList(),
+      'professional_programs': professionalPrograms
+          .map((e) => e.toJson())
+          .toList(),
     };
   }
 }

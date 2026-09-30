@@ -67,9 +67,7 @@ class _ApplicationsTabState extends State<ApplicationsTab>
     final silent =
         _loadedForCandidateId == candidateId && bloc.state is ApplicationLoaded;
     _loadedForCandidateId = candidateId;
-    bloc.add(
-      LoadApplicationsEvent(candId: candidateId, silent: silent),
-    );
+    bloc.add(LoadApplicationsEvent(candId: candidateId, silent: silent));
   }
 
   @override
@@ -138,7 +136,7 @@ class _ApplicationsTabState extends State<ApplicationsTab>
         }
 
         return RefreshIndicator(
-          color: CareersColors.primary,
+          color: context.careers.accentText,
           onRefresh: () async {
             context.read<ApplicationBloc>().add(
               RefreshApplicationsEvent(candId: candidateId),
@@ -147,8 +145,9 @@ class _ApplicationsTabState extends State<ApplicationsTab>
           child: Column(
             children: [
               _StatusFilterBar(
-                selectedStatus:
-                    state is ApplicationLoaded ? state.selectedStatus : null,
+                selectedStatus: state is ApplicationLoaded
+                    ? state.selectedStatus
+                    : null,
                 onSelected: (status) {
                   context.read<ApplicationBloc>().add(
                     FilterApplicationsByStatusEvent(status: status),
@@ -250,9 +249,9 @@ class _StatusFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: CareersColors.surface,
-        border: Border(bottom: BorderSide(color: CareersColors.divider)),
+      decoration: BoxDecoration(
+        color: context.careers.surface,
+        border: Border(bottom: BorderSide(color: context.careers.divider)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,

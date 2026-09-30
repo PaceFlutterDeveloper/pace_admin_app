@@ -12,18 +12,19 @@ class ProfileFieldDecorations {
 
   static InputDecoration bordered(ThemeData theme, {String? errorText}) {
     final hasError = errorText != null && errorText.isNotEmpty;
+    final palette = theme.extension<CareersPalette>() ?? CareersPalette.light;
 
     return InputDecoration(
       filled: true,
-      fillColor: CareersColors.surface,
+      fillColor: palette.surface,
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-      border: _border(CareersColors.border),
+      border: _border(palette.border),
       enabledBorder: hasError
           ? _border(CareersColors.error, 1.4)
-          : _border(CareersColors.border),
+          : _border(palette.border),
       focusedBorder: _border(
-        hasError ? CareersColors.error : CareersColors.primary,
+        hasError ? CareersColors.error : palette.accentText,
         1.4,
       ),
       errorBorder: _border(CareersColors.error),
@@ -260,6 +261,7 @@ class ProfileDropdownField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = context.careers;
     final effectiveValue = _valueInItems(value) ? value : null;
 
     return Column(
@@ -268,10 +270,10 @@ class ProfileDropdownField<T> extends StatelessWidget {
       children: [
         Text(
           isRequired ? '$label *' : label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13.5,
             fontWeight: FontWeight.w500,
-            color: CareersColors.textSecondary,
+            color: palette.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -282,24 +284,19 @@ class ProfileDropdownField<T> extends StatelessWidget {
           onChanged: onChanged,
           isExpanded: true,
           borderRadius: CareersRadius.inputAll,
-          icon: const Icon(
+          dropdownColor: palette.surface,
+          icon: Icon(
             CupertinoIcons.chevron_down,
             size: 16,
-            color: CareersColors.textTertiary,
+            color: palette.textTertiary,
           ),
           hint: hint != null
               ? Text(
                   hint!,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: CareersColors.textTertiary,
-                  ),
+                  style: TextStyle(fontSize: 15, color: palette.textTertiary),
                 )
               : null,
-          style: const TextStyle(
-            fontSize: 15,
-            color: CareersColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 15, color: palette.textPrimary),
           decoration: ProfileFieldDecorations.bordered(theme),
           validator: isRequired
               ? (v) => v == null ? 'Please select $label' : null
@@ -325,6 +322,7 @@ class ProfileSwitchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
     return Semantics(
       container: true,
       toggled: value,
@@ -334,12 +332,10 @@ class ProfileSwitchField extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: const BoxDecoration(
-            color: CareersColors.surface,
+          decoration: BoxDecoration(
+            color: palette.surface,
             borderRadius: CareersRadius.inputAll,
-            border: Border.fromBorderSide(
-              BorderSide(color: CareersColors.border),
-            ),
+            border: Border.fromBorderSide(BorderSide(color: palette.border)),
           ),
           child: Row(
             children: [
@@ -347,10 +343,10 @@ class ProfileSwitchField extends StatelessWidget {
                 child: ExcludeSemantics(
                   child: Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w500,
-                      color: CareersColors.textPrimary,
+                      color: palette.textPrimary,
                       height: 1.35,
                     ),
                   ),
@@ -386,7 +382,11 @@ class _CareersSwitch extends StatelessWidget {
       height: _height,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: value ? CareersColors.primary : const Color(0xFFCBD5E1),
+        color: value
+            ? CareersColors.primary
+            : (context.careers.isDark
+                  ? const Color(0xFF3F446E)
+                  : const Color(0xFFCBD5E1)),
         borderRadius: BorderRadius.circular(_height / 2),
       ),
       child: AnimatedAlign(

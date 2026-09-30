@@ -11,9 +11,11 @@ class JobDateFormat {
   static String? relative(DateTime? date) {
     if (date == null) return null;
     final now = DateTime.now();
-    final days = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(date.year, date.month, date.day))
-        .inDays;
+    final days = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).difference(DateTime(date.year, date.month, date.day)).inDays;
 
     if (days < 0) return _long.format(date);
     if (days == 0) return 'Today';

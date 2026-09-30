@@ -78,78 +78,82 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       schoolId: event.schoolId,
       employmentType: event.filterBy,
       page: 1,
-      limit: 10,    );
+      limit: 10,
+    );
 
-    result.fold((error) {
-      if (keepList) return;
-      emit(JobsError(error.message));
-    }, (response) {
-      if (response.data.isNotEmpty) {
-        List<JobModel> filteredJobs = _applyClientFilters(
-          response.data,
+    result.fold(
+      (error) {
+        if (keepList) return;
+        emit(JobsError(error.message));
+      },
+      (response) {
+        if (response.data.isNotEmpty) {
+          List<JobModel> filteredJobs = _applyClientFilters(
+            response.data,
+            search: event.searchQuery,
+            location: event.location,
+          );
+
+          // Apply client-side filtering for employment type
+          if (event.filterBy != null && event.filterBy != 'All') {
+            filteredJobs = filteredJobs.where((job) {
+              switch (event.filterBy) {
+                case 'Open':
+                  return job.status == 'Open';
+                case 'Full-time':
+                  return job.employmentType == 'Full-time';
+                case 'Part-time':
+                  return job.employmentType == 'Part-time';
+                case 'Engineering':
+                  return job.title.toLowerCase().contains('engineer') ||
+                      job.title.toLowerCase().contains('developer') ||
+                      job.title.toLowerCase().contains('programmer');
+                case 'Design':
+                  return job.title.toLowerCase().contains('design') ||
+                      job.title.toLowerCase().contains('ui') ||
+                      job.title.toLowerCase().contains('ux');
+                case 'Marketing':
+                  return job.title.toLowerCase().contains('marketing') ||
+                      job.title.toLowerCase().contains('sales') ||
+                      job.title.toLowerCase().contains('promotion');
+                default:
+                  return true;
+              }
+            }).toList();
+          }
+
+          emit(
+            JobsLoaded(
+              jobs: filteredJobs,
+              searchQuery: event.searchQuery ?? '',
+              filterBy: event.filterBy ?? 'All',
+              selectedSchoolId: event.schoolId,
+              locationQuery: event.location ?? '',
+              schools: _schoolsCache,
+              currentPage: response.page,
+              totalPages: response.totalPages,
+              hasMoreJobs: response.hasNext,
+            ),
+          );
+        } else if (_hasActiveClientFilters(
           search: event.searchQuery,
           location: event.location,
-        );
-
-        // Apply client-side filtering for employment type
-        if (event.filterBy != null && event.filterBy != 'All') {
-          filteredJobs = filteredJobs.where((job) {
-            switch (event.filterBy) {
-              case 'Open':
-                return job.status == 'Open';
-              case 'Full-time':
-                return job.employmentType == 'Full-time';
-              case 'Part-time':
-                return job.employmentType == 'Part-time';
-              case 'Engineering':
-                return job.title.toLowerCase().contains('engineer') ||
-                    job.title.toLowerCase().contains('developer') ||
-                    job.title.toLowerCase().contains('programmer');
-              case 'Design':
-                return job.title.toLowerCase().contains('design') ||
-                    job.title.toLowerCase().contains('ui') ||
-                    job.title.toLowerCase().contains('ux');
-              case 'Marketing':
-                return job.title.toLowerCase().contains('marketing') ||
-                    job.title.toLowerCase().contains('sales') ||
-                    job.title.toLowerCase().contains('promotion');
-              default:
-                return true;
-            }
-          }).toList();
+        )) {
+          emit(
+            JobsLoaded(
+              jobs: const [],
+              searchQuery: event.searchQuery ?? '',
+              filterBy: event.filterBy ?? 'All',
+              selectedSchoolId: event.schoolId,
+              locationQuery: event.location ?? '',
+              schools: _schoolsCache,
+            ),
+          );
+        } else {
+          emit(JobsError('No jobs found'));
         }
-
-        emit(
-          JobsLoaded(
-            jobs: filteredJobs,
-            searchQuery: event.searchQuery ?? '',
-            filterBy: event.filterBy ?? 'All',
-            selectedSchoolId: event.schoolId,
-            locationQuery: event.location ?? '',
-            schools: _schoolsCache,
-            currentPage: response.page,
-            totalPages: response.totalPages,
-            hasMoreJobs: response.hasNext,
-          ),
-        );
-      } else if (_hasActiveClientFilters(
-        search: event.searchQuery,
-        location: event.location,
-      )) {
-        emit(
-          JobsLoaded(
-            jobs: const [],
-            searchQuery: event.searchQuery ?? '',
-            filterBy: event.filterBy ?? 'All',
-            selectedSchoolId: event.schoolId,
-            locationQuery: event.location ?? '',
-            schools: _schoolsCache,
-          ),
-        );
-      } else {
-        emit(JobsError('No jobs found'));
-      }
-    });
+      },
+    );
   }
 
   void _onSearchJobs(SearchJobsEvent event, Emitter<JobsState> emit) {
@@ -215,8 +219,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
   ) async {
     emit(JobDetailsLoading());
 
-    final result = await _jobsApiService.fetchJobDetails(
-      event.jobId,    );
+    final result = await _jobsApiService.fetchJobDetails(event.jobId);
 
     result.fold(
       (error) => emit(JobDetailsError(error.message)),
@@ -284,7 +287,8 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             ? currentState.filterBy
             : null,
         page: 1,
-        limit: 10,      );
+        limit: 10,
+      );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
         // if (response.data.isNotEmpty) {
@@ -318,7 +322,8 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       final result = await _jobsApiService.fetchJobs(
         schoolId: event.schoolId,
         page: 1,
-        limit: 10,      );
+        limit: 10,
+      );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
         if (response.data.isNotEmpty) {
@@ -360,7 +365,8 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             ? currentState.filterBy
             : null,
         page: currentState.currentPage + 1,
-        limit: 10,      );
+        limit: 10,
+      );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
         if (response.data.isNotEmpty) {

@@ -30,16 +30,16 @@ class CompanyCard extends StatelessWidget {
             CareersSpacing.gap16,
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: const BoxDecoration(
-                color: CareersColors.surfaceMuted,
+              decoration: BoxDecoration(
+                color: context.careers.surfaceMuted,
                 borderRadius: CareersRadius.chipAll,
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     CupertinoIcons.globe,
                     size: 15,
-                    color: CareersColors.textSecondary,
+                    color: context.careers.textSecondary,
                   ),
                   const SizedBox(width: 8),
                   Expanded(

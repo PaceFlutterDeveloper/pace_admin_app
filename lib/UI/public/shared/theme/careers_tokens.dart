@@ -51,6 +51,17 @@ class CareersGradients {
     stops: [0.0, 0.58, 1.0],
   );
 
+  /// Deeper hero ramp used on midnight surfaces so the band still has range.
+  static const LinearGradient heroDark = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1E1B4B), Color(0xFF3730A3), Color(0xFF0E7490)],
+    stops: [0.0, 0.6, 1.0],
+  );
+
+  static LinearGradient heroFor(Brightness brightness) =>
+      brightness == Brightness.dark ? heroDark : hero;
+
   /// Tighter indigo ramp for primary call-to-action surfaces.
   static const LinearGradient cta = LinearGradient(
     begin: Alignment.topLeft,
@@ -103,8 +114,9 @@ class CareersSpacing {
   /// Inner padding of a standard card.
   static const double cardPadding = 16.0;
 
-  static const EdgeInsets screenHorizontal =
-      EdgeInsets.symmetric(horizontal: screenH);
+  static const EdgeInsets screenHorizontal = EdgeInsets.symmetric(
+    horizontal: screenH,
+  );
 
   static const EdgeInsets cardInset = EdgeInsets.all(cardPadding);
 
@@ -123,29 +135,17 @@ class CareersShadows {
 
   /// Default resting elevation for cards.
   static const List<BoxShadow> card = [
-    BoxShadow(
-      color: Color(0x0A0F172A),
-      blurRadius: 16,
-      offset: Offset(0, 6),
-    ),
+    BoxShadow(color: Color(0x0A0F172A), blurRadius: 16, offset: Offset(0, 6)),
   ];
 
   /// Floating surfaces: sticky CTA bars, bottom sheets, hero cards.
   static const List<BoxShadow> elevated = [
-    BoxShadow(
-      color: Color(0x120F172A),
-      blurRadius: 24,
-      offset: Offset(0, 10),
-    ),
+    BoxShadow(color: Color(0x120F172A), blurRadius: 24, offset: Offset(0, 10)),
   ];
 
   /// Tinted shadow used under glass and gradient surfaces.
   static const List<BoxShadow> glass = [
-    BoxShadow(
-      color: Color(0x1F4F46E5),
-      blurRadius: 20,
-      offset: Offset(0, 8),
-    ),
+    BoxShadow(color: Color(0x1F4F46E5), blurRadius: 20, offset: Offset(0, 8)),
   ];
 }
 
@@ -155,6 +155,188 @@ class CareersStatusStyle {
   final Color background;
 
   const CareersStatusStyle(this.foreground, this.background);
+
+  /// The light-mode pair is tuned for white surfaces. On dark surfaces the hue
+  /// is kept but the chip becomes a translucent tint with a lifted foreground.
+  CareersStatusStyle resolve(Brightness brightness) {
+    if (brightness == Brightness.light) return this;
+    return CareersStatusStyle(
+      Color.lerp(foreground, Colors.white, 0.55)!,
+      foreground.withValues(alpha: 0.2),
+    );
+  }
+}
+
+/// Theme-aware surface and text colours for the careers experience.
+///
+/// Brand colours ([CareersColors.primary], success, error, ...) stay constant;
+/// everything that has to flip between light and dark lives here. Read it with
+/// `context.careers`.
+@immutable
+class CareersPalette extends ThemeExtension<CareersPalette> {
+  final Brightness brightness;
+  final Color background;
+  final Color surface;
+  final Color surfaceMuted;
+  final Color border;
+  final Color divider;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textTertiary;
+  final Color primarySoft;
+  final Color secondarySoft;
+
+  /// Brand accent for text, icons and outlines. [CareersColors.primary] is
+  /// too dark to read on the midnight surfaces, so dark mode lifts it.
+  final Color accentText;
+
+  final List<BoxShadow> cardShadow;
+  final List<BoxShadow> elevatedShadow;
+  final List<BoxShadow> glassShadow;
+
+  const CareersPalette({
+    required this.brightness,
+    required this.background,
+    required this.surface,
+    required this.surfaceMuted,
+    required this.border,
+    required this.divider,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textTertiary,
+    required this.primarySoft,
+    required this.secondarySoft,
+    required this.accentText,
+    required this.cardShadow,
+    required this.elevatedShadow,
+    required this.glassShadow,
+  });
+
+  bool get isDark => brightness == Brightness.dark;
+
+  static const CareersPalette light = CareersPalette(
+    brightness: Brightness.light,
+    background: CareersColors.background,
+    surface: CareersColors.surface,
+    surfaceMuted: CareersColors.surfaceMuted,
+    border: CareersColors.border,
+    divider: CareersColors.divider,
+    textPrimary: CareersColors.textPrimary,
+    textSecondary: CareersColors.textSecondary,
+    textTertiary: CareersColors.textTertiary,
+    primarySoft: CareersColors.primarySoft,
+    secondarySoft: CareersColors.secondarySoft,
+    accentText: CareersColors.primary,
+    cardShadow: CareersShadows.card,
+    elevatedShadow: CareersShadows.elevated,
+    glassShadow: CareersShadows.glass,
+  );
+
+  /// Midnight palette shared with the auth screens.
+  static const CareersPalette dark = CareersPalette(
+    brightness: Brightness.dark,
+    background: Color(0xFF0A0D29),
+    surface: Color(0xFF14173A),
+    surfaceMuted: Color(0xFF1D2050),
+    border: Color(0x1FFFFFFF),
+    divider: Color(0x14FFFFFF),
+    textPrimary: Color(0xFFF4F5FB),
+    textSecondary: Color(0xB0FFFFFF),
+    textTertiary: Color(0x75FFFFFF),
+    primarySoft: Color(0x384F46E5),
+    secondarySoft: Color(0x2606B6D4),
+    accentText: Color(0xFFA5B4FC),
+    cardShadow: [
+      BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 8)),
+    ],
+    elevatedShadow: [
+      BoxShadow(
+        color: Color(0x4D000000),
+        blurRadius: 28,
+        offset: Offset(0, 12),
+      ),
+    ],
+    glassShadow: [
+      BoxShadow(
+        color: Color(0x40000000),
+        blurRadius: 24,
+        offset: Offset(0, 10),
+      ),
+    ],
+  );
+
+  CareersStatusStyle status(CareersStatusStyle style) =>
+      style.resolve(brightness);
+
+  @override
+  CareersPalette copyWith({
+    Color? background,
+    Color? surface,
+    Color? surfaceMuted,
+    Color? border,
+    Color? divider,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textTertiary,
+    Color? primarySoft,
+    Color? secondarySoft,
+    Color? accentText,
+    List<BoxShadow>? cardShadow,
+    List<BoxShadow>? elevatedShadow,
+    List<BoxShadow>? glassShadow,
+  }) {
+    return CareersPalette(
+      brightness: brightness,
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      surfaceMuted: surfaceMuted ?? this.surfaceMuted,
+      border: border ?? this.border,
+      divider: divider ?? this.divider,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textTertiary: textTertiary ?? this.textTertiary,
+      primarySoft: primarySoft ?? this.primarySoft,
+      secondarySoft: secondarySoft ?? this.secondarySoft,
+      accentText: accentText ?? this.accentText,
+      cardShadow: cardShadow ?? this.cardShadow,
+      elevatedShadow: elevatedShadow ?? this.elevatedShadow,
+      glassShadow: glassShadow ?? this.glassShadow,
+    );
+  }
+
+  @override
+  CareersPalette lerp(CareersPalette? other, double t) {
+    if (other == null) return this;
+    Color c(Color a, Color b) => Color.lerp(a, b, t)!;
+    return CareersPalette(
+      brightness: t < 0.5 ? brightness : other.brightness,
+      background: c(background, other.background),
+      surface: c(surface, other.surface),
+      surfaceMuted: c(surfaceMuted, other.surfaceMuted),
+      border: c(border, other.border),
+      divider: c(divider, other.divider),
+      textPrimary: c(textPrimary, other.textPrimary),
+      textSecondary: c(textSecondary, other.textSecondary),
+      textTertiary: c(textTertiary, other.textTertiary),
+      primarySoft: c(primarySoft, other.primarySoft),
+      secondarySoft: c(secondarySoft, other.secondarySoft),
+      accentText: c(accentText, other.accentText),
+      cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, t)!,
+      elevatedShadow: BoxShadow.lerpList(
+        elevatedShadow,
+        other.elevatedShadow,
+        t,
+      )!,
+      glassShadow: BoxShadow.lerpList(glassShadow, other.glassShadow, t)!,
+    );
+  }
+}
+
+extension CareersPaletteContext on BuildContext {
+  /// Careers palette for the current theme; falls back to light outside the
+  /// careers subtree (e.g. in isolated widget tests).
+  CareersPalette get careers =>
+      Theme.of(this).extension<CareersPalette>() ?? CareersPalette.light;
 }
 
 /// Single source of truth for status colours across job cards, application

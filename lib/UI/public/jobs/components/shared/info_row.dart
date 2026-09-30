@@ -25,6 +25,7 @@ class InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final palette = context.careers;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,15 +34,16 @@ class InfoRow extends StatelessWidget {
           width: 34,
           height: 34,
           alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: CareersColors.primarySoft,
+          decoration: BoxDecoration(
+            color: palette.primarySoft,
             borderRadius: CareersRadius.chipAll,
           ),
-          child: leading ??
+          child:
+              leading ??
               Icon(
                 icon ?? Icons.info_outline,
                 size: 17,
-                color: CareersColors.primary,
+                color: palette.accentText,
               ),
         ),
         const SizedBox(width: 12),

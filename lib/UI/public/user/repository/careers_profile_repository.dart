@@ -48,21 +48,18 @@ class CareersProfileRepository {
   }
 
   Future<Either<MyError, ProfileModel>> getProfile() {
-    return _withCandidate(
-      (candidateId, token) async {
-        final result = await _profileApiService.getProfile(
-          candidateId: candidateId,
-          token: token,
-        );
-        result.fold(
-          (_) {},
-          (profile) => unawaited(
-            CareersFcmService.subscribeToTopics(profile.topics),
-          ),
-        );
-        return result;
-      },
-    );
+    return _withCandidate((candidateId, token) async {
+      final result = await _profileApiService.getProfile(
+        candidateId: candidateId,
+        token: token,
+      );
+      result.fold(
+        (_) {},
+        (profile) =>
+            unawaited(CareersFcmService.subscribeToTopics(profile.topics)),
+      );
+      return result;
+    });
   }
 
   Future<Either<MyError, Map<String, dynamic>>> updateProfile(

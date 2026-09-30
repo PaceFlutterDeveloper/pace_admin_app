@@ -87,16 +87,18 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.careers;
+
     return Row(
       children: [
         Expanded(
           child: Container(
             height: 54,
             decoration: BoxDecoration(
-              color: CareersColors.surface,
+              color: palette.surface,
               borderRadius: CareersRadius.inputAll,
-              border: Border.all(color: CareersColors.border),
-              boxShadow: CareersShadows.card,
+              border: Border.all(color: palette.border),
+              boxShadow: palette.cardShadow,
             ),
             child: TextField(
               controller: _searchController,
@@ -105,9 +107,9 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
               style: Theme.of(context).textTheme.bodyLarge,
               decoration: InputDecoration(
                 hintText: 'Search job title or keyword',
-                hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: CareersColors.textTertiary,
-                    ),
+                hintStyle: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: palette.textTertiary),
                 filled: false,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -123,18 +125,18 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         CupertinoIcons.search,
                         size: 20,
-                        color: CareersColors.textTertiary,
+                        color: palette.textTertiary,
                       ),
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           CupertinoIcons.clear_circled_solid,
                           size: 18,
-                          color: CareersColors.textTertiary,
+                          color: palette.textTertiary,
                         ),
                         onPressed: () {
                           _searchController.clear();
@@ -147,10 +149,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
           ),
         ),
         const SizedBox(width: 10),
-        _FilterButton(
-          activeCount: _activeFilterCount,
-          onTap: _openFilters,
-        ),
+        _FilterButton(activeCount: _activeFilterCount, onTap: _openFilters),
       ],
     );
   }
@@ -165,12 +164,13 @@ class _FilterButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = activeCount > 0;
+    final palette = context.careers;
 
     return Semantics(
       button: true,
       label: 'Filter jobs',
       child: Material(
-        color: isActive ? CareersColors.primary : CareersColors.surface,
+        color: isActive ? CareersColors.primary : palette.surface,
         borderRadius: CareersRadius.inputAll,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -182,7 +182,7 @@ class _FilterButton extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: CareersRadius.inputAll,
               border: Border.all(
-                color: isActive ? CareersColors.primary : CareersColors.border,
+                color: isActive ? CareersColors.primary : palette.border,
               ),
             ),
             child: Stack(
@@ -193,7 +193,7 @@ class _FilterButton extends StatelessWidget {
                   size: 21,
                   color: isActive
                       ? CareersColors.onPrimary
-                      : CareersColors.textSecondary,
+                      : palette.textSecondary,
                 ),
                 if (isActive)
                   Positioned(
@@ -295,9 +295,9 @@ class _FilterSheetState extends State<_FilterSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: CareersColors.surface,
-          borderRadius: BorderRadius.vertical(
+        decoration: BoxDecoration(
+          color: context.careers.surface,
+          borderRadius: const BorderRadius.vertical(
             top: Radius.circular(CareersRadius.hero),
           ),
         ),
@@ -319,7 +319,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: CareersColors.border,
+                      color: context.careers.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -423,9 +423,10 @@ class _SchoolChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showCount = (count ?? 0) > 0;
+    final palette = context.careers;
 
     return Material(
-      color: isSelected ? CareersColors.primary : CareersColors.surfaceMuted,
+      color: isSelected ? CareersColors.primary : palette.surfaceMuted,
       borderRadius: CareersRadius.chipAll,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -436,7 +437,7 @@ class _SchoolChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: CareersRadius.chipAll,
             border: Border.all(
-              color: isSelected ? CareersColors.primary : CareersColors.border,
+              color: isSelected ? CareersColors.primary : palette.border,
             ),
           ),
           child: Row(
@@ -448,12 +449,11 @@ class _SchoolChip extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: isSelected
-                            ? CareersColors.onPrimary
-                            : CareersColors.textSecondary,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                      ),
+                    color: isSelected
+                        ? CareersColors.onPrimary
+                        : palette.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
                 ),
               ),
               if (showCount) ...[
@@ -461,10 +461,10 @@ class _SchoolChip extends StatelessWidget {
                 Text(
                   '$count',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: isSelected
-                            ? CareersColors.onPrimary.withValues(alpha: 0.8)
-                            : CareersColors.textTertiary,
-                      ),
+                    color: isSelected
+                        ? CareersColors.onPrimary.withValues(alpha: 0.8)
+                        : palette.textTertiary,
+                  ),
                 ),
               ],
             ],

@@ -16,6 +16,9 @@ class CareersHtmlText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bodyStyle = Theme.of(context).textTheme.bodyMedium;
+    final palette = context.careers;
+    final heading = _cssHex(palette.textPrimary);
+    final link = _cssHex(palette.accentText);
 
     if (!_tag.hasMatch(html)) {
       return Text(html, style: bodyStyle);
@@ -34,7 +37,7 @@ class CareersHtmlText extends StatelessWidget {
               'font-size': '15px',
               'font-weight': '600',
               'margin': '12px 0 6px',
-              'color': '#0F172A',
+              'color': heading,
             };
           case 'p':
             return {'margin': '0 0 10px'};
@@ -44,16 +47,21 @@ class CareersHtmlText extends StatelessWidget {
           case 'li':
             return {'margin': '0 0 6px'};
           case 'a':
-            return {'color': '#4F46E5', 'text-decoration': 'none'};
+            return {'color': link, 'text-decoration': 'none'};
           case 'strong':
           case 'b':
-            return {'color': '#0F172A'};
+            return {'color': heading};
           default:
             return null;
         }
       },
       renderMode: RenderMode.column,
     );
+  }
+
+  static String _cssHex(Color color) {
+    final rgb = color.toARGB32() & 0xFFFFFF;
+    return '#${rgb.toRadixString(16).padLeft(6, '0')}';
   }
 }
 
@@ -80,8 +88,8 @@ class CareersBulletList extends StatelessWidget {
                   margin: const EdgeInsets.only(top: 7),
                   width: 6,
                   height: 6,
-                  decoration: const BoxDecoration(
-                    color: CareersColors.primary,
+                  decoration: BoxDecoration(
+                    color: context.careers.accentText,
                     shape: BoxShape.circle,
                   ),
                 ),

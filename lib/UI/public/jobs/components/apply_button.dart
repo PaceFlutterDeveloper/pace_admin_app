@@ -68,17 +68,12 @@ class ApplyBottomBar extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final salary = job.salaryRange;
 
+    final palette = context.careers;
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: CareersColors.surface,
-        border: Border(top: BorderSide(color: CareersColors.divider)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x140F172A),
-            blurRadius: 20,
-            offset: Offset(0, -6),
-          ),
-        ],
+      decoration: BoxDecoration(
+        color: palette.surface,
+        border: Border(top: BorderSide(color: palette.divider)),
+        boxShadow: palette.elevatedShadow,
       ),
       child: SafeArea(
         top: false,
