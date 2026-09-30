@@ -1,267 +1,205 @@
+import 'package:admin_app/UI/public/jobs/components/shared/aed_currency_icon.dart';
+import 'package:admin_app/UI/public/jobs/components/shared/card_decoration.dart';
+import 'package:admin_app/UI/public/jobs/utils/job_date_format.dart';
+import 'package:admin_app/UI/public/shared/components/careers_status_chip.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../models/application_models.dart';
 
+/// Summary card for one submitted application.
 class ApplicationCard extends StatelessWidget {
   final Application application;
 
-  const ApplicationCard({
-    Key? key,
-    required this.application,
-  }) : super(key: key);
+  const ApplicationCard({super.key, required this.application});
 
   @override
   Widget build(BuildContext context) {
-    final status = ApplicationStatus.fromString(application.application.status);
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with Job Title and Status
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        application.job.title,
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        application.job.school,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildStatusChip(status),
-              ],
-            ),
-
-            SizedBox(height: 16.h),
-
-            // Job Details
-            _buildJobDetails(),
-
-            SizedBox(height: 16.h),
-
-            // Application Details
-            _buildApplicationDetails(),
-
-            SizedBox(height: 16.h),
-
-            // Footer with Applied Date and Actions
-            _buildFooter(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(ApplicationStatus status) {
-    Color backgroundColor;
-    Color textColor;
-
-    switch (status) {
-      case ApplicationStatus.applied:
-        backgroundColor = Colors.blue[100]!;
-        textColor = Colors.blue[800]!;
-        break;
-      case ApplicationStatus.reviewed:
-        backgroundColor = Colors.orange[100]!;
-        textColor = Colors.orange[800]!;
-        break;
-      case ApplicationStatus.shortlisted:
-        backgroundColor = Colors.purple[100]!;
-        textColor = Colors.purple[800]!;
-        break;
-      case ApplicationStatus.interviewed:
-        backgroundColor = Colors.indigo[100]!;
-        textColor = Colors.indigo[800]!;
-        break;
-      case ApplicationStatus.accepted:
-        backgroundColor = Colors.green[100]!;
-        textColor = Colors.green[800]!;
-        break;
-      case ApplicationStatus.rejected:
-        backgroundColor = Colors.red[100]!;
-        textColor = Colors.red[800]!;
-        break;
-    }
+    final textTheme = Theme.of(context).textTheme;
+    final job = application.job;
+    final details = application.application;
+    final status = ApplicationStatus.fromString(details.status);
+    final appliedDate = JobDateFormat.absolute(details.appliedDate);
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Text(
-        status.displayName,
-        style: TextStyle(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w500,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildJobDetails() {
-    return Column(
-      children: [
-        _buildDetailRow(
-          icon: Icons.location_on,
-          label: 'Location',
-          value: application.job.location,
-        ),
-        SizedBox(height: 8.h),
-        _buildDetailRow(
-          icon: Icons.work,
-          label: 'Employment Type',
-          value: application.job.employmentType,
-        ),
-        SizedBox(height: 8.h),
-        _buildDetailRow(
-          icon: Icons.attach_money,
-          label: 'Salary Range',
-          value: application.job.salaryRange,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildApplicationDetails() {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
+      padding: const EdgeInsets.all(CareersSpacing.cardPadding),
+      decoration: CardDecoration.build(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Application Details',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
-          ),
-          SizedBox(height: 8.h),
-          _buildDetailRow(
-            icon: Icons.source,
-            label: 'Source',
-            value: application.application.source,
-          ),
-          SizedBox(height: 8.h),
-          _buildDetailRow(
-            icon: Icons.check_circle,
-            label: 'Availability',
-            value: application.application.availabilityOk
-                ? 'Available'
-                : 'Not Available',
-            valueColor: application.application.availabilityOk
-                ? Colors.green[600]
-                : Colors.red[600],
-          ),
-          if (application.application.coverLetter.isNotEmpty) ...[
-            SizedBox(height: 8.h),
-            Text(
-              'Cover Letter',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      job.title,
+                      style: textTheme.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (job.school.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        job.school,
+                        style: textTheme.labelMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              application.application.coverLetter,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: Colors.grey[700],
+              const SizedBox(width: 10),
+              CareersStatusChip(
+                label: status.displayName,
+                style: CareersStatusColors.application(status.name),
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            ],
+          ),
+          CareersSpacing.gap12,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (job.location.isNotEmpty)
+                CareersMetaChip(
+                  label: job.location,
+                  icon: CupertinoIcons.location_solid,
+                ),
+              if (job.employmentType.isNotEmpty)
+                CareersMetaChip(
+                  label: job.employmentType,
+                  icon: CupertinoIcons.briefcase,
+                ),
+              if (job.salaryRange.isNotEmpty) _SalaryChip(job.salaryRange),
+            ],
+          ),
+          if (details.coverLetter.isNotEmpty) ...[
+            CareersSpacing.gap12,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: CardDecoration.nested(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Cover letter', style: textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    details.coverLetter,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: CareersColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
+          CareersSpacing.gap12,
+          const Divider(height: 1),
+          CareersSpacing.gap12,
+          Row(
+            children: [
+              Expanded(
+                child: _Fact(
+                  label: 'Applied',
+                  value: appliedDate ?? '—',
+                  icon: CupertinoIcons.calendar,
+                ),
+              ),
+              Expanded(
+                child: _Fact(
+                  label: 'Availability',
+                  value: details.availabilityOk ? 'Available' : 'Not available',
+                  icon: CupertinoIcons.checkmark_circle,
+                  valueColor: details.availabilityOk
+                      ? CareersColors.success
+                      : CareersColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDetailRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    Color? valueColor,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 16.w,
-          color: Colors.grey[600],
-        ),
-        SizedBox(width: 8.w),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
+class _SalaryChip extends StatelessWidget {
+  final String range;
+
+  const _SalaryChip(this.range);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: CareersColors.success.withValues(alpha: 0.1),
+        borderRadius: CareersRadius.chipAll,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AedCurrencyIcon(color: CareersColors.success, size: 13),
+          const SizedBox(width: 5),
+          Text(
+            range,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: CareersColors.success,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: valueColor ?? Colors.grey[700],
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildFooter() {
-    return Column(
+class _Fact extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color? valueColor;
+
+  const _Fact({
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Applied on',
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: Colors.grey[600],
-          ),
-        ),
-        Text(
-          application.application.appliedDate,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+        Icon(icon, size: 15, color: CareersColors.textTertiary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: textTheme.bodySmall),
+              const SizedBox(height: 1),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleMedium?.copyWith(
+                  color: valueColor,
+                  fontSize: 13.5,
+                ),
+              ),
+            ],
           ),
         ),
       ],

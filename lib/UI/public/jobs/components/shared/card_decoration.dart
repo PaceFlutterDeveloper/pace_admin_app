@@ -1,18 +1,31 @@
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/material.dart';
 
-class CardDecoration {
-  static BoxDecoration build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+import '../../../shared/theme/careers_tokens.dart';
 
-    return BoxDecoration(
-      color: isDark ? AppColors.surfaceElevatedDark : AppColors.cardBg,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      border: Border.all(
-        color: isDark ? AppColors.dividerDark : AppColors.cardBorder,
+/// The one surface definition for careers cards. Job cards, detail cards and
+/// profile cards all build from this so radius, border and shadow stay in sync.
+class CardDecoration {
+  const CardDecoration._();
+
+  static BoxDecoration build(BuildContext context) {
+    return const BoxDecoration(
+      color: CareersColors.surface,
+      borderRadius: CareersRadius.cardAll,
+      border: Border.fromBorderSide(
+        BorderSide(color: CareersColors.border),
       ),
-      boxShadow: isDark ? AppShadows.none : AppShadows.soft,
+      boxShadow: CareersShadows.card,
+    );
+  }
+
+  /// Flat variant for cards nested inside another card or a coloured section.
+  static BoxDecoration nested(BuildContext context) {
+    return const BoxDecoration(
+      color: CareersColors.surfaceMuted,
+      borderRadius: CareersRadius.chipAll,
+      border: Border.fromBorderSide(
+        BorderSide(color: CareersColors.divider),
+      ),
     );
   }
 }

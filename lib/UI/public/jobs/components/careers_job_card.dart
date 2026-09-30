@@ -1,13 +1,16 @@
 import 'package:admin_app/UI/public/jobs/components/shared/aed_currency_icon.dart';
 import 'package:admin_app/UI/public/jobs/models/job_model.dart';
+import 'package:admin_app/UI/public/jobs/utils/job_date_format.dart';
 import 'package:admin_app/UI/public/jobs/utils/job_share.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/UI/public/shared/components/careers_status_chip.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+/// The canonical job card. Used by every list that shows jobs so radius,
+/// padding, typography and shadow never drift between screens.
 class CareersJobCard extends StatelessWidget {
   final JobModel job;
 
@@ -15,126 +18,113 @@ class CareersJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final textTheme = Theme.of(context).textTheme;
+    final postedLabel = JobDateFormat.relative(job.postedDate);
+    final isClosed = !job.isActive;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
-      ),
-      child: Material(
-        color: isDark ? AppColors.surfaceElevatedDark : AppColors.cardBg,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () =>
-              context.pushNamed(Routes.jobDetail.name, extra: job.jobId),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(
-                color: isDark ? AppColors.dividerDark : AppColors.cardBorder,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          borderRadius: CareersRadius.cardAll,
+          boxShadow: CareersShadows.card,
+        ),
+        child: Material(
+          color: CareersColors.surface,
+          borderRadius: CareersRadius.cardAll,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () =>
+                context.pushNamed(Routes.jobDetail.name, extra: job.jobId),
+            splashColor: CareersColors.primarySoft,
+            highlightColor: CareersColors.primarySoft,
+            child: Container(
+              padding: const EdgeInsets.all(CareersSpacing.cardPadding),
+              decoration: BoxDecoration(
+                borderRadius: CareersRadius.cardAll,
+                border: Border.all(color: CareersColors.border),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        job.title,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SchoolBadge(
+                        name: job.schoolName,
+                        logoUrl: job.schoolLogo,
                       ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
-                      ),
-                      tooltip: 'Share job',
-                      onPressed: () => JobShare.share(context, job),
-                      icon: Icon(
-                        Icons.share_outlined,
-                        size: 18,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.55,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // The job title is the strongest element on the card.
+                            Text(
+                              job.title,
+                              style: textTheme.titleLarge,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (job.schoolName.isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                job.schoolName,
+                                style: textTheme.labelMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  job.schoolName,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                      const SizedBox(width: 4),
+                      _ShareButton(job: job),
+                    ],
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Row(
-                  children: [
-                    Icon(
-                      CupertinoIcons.location,
-                      size: 14,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: Text(
-                        job.location,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  const SizedBox(height: 12),
+                  if (job.location.isNotEmpty)
+                    Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.location_solid,
+                          size: 13,
+                          color: CareersColors.textTertiary,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    if ((job.salary?.minYears ?? 0) > 0)
-                      _Tag(
-                        label: '${job.salary!.minYears}+ years experience',
-                      icon: Icon(
-                        CupertinoIcons.briefcase,
-                        size: 14,
-                        color: theme.colorScheme.primary,
-                      ),
-                      color: theme.colorScheme.primary,
-                    ),
-                    if (job.salaryRange.isNotEmpty)
-                      _Tag(
-                        label: job.salaryRange,
-                        icon: const AedCurrencyIcon(
-                          color: AppColors.success,
-                          size: 14,
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            job.location,
+                            style: textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        color: AppColors.success,
-                      ),
-                  ],
-                ),
-              ],
+                        if (postedLabel != null)
+                          Text(postedLabel, style: textTheme.bodySmall),
+                      ],
+                    ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (isClosed) CareersStatusChip.job(job.status),
+                      if (job.employmentType.isNotEmpty)
+                        CareersMetaChip(
+                          label: job.employmentType,
+                          icon: CupertinoIcons.briefcase,
+                        ),
+                      if ((job.salary?.minYears ?? 0) > 0)
+                        CareersMetaChip(
+                          label: '${job.salary!.minYears}+ yrs',
+                          icon: CupertinoIcons.chart_bar,
+                        ),
+                      if (job.salaryRange.isNotEmpty) _SalaryChip(job: job),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -143,34 +133,119 @@ class CareersJobCard extends StatelessWidget {
   }
 }
 
-class _Tag extends StatelessWidget {
-  final String label;
-  final Widget? icon;
-  final Color color;
+/// School logo from the jobs API. Falls back to the school initial when the
+/// URL is missing or the image fails to load.
+class _SchoolBadge extends StatelessWidget {
+  final String name;
+  final String? logoUrl;
 
-  const _Tag({required this.label, this.icon, required this.color});
+  const _SchoolBadge({required this.name, this.logoUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = name.trim();
+    final initial = trimmed.isEmpty ? '#' : trimmed[0].toUpperCase();
+    final url = logoUrl?.trim() ?? '';
+
+    return Container(
+      width: 46,
+      height: 46,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: CareersColors.surface,
+        borderRadius: BorderRadius.circular(CareersRadius.chip),
+        border: Border.all(color: CareersColors.border),
+      ),
+      child: url.isEmpty
+          ? _Initial(initial)
+          : Padding(
+              padding: const EdgeInsets.all(4),
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => _Initial(initial),
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+}
+
+class _Initial extends StatelessWidget {
+  final String initial;
+
+  const _Initial(this.initial);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(gradient: CareersGradients.cta),
+      child: Text(
+        initial,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: CareersColors.onPrimary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
+    );
+  }
+}
+
+class _ShareButton extends StatelessWidget {
+  final JobModel job;
+
+  const _ShareButton({required this.job});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      tooltip: 'Share job',
+      onPressed: () => JobShare.share(context, job),
+      icon: const Icon(
+        Icons.share_outlined,
+        size: 18,
+        color: CareersColors.textTertiary,
+      ),
+    );
+  }
+}
+
+class _SalaryChip extends StatelessWidget {
+  final JobModel job;
+
+  const _SalaryChip({required this.job});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: CareersColors.success.withValues(alpha: 0.1),
+        borderRadius: CareersRadius.chipAll,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[icon!, const SizedBox(width: AppSpacing.xs)],
+          const AedCurrencyIcon(color: CareersColors.success, size: 13),
+          const SizedBox(width: 5),
           Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: color,
+            job.salaryRange,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: CareersColors.success,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

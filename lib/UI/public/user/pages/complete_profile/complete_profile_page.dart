@@ -1,3 +1,4 @@
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_states.dart';
@@ -9,11 +10,9 @@ import 'package:admin_app/UI/public/user/pages/complete_profile/family_tab.dart'
 import 'package:admin_app/UI/public/user/pages/complete_profile/programs_tab.dart';
 import 'package:admin_app/UI/public/user/pages/complete_profile/references_tab.dart';
 import 'package:admin_app/UI/public/user/utils/profile_completion_mapper.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Tabbed page to complete the candidate's careers profile.
 class CompleteProfilePage extends StatefulWidget {
@@ -62,9 +61,6 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return BlocListener<CareersProfileBloc, CareersProfileState>(
       listenWhen: (previous, current) =>
           current is ProfileCompletionLoaded ||
@@ -80,65 +76,74 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
         }
       },
       child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          title: Text(
-            'Complete Your Profile',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-              letterSpacing: -0.3,
-            ),
-          ),
-          backgroundColor: isDark
-              ? AppColors.surfaceContainerDark
-              : AppColors.surfaceContainerLight,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          surfaceTintColor: Colors.transparent,
-          iconTheme: IconThemeData(
-            color: theme.colorScheme.onSurface,
-            size: 22,
-          ),
-          bottom: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            labelColor: theme.colorScheme.primary,
-            unselectedLabelColor: theme.colorScheme.onSurface.withValues(
-              alpha: 0.6,
-            ),
-            indicatorColor: theme.colorScheme.primary,
-            labelStyle: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-            tabs: List.generate(_tabLabels.length, (index) {
-              final needsAttention = ProfileCompletionMapper.isSectionIncomplete(
-                _tabSections[index],
-                _completion,
-              );
-              return Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(_tabLabels[index]),
-                    if (needsAttention) ...[
-                      const SizedBox(width: 4),
-                      const Icon(
-                        CupertinoIcons.exclamationmark_circle_fill,
-                        size: 14,
-                        color: AppColors.warning,
-                      ),
-                    ],
-                  ],
+          title: const Text('Complete your profile'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(58),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: CareersColors.divider),
                 ),
-              );
-            }),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorPadding: const EdgeInsets.symmetric(vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: CareersSpacing.screenH - 4,
+                  vertical: 4,
+                ),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                overlayColor: const WidgetStatePropertyAll(
+                  Colors.transparent,
+                ),
+                indicator: const BoxDecoration(
+                  color: CareersColors.primary,
+                  borderRadius: CareersRadius.pillAll,
+                ),
+                labelColor: CareersColors.onPrimary,
+                unselectedLabelColor: CareersColors.textSecondary,
+                labelStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: List.generate(_tabLabels.length, (index) {
+                  final needsAttention =
+                      ProfileCompletionMapper.isSectionIncomplete(
+                    _tabSections[index],
+                    _completion,
+                  );
+                  return Tab(
+                    height: 40,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_tabLabels[index]),
+                          if (needsAttention) ...[
+                            const SizedBox(width: 5),
+                            const Icon(
+                              CupertinoIcons.exclamationmark_circle_fill,
+                              size: 13,
+                              color: CareersColors.warning,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
           ),
         ),
         body: TabBarView(

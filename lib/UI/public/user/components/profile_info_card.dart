@@ -1,9 +1,8 @@
-import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
+import 'package:admin_app/UI/public/jobs/components/shared/info_row.dart';
+import 'package:admin_app/UI/public/jobs/components/shared/section_card.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Personal information card driven by the API profile.
 class ProfileInfoCard extends StatelessWidget {
@@ -14,17 +13,17 @@ class ProfileInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = <_InfoRowData>[
-      _InfoRowData(CupertinoIcons.person, 'Full Name', profile.name),
+      _InfoRowData(CupertinoIcons.person, 'Full name', profile.name),
       _InfoRowData(CupertinoIcons.mail, 'Email', profile.email),
-      _InfoRowData(CupertinoIcons.phone, 'Phone Number', profile.phone),
+      _InfoRowData(CupertinoIcons.phone, 'Phone number', profile.phone),
       _InfoRowData(
         CupertinoIcons.location,
-        'Current Location',
+        'Current location',
         profile.currentLocation,
       ),
       _InfoRowData(
         CupertinoIcons.briefcase,
-        'Preferred Position',
+        'Preferred position',
         profile.preferredPosition,
       ),
       _InfoRowData(
@@ -36,66 +35,22 @@ class ProfileInfoCard extends StatelessWidget {
       ),
     ];
 
-    return ProfileCard(
+    return SectionCard(
+      title: 'Personal information',
+      icon: CupertinoIcons.person_crop_circle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Personal Information',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
-              letterSpacing: -0.3,
-            ),
-          ),
-          AppSpacing.vGapLg,
           for (int i = 0; i < rows.length; i++) ...[
-            if (i > 0) AppSpacing.vGapMd,
-            _buildInfoRow(context, rows[i]),
+            if (i > 0) CareersSpacing.gap16,
+            InfoRow(
+              label: rows[i].label,
+              value: rows[i].displayValue,
+              icon: rows[i].icon,
+            ),
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoRow(BuildContext context, _InfoRowData row) {
-    final theme = Theme.of(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          row.icon,
-          size: AppSizes.iconXs + 2,
-          color: theme.colorScheme.primary,
-        ),
-        AppSpacing.hGapSm,
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                row.label,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ),
-              AppSpacing.vGapXs,
-              Text(
-                (row.value?.isNotEmpty ?? false) ? row.value! : 'Not provided',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -106,4 +61,7 @@ class _InfoRowData {
   final String? value;
 
   const _InfoRowData(this.icon, this.label, this.value);
+
+  String get displayValue =>
+      (value?.isNotEmpty ?? false) ? value! : 'Not provided';
 }

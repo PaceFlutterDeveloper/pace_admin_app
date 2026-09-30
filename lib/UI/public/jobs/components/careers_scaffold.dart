@@ -1,6 +1,6 @@
-import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
 class CareersScaffold extends StatelessWidget {
   final String title;
@@ -10,6 +10,12 @@ class CareersScaffold extends StatelessWidget {
   final bool centerTitle;
   final VoidCallback? onTitleTap;
 
+  /// Hides the app bar when the screen provides its own hero header.
+  final bool showAppBar;
+
+  /// Pace Group mark beside the title, with the title set in block capitals.
+  final bool brandedTitle;
+
   const CareersScaffold({
     super.key,
     required this.title,
@@ -18,31 +24,41 @@ class CareersScaffold extends StatelessWidget {
     this.bottomNavigationBar,
     this.centerTitle = false,
     this.onTitleTap,
+    this.showAppBar = true,
+    this.brandedTitle = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: _Title(
-          title: title,
-          color: theme.colorScheme.onSurface,
-          onTap: onTitleTap,
-        ),
-        centerTitle: centerTitle,
-        backgroundColor: isDark
-            ? AppColors.surfaceContainerDark
-            : AppColors.surfaceContainerLight,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(color: theme.colorScheme.onSurface, size: 22),
-        actions: actions,
-      ),
+      backgroundColor: CareersColors.background,
+      appBar: showAppBar
+          ? AppBar(
+              title: _Title(
+                title: title,
+                onTap: onTitleTap,
+                branded: brandedTitle,
+              ),
+              centerTitle: centerTitle,
+              titleSpacing: CareersSpacing.screenH,
+              backgroundColor: CareersColors.surface,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              surfaceTintColor: Colors.transparent,
+              systemOverlayStyle: SystemUiOverlayStyle.dark,
+              iconTheme: const IconThemeData(
+                color: CareersColors.textPrimary,
+                size: 22,
+              ),
+              shape: const Border(
+                bottom: BorderSide(color: CareersColors.divider),
+              ),
+              actions: [
+                ...?actions,
+                const SizedBox(width: CareersSpacing.screenH - 8),
+              ],
+            )
+          : null,
       body: body,
       bottomNavigationBar: bottomNavigationBar,
     );
@@ -51,27 +67,48 @@ class CareersScaffold extends StatelessWidget {
 
 class _Title extends StatelessWidget {
   final String title;
-  final Color color;
   final VoidCallback? onTap;
+  final bool branded;
 
-  const _Title({required this.title, required this.color, this.onTap});
+  const _Title({required this.title, this.onTap, this.branded = false});
 
   @override
   Widget build(BuildContext context) {
+    final base = Theme.of(context).appBarTheme.titleTextStyle;
     final text = Text(
-      title,
-      style: GoogleFonts.inter(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: color,
-        letterSpacing: -0.3,
-      ),
+      branded ? title.toUpperCase() : title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: branded
+          ? base?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              letterSpacing: 1.15,
+              height: 1,
+            )
+          : base,
     );
-    if (onTap == null) return text;
+
+    final child = branded
+        ? Row(
+            children: [
+              Image.asset(
+                'assets/logo/group.png',
+                height: 35,
+                fit: BoxFit.contain,
+                semanticLabel: 'Pace Group',
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: text),
+            ],
+          )
+        : text;
+
+    if (onTap == null) return child;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: text,
+      child: child,
     );
   }
 }

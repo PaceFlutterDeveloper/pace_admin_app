@@ -8,6 +8,8 @@ export 'job_info_card.dart';
 export 'job_requirements_card.dart';
 // Shared Components
 export 'shared/card_decoration.dart';
+export 'shared/careers_html_text.dart';
 export 'shared/description_text.dart';
 export 'shared/info_row.dart';
+export 'shared/section_card.dart';
 export 'shared/section_title.dart';

@@ -2,14 +2,14 @@ import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_events.dart';
 import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/UI/public/user/pages/signup_page.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
-import 'package:admin_app/core/widgets/app_button.dart';
+import 'package:admin_app/UI/public/shared/components/careers_auth_scaffold.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_theme.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/core/widgets/app_text_field.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,7 +22,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -31,217 +30,118 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  // Pushed with MaterialPageRoute, so this page sits outside the careers
+  // ShellRoute subtree and has to apply the careers theme itself.
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final isNarrow = MediaQuery.sizeOf(context).width < 360;
-    final horizontalPadding = isNarrow ? AppSpacing.md : AppSpacing.lg;
+    return CareersTheme.wrap(Builder(builder: _buildContent));
+  }
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(CupertinoIcons.back, color: theme.colorScheme.onSurface),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: BlocListener<UserBloc, UserState>(
-        listener: (context, state) {
-          if (state is LoginSuccess) {
-            AppToast.success(context, 'Welcome back, ${state.user.name}!');
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          } else if (state is LoginEmailNotVerified) {
-            _showEmailNotVerifiedDialog(state.email);
-          } else if (state is LoginError) {
-            AppToast.error(context, state.message);
-          } else if (state is ResendVerificationSuccess) {
-            AppToast.success(context, state.message);
-          } else if (state is ResendVerificationError) {
-            AppToast.error(context, state.message);
-          }
-        },
-        child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              AppSpacing.lg,
-              horizontalPadding,
-              AppSpacing.lg,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Image.asset(
-                            'assets/logo/group.png',
-                            width: isNarrow ? 140 : 180,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
-                        'Welcome Back',
-                        style: GoogleFonts.inter(
-                          fontSize: isNarrow ? 24 : 28,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Sign in to continue your job search',
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                      AppTextField(
-                        label: 'Email',
-                        hint: 'Enter your email',
-                        controller: _emailController,
-                        prefixIcon: CupertinoIcons.mail,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Please enter a valid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      AppTextField(
-                        label: 'Password',
-                        hint: 'Enter your password',
-                        controller: _passwordController,
-                        prefixIcon: CupertinoIcons.lock,
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _handleLogin(),
-                        suffix: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? CupertinoIcons.eye
-                                : CupertinoIcons.eye_slash,
-                            size: 20,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.4,
-                            ),
-                          ),
-                          onPressed: () {
-                            setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            );
-                          },
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _showForgotPasswordDialog,
-                          child: Text(
-                            'Forgot Password?',
-                            style: GoogleFonts.inter(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      BlocBuilder<UserBloc, UserState>(
-                        builder: (context, state) {
-                          return AppButton.primary(
-                            label: 'Sign In',
-                            isLoading: state is LoginLoading,
-                            onPressed: state is LoginLoading
-                                ? null
-                                : _handleLogin,
-                          );
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            "Don't have an account? ",
-                            style: GoogleFonts.inter(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (context) => const SignupPage(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              'Sign Up',
-                              style: GoogleFonts.inter(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(
-                          'Continue as Guest',
-                          style: GoogleFonts.inter(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.5,
-                            ),
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ],
+  Widget _buildContent(BuildContext context) {
+    return BlocListener<UserBloc, UserState>(
+      listener: (context, state) {
+        if (state is LoginSuccess) {
+          AppToast.success(context, 'Welcome back, ${state.user.name}!');
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else if (state is LoginEmailNotVerified) {
+          _showEmailNotVerifiedDialog(state.email);
+        } else if (state is LoginError) {
+          AppToast.error(context, state.message);
+        } else if (state is ResendVerificationSuccess) {
+          AppToast.success(context, state.message);
+        } else if (state is ResendVerificationError) {
+          AppToast.error(context, state.message);
+        }
+      },
+      child: CareersAuthScaffold(
+        title: 'Welcome back',
+        subtitle: 'Sign in to continue your job search.',
+        form: Form(
+          key: _formKey,
+          child: AutofillGroup(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CareersAuthField(
+                  label: 'Email',
+                  hint: 'you@example.com',
+                  controller: _emailController,
+                  icon: CupertinoIcons.mail,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.email],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                CareersAuthField(
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  controller: _passwordController,
+                  icon: CupertinoIcons.lock,
+                  isPassword: true,
+                  textInputAction: TextInputAction.done,
+                  autofillHints: const [AutofillHints.password],
+                  onSubmitted: (_) => _handleLogin(),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: CareersAuthTextAction(
+                    label: 'Forgot password?',
+                    emphasized: true,
+                    onPressed: _showForgotPasswordDialog,
                   ),
                 ),
-              ),
+                const SizedBox(height: 18),
+                BlocBuilder<UserBloc, UserState>(
+                  builder: (context, state) {
+                    return CareersAuthButton(
+                      label: 'Sign in',
+                      isLoading: state is LoginLoading,
+                      onPressed: state is LoginLoading ? null : _handleLogin,
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
+        footer: [
+          CareersAuthLink(
+            leading: "Don't have an account?",
+            action: 'Sign up',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const SignupPage(),
+                ),
+              );
+            },
+          ),
+          Center(
+            child: CareersAuthTextAction(
+              label: 'Continue as guest',
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -269,16 +169,13 @@ class _LoginPageState extends State<LoginPage> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(
-          'Verify Your Email',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
+        title: const Text('Verify your email'),
         content: Text(
           'Your email address has not been verified yet. Please open the '
           'verification link sent to $email, then sign in again.\n\n'
           'Didn\'t receive the email? We can send a new verification link '
           '(valid for 24 hours).',
-          style: GoogleFonts.inter(fontSize: 14),
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
         actions: [
           TextButton(
@@ -290,13 +187,7 @@ class _LoginPageState extends State<LoginPage> {
               Navigator.of(dialogContext).pop();
               bloc.add(ResendVerificationEvent(email: email));
             },
-            child: Text(
-              'Resend Email',
-              style: GoogleFonts.inter(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: const Text('Resend email'),
           ),
         ],
       ),
@@ -337,25 +228,24 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
       child: AlertDialog(
         scrollable: true,
         actionsOverflowButtonSpacing: 8,
-        title: Text(
-          'Forgot Password',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
+        title: const Text('Forgot password'),
         content: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "Enter your email address and we'll send you a link to reset your password.",
-                style: GoogleFonts.inter(fontSize: 14),
+                "Enter your email address and we'll send you a link to reset "
+                'your password.',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: AppSpacing.md),
+              CareersSpacing.gap16,
               AppTextField(
                 label: 'Email',
                 hint: 'Enter your email',
                 controller: _emailController,
                 prefixIcon: CupertinoIcons.mail,
+                outlined: true,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -398,12 +288,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
                         width: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(
-                        'Send Reset Link',
-                        style: GoogleFonts.inter(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
+                    : const Text('Send reset link'),
               );
             },
           ),

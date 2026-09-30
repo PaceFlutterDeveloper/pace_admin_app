@@ -1,17 +1,15 @@
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_states.dart';
+import 'package:admin_app/UI/public/shared/components/careers_empty_state.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
-import 'package:admin_app/core/widgets/app_empty_state.dart';
-import 'package:admin_app/core/widgets/app_error_state.dart';
 import 'package:admin_app/core/widgets/app_shimmer.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Generic list-section tab (Education / Experience / Family / References /
 /// Certificates) for the complete-profile page.
@@ -133,7 +131,12 @@ class _ProfileSectionTabState<T> extends State<ProfileSectionTab<T>>
       listener: _onStateChange,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          CareersSpacing.screenH,
+          CareersSpacing.cardPadding,
+          CareersSpacing.screenH,
+          CareersSpacing.section,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -142,20 +145,26 @@ class _ProfileSectionTabState<T> extends State<ProfileSectionTab<T>>
               leadingIcon: CupertinoIcons.add,
               onPressed: _loading ? null : () => _addOrEdit(),
             ),
-            AppSpacing.vGapMd,
+            CareersSpacing.gap16,
             if (_loading)
               const ShimmerList(itemCount: 3, showAvatar: false)
             else if (_error != null)
-              AppErrorState.generic(message: _error, onRetry: _load)
+              CareersErrorState(
+                title: 'Could not load this section',
+                onRetry: _load,
+              )
             else if (_records.isEmpty)
-              AppEmptyState.noData(
+              CareersEmptyState(
+                icon: CupertinoIcons.doc_plaintext,
                 title: widget.emptyTitle,
-                subtitle: widget.emptySubtitle,
+                message: widget.emptySubtitle,
               )
             else
               ..._records.asMap().entries.map(
                 (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  padding: const EdgeInsets.only(
+                    bottom: CareersSpacing.cardPadding,
+                  ),
                   child: _RecordCard<T>(
                     title: widget.titleOf(entry.value),
                     details: widget.detailsOf(entry.value),
@@ -173,7 +182,7 @@ class _ProfileSectionTabState<T> extends State<ProfileSectionTab<T>>
             if (!_loading &&
                 _error == null &&
                 (_dirty || _records.isNotEmpty)) ...[
-              AppSpacing.vGapMd,
+              CareersSpacing.gap8,
               BlocBuilder<CareersProfileBloc, CareersProfileState>(
                 buildWhen: (previous, current) =>
                     (current is ProfileSaving &&
@@ -186,7 +195,7 @@ class _ProfileSectionTabState<T> extends State<ProfileSectionTab<T>>
                   final saving =
                       state is ProfileSaving && state.section == widget.section;
                   return AppButton.primary(
-                    label: 'Save Changes',
+                    label: 'Save changes',
                     isLoading: saving,
                     onPressed: saving ? null : _save,
                   );
@@ -216,12 +225,9 @@ class _RecordCard<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final dangerColor = isDark ? AppColors.iosRedDark : AppColors.iosRed;
+    final textTheme = Theme.of(context).textTheme;
 
     return ProfileCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -229,41 +235,33 @@ class _RecordCard<T> extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                AppSpacing.vGapXs,
+                Text(title, style: textTheme.titleLarge),
+                if (details.isNotEmpty) const SizedBox(height: 6),
                 for (final detail in details)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       detail,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.6,
-                        ),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: CareersColors.textSecondary,
+                        height: 1.45,
                       ),
                     ),
                   ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           AppIconButton(
             icon: CupertinoIcons.pencil,
-            size: AppSizes.touchTarget,
+            size: 40,
             onPressed: onEdit,
             tooltip: 'Edit',
           ),
           AppIconButton(
             icon: CupertinoIcons.trash,
-            size: AppSizes.touchTarget,
-            color: dangerColor,
+            size: 40,
+            color: CareersColors.error,
             onPressed: onDelete,
             tooltip: 'Delete',
           ),

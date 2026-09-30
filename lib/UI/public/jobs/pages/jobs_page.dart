@@ -5,8 +5,8 @@ import 'package:admin_app/UI/public/jobs/pages/careers_home_tab.dart';
 import 'package:admin_app/UI/public/jobs/utils/secret_title_tap.dart';
 import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/pages/profile_page.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +25,6 @@ class _JobsPageState extends State<JobsPage> {
   late int _currentNavIndex;
   bool _isLoggedIn = false;
   final _secretTitleTap = SecretTitleTap();
-
-  static const _titles = ['Pace Careers', 'Applications', 'Profile'];
 
   @override
   void initState() {
@@ -64,10 +62,8 @@ class _JobsPageState extends State<JobsPage> {
   List<Widget>? _buildAppBarActions(BuildContext context) {
     if (_currentNavIndex != 0 || _isLoggedIn) return null;
 
-    final theme = Theme.of(context);
     return [
-      Padding(
-        padding: const EdgeInsets.only(right: AppSpacing.sm),
+      Center(
         child: TextButton(
           onPressed: () {
             Navigator.of(context)
@@ -79,22 +75,20 @@ class _JobsPageState extends State<JobsPage> {
                 .then((_) => _checkAuthStatus());
           },
           style: TextButton.styleFrom(
-            foregroundColor: theme.colorScheme.primary,
-            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+            foregroundColor: CareersColors.primary,
+            backgroundColor: CareersColors.primarySoft,
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            shape: const RoundedRectangleBorder(
+              borderRadius: CareersRadius.pillAll,
             ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.pill),
+            textStyle: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
+              fontSize: 13.5,
             ),
           ),
-          child: Text(
-            'Login',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
+          child: const Text('Sign in'),
         ),
       ),
     ];
@@ -103,8 +97,9 @@ class _JobsPageState extends State<JobsPage> {
   @override
   Widget build(BuildContext context) {
     return CareersScaffold(
-      title: _titles[_currentNavIndex],
-      onTitleTap: _currentNavIndex == 0 ? _onPaceCareersTitleTap : null,
+      title: 'Pace Careers',
+      brandedTitle: true,
+      onTitleTap: _onPaceCareersTitleTap,
       actions: _buildAppBarActions(context),
       bottomNavigationBar: CareersBottomNav(
         currentIndex: _currentNavIndex,

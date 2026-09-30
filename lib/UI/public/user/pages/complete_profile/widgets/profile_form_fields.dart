@@ -1,66 +1,45 @@
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/utils/careers_api_dates.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/core/widgets/app_text_field.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Shared bordered input decoration for profile dropdowns.
 class ProfileFieldDecorations {
   ProfileFieldDecorations._();
 
   static InputDecoration bordered(ThemeData theme, {String? errorText}) {
-    final isDark = theme.brightness == Brightness.dark;
-    final fillColor = isDark
-        ? theme.colorScheme.surfaceContainerHigh
-        : AppColors.iosSystemGray6;
-    final idleBorder = isDark
-        ? AppColors.iosSystemGray4Dark
-        : AppColors.iosSystemGray3;
-    final errorColor = isDark ? AppColors.iosRedDark : AppColors.iosRed;
     final hasError = errorText != null && errorText.isNotEmpty;
 
     return InputDecoration(
       filled: true,
-      fillColor: fillColor,
+      fillColor: CareersColors.surface,
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: 14,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+      border: _border(CareersColors.border),
+      enabledBorder: hasError
+          ? _border(CareersColors.error, 1.4)
+          : _border(CareersColors.border),
+      focusedBorder: _border(
+        hasError ? CareersColors.error : CareersColors.primary,
+        1.4,
       ),
-      border: OutlineInputBorder(
-        borderRadius: AppRadius.borderRadiusMd,
-        borderSide: BorderSide(color: idleBorder, width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: AppRadius.borderRadiusMd,
-        borderSide: BorderSide(
-          color: hasError ? errorColor : idleBorder,
-          width: hasError ? 2 : 1,
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: AppRadius.borderRadiusMd,
-        borderSide: BorderSide(
-          color: hasError ? errorColor : theme.colorScheme.primary,
-          width: 2,
-        ),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: AppRadius.borderRadiusMd,
-        borderSide: BorderSide(color: errorColor, width: 1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: AppRadius.borderRadiusMd,
-        borderSide: BorderSide(color: errorColor, width: 2),
-      ),
-      errorStyle: GoogleFonts.inter(
+      errorBorder: _border(CareersColors.error),
+      focusedErrorBorder: _border(CareersColors.error, 1.4),
+      errorStyle: const TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        color: errorColor,
+        color: CareersColors.error,
       ),
+    );
+  }
+
+  static OutlineInputBorder _border(Color color, [double width = 1]) {
+    return OutlineInputBorder(
+      borderRadius: CareersRadius.inputAll,
+      borderSide: BorderSide(color: color, width: width),
     );
   }
 }
@@ -289,31 +268,37 @@ class ProfileDropdownField<T> extends StatelessWidget {
       children: [
         Text(
           isRequired ? '$label *' : label,
-          style: GoogleFonts.inter(
-            fontSize: 14,
+          style: const TextStyle(
+            fontSize: 13.5,
             fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            color: CareersColors.textSecondary,
           ),
         ),
-        AppSpacing.vGapSm,
+        const SizedBox(height: 8),
         DropdownButtonFormField<T>(
           key: ValueKey('$label-$effectiveValue-${items.length}'),
           initialValue: effectiveValue,
           items: items,
           onChanged: onChanged,
           isExpanded: true,
+          borderRadius: CareersRadius.inputAll,
+          icon: const Icon(
+            CupertinoIcons.chevron_down,
+            size: 16,
+            color: CareersColors.textTertiary,
+          ),
           hint: hint != null
               ? Text(
                   hint!,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: CareersColors.textTertiary,
                   ),
                 )
               : null,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            color: theme.colorScheme.onSurface,
+          style: const TextStyle(
+            fontSize: 15,
+            color: CareersColors.textPrimary,
           ),
           decoration: ProfileFieldDecorations.bordered(theme),
           validator: isRequired
@@ -340,44 +325,81 @@ class ProfileSwitchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final fillColor = isDark
-        ? theme.colorScheme.surfaceContainerHigh
-        : AppColors.iosSystemGray6;
-    final idleBorder = isDark
-        ? AppColors.iosSystemGray4Dark
-        : AppColors.iosSystemGray3;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: fillColor,
-        borderRadius: AppRadius.borderRadiusMd,
-        border: Border.all(color: idleBorder, width: 1),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
-              ),
+    return Semantics(
+      container: true,
+      toggled: value,
+      label: label,
+      child: GestureDetector(
+        onTap: () => onChanged(!value),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: const BoxDecoration(
+            color: CareersColors.surface,
+            borderRadius: CareersRadius.inputAll,
+            border: Border.fromBorderSide(
+              BorderSide(color: CareersColors.border),
             ),
           ),
-          Switch.adaptive(
-            value: value,
-            activeThumbColor: theme.colorScheme.primary,
-            onChanged: onChanged,
+          child: Row(
+            children: [
+              Expanded(
+                child: ExcludeSemantics(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w500,
+                      color: CareersColors.textPrimary,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _CareersSwitch(value: value),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Solid track and thumb with no elevation shadow. Material's adaptive switch
+/// paints a blurred thumb shadow and ink overlay that looks soft on Android.
+class _CareersSwitch extends StatelessWidget {
+  final bool value;
+
+  const _CareersSwitch({required this.value});
+
+  static const double _width = 46;
+  static const double _height = 28;
+  static const double _thumb = 22;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      width: _width,
+      height: _height,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: value ? CareersColors.primary : const Color(0xFFCBD5E1),
+        borderRadius: BorderRadius.circular(_height / 2),
+      ),
+      child: AnimatedAlign(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+        child: const DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: SizedBox.square(dimension: _thumb),
+        ),
       ),
     );
   }
@@ -403,20 +425,21 @@ class RecordEditorDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final media = MediaQuery.of(context);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      insetPadding: const EdgeInsets.all(AppSpacing.md),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-          maxWidth: AppSizes.maxCardWidth,
+          // Leave room for the keyboard so fields stay reachable.
+          maxHeight: (media.size.height - media.viewInsets.bottom - 48).clamp(
+            240.0,
+            media.size.height,
+          ),
+          maxWidth: 480,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(CareersSpacing.section),
           child: Form(
             key: formKey,
             child: SingleChildScrollView(
@@ -424,35 +447,28 @@ class RecordEditorDialog extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurface,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  AppSpacing.vGapLg,
-                  for (final field in fields) ...[field, AppSpacing.vGapMd],
-                  AppSpacing.vGapSm,
+                  Text(title, style: Theme.of(context).textTheme.headlineSmall),
+                  CareersSpacing.gap24,
+                  for (final field in fields) ...[field, CareersSpacing.gap16],
+                  CareersSpacing.gap8,
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      AppButton.ghost(
-                        label: 'Cancel',
-                        onPressed: () => Navigator.of(context).pop(),
+                      Expanded(
+                        child: AppButton.ghost(
+                          label: 'Cancel',
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
                       ),
-                      AppSpacing.hGapSm,
-                      AppButton.primary(
-                        label: 'Save',
-                        isFullWidth: false,
-                        size: AppButtonSize.small,
-                        onPressed: () {
-                          if (formKey.currentState!.validate()) {
-                            onSave();
-                          }
-                        },
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: AppButton.primary(
+                          label: 'Save',
+                          onPressed: () {
+                            if (formKey.currentState!.validate()) {
+                              onSave();
+                            }
+                          },
+                        ),
                       ),
                     ],
                   ),

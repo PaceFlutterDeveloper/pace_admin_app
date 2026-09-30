@@ -32,6 +32,7 @@ class JobModel {
   final String title;
   final String location;
   final String schoolName;
+  final String? schoolLogo;
   final String? country;
   final String createdAt;
   final String deadline;
@@ -49,6 +50,7 @@ class JobModel {
     required this.title,
     required this.location,
     required this.schoolName,
+    this.schoolLogo,
     this.country,
     required this.createdAt,
     required this.deadline,
@@ -95,6 +97,7 @@ class JobModel {
     title: json['title'] ?? '',
     location: json['location'] ?? '',
     schoolName: json['school_name'] ?? '',
+    schoolLogo: _nullableText(json['school_logo']),
     country: json['country'],
     createdAt: json['posted_date'] ?? json['created_at'] ?? '',
     deadline: json['deadline'] ?? '',
@@ -107,7 +110,8 @@ class JobModel {
     employmentType: json['employment_type'] ?? '',
     qualification: json['qualification'],
     requirements: json['requirements'] is Map
-        ? (json['requirements']['skills'] ?? json['requirements']['qualification'])
+        ? (json['requirements']['skills'] ??
+              json['requirements']['qualification'])
         : json['requirements']?.toString(),
     department: json['department'],
     isActive: json['is_active'] ?? true,
@@ -119,6 +123,7 @@ class JobModel {
     'title': title,
     'location': location,
     'school_name': schoolName,
+    if (schoolLogo != null) 'school_logo': schoolLogo,
     'country': country,
     'posted_date': createdAt,
     'deadline': deadline,
@@ -137,6 +142,7 @@ class JobModel {
     title: detail.title,
     location: detail.location,
     schoolName: detail.school.name,
+    schoolLogo: _nullableText(detail.school.logo),
     country: detail.country.name,
     createdAt: detail.dates.posted,
     deadline: detail.dates.deadline,
@@ -154,6 +160,7 @@ class JobModel {
     String? title,
     String? location,
     String? schoolName,
+    String? schoolLogo,
     String? country,
     String? createdAt,
     String? deadline,
@@ -171,6 +178,7 @@ class JobModel {
       title: title ?? this.title,
       location: location ?? this.location,
       schoolName: schoolName ?? this.schoolName,
+      schoolLogo: schoolLogo ?? this.schoolLogo,
       country: country ?? this.country,
       createdAt: createdAt ?? this.createdAt,
       deadline: deadline ?? this.deadline,
@@ -190,18 +198,41 @@ class JobSchoolInfo {
   final String name;
   final String code;
   final String baseUrl;
+  final String logo;
 
   const JobSchoolInfo({
     required this.name,
     this.code = '',
     this.baseUrl = '',
+    this.logo = '',
   });
 
   factory JobSchoolInfo.fromJson(Map<String, dynamic>? json) => JobSchoolInfo(
     name: json?['name'] ?? '',
     code: json?['code'] ?? '',
     baseUrl: json?['base_url'] ?? '',
+    logo: (json?['logo'] ?? json?['school_logo'] ?? '').toString(),
   );
+}
+
+String? _nullableText(dynamic value) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty ? null : text;
+}
+
+/// Job detail may nest the logo on `school`, or send the same `school_logo`
+/// field the jobs list uses.
+Map<String, dynamic>? _schoolJson(Map<String, dynamic> json) {
+  final raw = json['school'];
+  final school = raw is Map
+      ? Map<String, dynamic>.from(raw)
+      : <String, dynamic>{};
+  final logo = _nullableText(school['logo'] ?? school['school_logo']);
+  final topLevel = _nullableText(json['school_logo']);
+  if (logo == null && topLevel != null) {
+    school['logo'] = topLevel;
+  }
+  return school.isEmpty ? null : school;
 }
 
 class JobCountryInfo {
@@ -210,10 +241,8 @@ class JobCountryInfo {
 
   const JobCountryInfo({required this.name, this.code = ''});
 
-  factory JobCountryInfo.fromJson(Map<String, dynamic>? json) => JobCountryInfo(
-    name: json?['name'] ?? '',
-    code: json?['code'] ?? '',
-  );
+  factory JobCountryInfo.fromJson(Map<String, dynamic>? json) =>
+      JobCountryInfo(name: json?['name'] ?? '', code: json?['code'] ?? '');
 }
 
 class JobDatesInfo {
@@ -294,7 +323,7 @@ class JobDetailModel {
     jobId: json['job_id'] ?? 0,
     title: json['title'] ?? '',
     location: json['location'] ?? '',
-    school: JobSchoolInfo.fromJson(json['school'] as Map<String, dynamic>?),
+    school: JobSchoolInfo.fromJson(_schoolJson(json)),
     country: JobCountryInfo.fromJson(json['country'] as Map<String, dynamic>?),
     dates: JobDatesInfo.fromJson(json['dates'] as Map<String, dynamic>?),
     descriptionHtml: json['description']?['html'] ?? '',

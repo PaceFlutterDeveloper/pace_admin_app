@@ -1,5 +1,7 @@
+import 'package:admin_app/UI/public/shared/components/careers_empty_state.dart';
+import 'package:admin_app/UI/public/shared/components/careers_sign_in_prompt.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
-import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
@@ -12,7 +14,6 @@ import 'package:admin_app/UI/public/user/models/profile_completion_model.dart';
 import 'package:admin_app/UI/public/user/models/profile_data_models.dart';
 import 'package:admin_app/UI/public/user/utils/careers_media_url.dart';
 import 'package:admin_app/UI/public/user/utils/profile_file_paths.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/core/widgets/app_error_state.dart';
@@ -195,124 +196,89 @@ class _CareersProfilePageState extends State<CareersProfilePage>
       // Offline fallback: show the cached Hive identity if available.
       final cachedUser = CareersUserManager.getCurrentUser();
       if (cachedUser == null) {
-        return Center(
-          child: AppErrorState.generic(message: _error, onRetry: _load),
+        return CareersErrorState(
+          title: 'Could not load your profile',
+          onRetry: _load,
         );
       }
-      return SingleChildScrollView(
+      return ListView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          children: [
-            ProfileHeaderCard(
-              name: cachedUser.name,
-              email: cachedUser.email,
-              avatarUrl: CareersMediaUrl.isDisplayableRemote(
-                    cachedUser.profileImage,
-                  )
-                  ? cachedUser.profileImage
-                  : null,
-            ),
-            AppSpacing.vGapMd,
-            AppInlineError(message: _error!, onRetry: _load),
-          ],
-        ),
+        padding: _contentPadding,
+        children: [
+          ProfileHeaderCard(
+            name: cachedUser.name,
+            email: cachedUser.email,
+            avatarUrl:
+                CareersMediaUrl.isDisplayableRemote(cachedUser.profileImage)
+                    ? cachedUser.profileImage
+                    : null,
+          ),
+          CareersSpacing.gap16,
+          AppInlineError(
+            message: 'Some details could not be loaded.',
+            onRetry: _load,
+          ),
+        ],
       );
     }
 
     final profile = _profile;
     final cachedUser = CareersUserManager.getCurrentUser();
 
-    return SingleChildScrollView(
+    return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        children: [
-          ProfileHeaderCard(
-            name: profile?.name ?? cachedUser?.name ?? 'Guest User',
-            email: profile?.email ?? cachedUser?.email ?? '',
-            avatarUrl: CareersMediaUrl.isDisplayableRemote(profile?.avatarFile)
-                ? profile?.avatarFile
-                : null,
-            isComplete: _completion?.isComplete,
-            completionPercentage: _completion?.percentage,
-          ),
-          AppSpacing.vGapLg,
-          if (profile != null) ...[
-            ProfileInfoCard(profile: profile),
-            AppSpacing.vGapLg,
-          ],
-          ProfileCompletionButton(
-            completion: _completion,
-            onNavigateToCompleteProfile: _openCompleteProfile,
-          ),
-          if (widget.embedded) ...[
-            AppSpacing.vGapLg,
-            AppButton.secondary(
-              label: 'Logout',
-              leadingIcon: CupertinoIcons.square_arrow_right,
-              onPressed: () => LogoutDialog.show(context),
-            ),
-          ],
+      padding: _contentPadding,
+      children: [
+        ProfileHeaderCard(
+          name: profile?.name ?? cachedUser?.name ?? 'Guest User',
+          email: profile?.email ?? cachedUser?.email ?? '',
+          avatarUrl: CareersMediaUrl.isDisplayableRemote(profile?.avatarFile)
+              ? profile?.avatarFile
+              : null,
+          isComplete: _completion?.isComplete,
+          completionPercentage: _completion?.percentage,
+        ),
+        CareersSpacing.gap24,
+        if (profile != null) ...[
+          ProfileInfoCard(profile: profile),
+          CareersSpacing.gap24,
         ],
-      ),
+        ProfileCompletionButton(
+          completion: _completion,
+          onNavigateToCompleteProfile: _openCompleteProfile,
+        ),
+        if (widget.embedded) ...[
+          CareersSpacing.gap24,
+          AppButton.secondary(
+            label: 'Logout',
+            leadingIcon: CupertinoIcons.square_arrow_right,
+            onPressed: () => LogoutDialog.show(context),
+          ),
+        ],
+      ],
     );
   }
 
   Widget _buildLoginPrompt(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              CupertinoIcons.person_crop_circle,
-              size: 56,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            AppSpacing.vGapMd,
-            Text(
-              'Sign in to view your profile',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            AppSpacing.vGapSm,
-            Text(
-              'Log in to manage your candidate profile and apply for jobs.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            AppSpacing.vGapLg,
-            AppButton.primary(
-              label: 'Login',
-              isFullWidth: false,
-              onPressed: () {
-                Navigator.of(context)
-                    .push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => const LoginPage(),
-                      ),
-                    )
-                    .then((_) {
-                      widget.onAuthChanged?.call();
-                      if (mounted &&
-                          locator<CareersUserService>()
-                              .isCareersUserLoggedIn()) {
-                        _load();
-                      }
-                    });
-              },
-            ),
-          ],
-        ),
-      ),
+    return CareersSignInPrompt(
+      title: 'Sign in to view your profile',
+      message: 'Manage your candidate profile and apply for open positions.',
+      onReturn: () {
+        widget.onAuthChanged?.call();
+        if (mounted && locator<CareersUserService>().isCareersUserLoggedIn()) {
+          _load();
+        }
+      },
     );
   }
 }
+
+const _contentPadding = EdgeInsets.fromLTRB(
+  CareersSpacing.screenH,
+  CareersSpacing.cardPadding,
+  CareersSpacing.screenH,
+  CareersSpacing.section,
+);
 
 class _ProfileShimmer extends StatelessWidget {
   const _ProfileShimmer();
@@ -321,18 +287,14 @@ class _ProfileShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SingleChildScrollView(
       physics: NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.all(AppSpacing.md),
+      padding: _contentPadding,
       child: AppShimmer(
         child: Column(
           children: [
-            ShimmerCircle(size: AppSizes.avatarXl),
-            AppSpacing.vGapMd,
-            ShimmerLine(width: 160, height: 20),
-            AppSpacing.vGapSm,
-            ShimmerLine(width: 220, height: 14),
-            AppSpacing.vGapLg,
-            ShimmerCard(height: 280),
-            AppSpacing.vGapLg,
+            ShimmerCard(height: 230),
+            CareersSpacing.gap24,
+            ShimmerCard(height: 300),
+            CareersSpacing.gap24,
             ShimmerCard(height: 96),
           ],
         ),

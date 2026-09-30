@@ -11,8 +11,8 @@ import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart'
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_events.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_states.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/utils/profile_completion_helper.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/utils/utils.dart';
 import 'package:admin_app/core/widgets/app_error_state.dart';
@@ -20,6 +20,7 @@ import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 
 class JobDetailPage extends StatefulWidget {
   final int jobId;
@@ -148,75 +149,122 @@ class _JobDetailPageState extends State<JobDetailPage> {
           },
         ),
       ],
-      child: CareersScaffold(
-        title: 'Job Details',
-        body: BlocBuilder<JobsBloc, JobsState>(
-          builder: (context, state) {
-            if (state is JobDetailsLoading) {
-              return Center(
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              );
-            }
+      child: BlocBuilder<JobsBloc, JobsState>(
+        builder: (context, state) {
+          final job = state is JobDetailsLoaded ? state.job : null;
 
-            if (state is JobDetailsError) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: AppErrorState.generic(
-                    title: 'Error loading job details',
-                    message: state.message,
-                    onRetry: () {
-                      context.read<JobsBloc>().add(
-                        FetchJobDetailsEvent(widget.jobId),
-                      );
-                    },
+          return CareersScaffold(
+            title: 'Job Details',
+            bottomNavigationBar: job == null
+                ? null
+                : ApplyBottomBar(
+                    job: job,
+                    hasApplied: _hasApplied,
+                    isLoading: _isCheckingApplication || _isApplying,
+                    onApply: _startApplyFlow,
                   ),
-                ),
-              );
-            }
-
-            if (state is JobDetailsLoaded) {
-              return _buildJobDetailContent(state.job);
-            }
-
-            return const SizedBox.shrink();
-          },
-        ),
+            body: _buildBody(state, job),
+          );
+        },
       ),
     );
+  }
+
+  Widget _buildBody(JobsState state, JobModel? job) {
+    if (state is JobDetailsError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(CareersSpacing.screenH),
+          child: AppErrorState.generic(
+            title: 'Unable to load this job',
+            message: 'Please check your connection and try again.',
+            onRetry: () {
+              context.read<JobsBloc>().add(FetchJobDetailsEvent(widget.jobId));
+            },
+          ),
+        ),
+      );
+    }
+
+    if (job != null) return _buildJobDetailContent(job);
+
+    return const _JobDetailSkeleton();
   }
 
   Widget _buildJobDetailContent(JobModel job) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        CareersSpacing.screenH,
+        CareersSpacing.cardPadding,
+        CareersSpacing.screenH,
+        CareersSpacing.section,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           JobHeaderCard(job: job),
-          const SizedBox(height: AppSpacing.md),
+          CareersSpacing.gap16,
           JobInfoCard(job: job),
-          const SizedBox(height: AppSpacing.md),
           if (job.description.isNotEmpty) ...[
+            CareersSpacing.gap16,
             JobDescriptionCard(job: job),
-            const SizedBox(height: AppSpacing.md),
           ],
           if (job.requirements?.isNotEmpty ?? false) ...[
+            CareersSpacing.gap16,
             JobRequirementsCard(job: job),
-            const SizedBox(height: AppSpacing.md),
           ],
+          CareersSpacing.gap16,
           CompanyCard(job: job),
-          const SizedBox(height: AppSpacing.md),
-          ApplyButton(
-            job: job,
-            hasApplied: _hasApplied,
-            isLoading: _isCheckingApplication || _isApplying,
-            onApply: _startApplyFlow,
-          ),
-          const SizedBox(height: AppSpacing.xxl),
         ],
+      ),
+    );
+  }
+}
+
+class _JobDetailSkeleton extends StatelessWidget {
+  const _JobDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        CareersSpacing.screenH,
+        CareersSpacing.cardPadding,
+        CareersSpacing.screenH,
+        CareersSpacing.section,
+      ),
+      child: Shimmer.fromColors(
+        baseColor: CareersColors.surfaceMuted,
+        highlightColor: CareersColors.surface,
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SkeletonBlock(height: 210, radius: CareersRadius.hero),
+            CareersSpacing.gap16,
+            _SkeletonBlock(height: 190, radius: CareersRadius.card),
+            CareersSpacing.gap16,
+            _SkeletonBlock(height: 150, radius: CareersRadius.card),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonBlock extends StatelessWidget {
+  final double height;
+  final double radius;
+
+  const _SkeletonBlock({required this.height, required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: CareersColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }

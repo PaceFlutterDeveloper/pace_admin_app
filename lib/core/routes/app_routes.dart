@@ -27,6 +27,7 @@ import 'package:admin_app/UI/public/jobs/bloc/jobs_bloc.dart';
 import 'package:admin_app/UI/public/jobs/pages/job_detail_page.dart';
 import 'package:admin_app/UI/public/jobs/pages/jobs_page.dart';
 import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_theme.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
 import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile_page.dart';
 import 'package:admin_app/UI/students/pages/students_page.dart';
@@ -257,10 +258,11 @@ class AppRoute {
           ),
         ],
       ),
-      // Jobs Shell Route - child pages own their Scaffold/AppBar
+      // Jobs Shell Route - child pages own their Scaffold/AppBar.
+      // The shell only applies the careers design system; admin keeps AppTheme.
       ShellRoute(
         navigatorKey: GlobalKey<NavigatorState>(),
-        builder: (context, state, child) => child,
+        builder: (context, state, child) => CareersTheme.wrap(child),
         routes: [
           GoRoute(
             path: Routes.careers.path,

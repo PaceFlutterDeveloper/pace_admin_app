@@ -1,51 +1,61 @@
-import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/theme/careers_tokens.dart';
+
+/// Label / value row used by job info cards and the candidate profile.
+///
+/// The label sits above the value so long values wrap cleanly instead of
+/// squeezing into a narrow column on small screens.
 class InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final IconData? icon;
   final Widget? leading;
-  final double width;
+  final Color? valueColor;
 
   const InfoRow({
-    Key? key,
+    super.key,
     required this.label,
     required this.value,
     this.icon,
     this.leading,
-    required this.width,
-  }) : super(key: key);
+    this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = width * 0.035;
+    final textTheme = Theme.of(context).textTheme;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        leading ??
-            Icon(
-              icon ?? Icons.info_outline,
-              size: iconSize,
-              color: ConstColors.textLight,
-            ),
-        SizedBox(width: width * 0.015),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontSize: width * 0.032,
-            fontWeight: FontWeight.w600,
-            color: ConstColors.textDark,
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: CareersColors.primarySoft,
+            borderRadius: CareersRadius.chipAll,
           ),
+          child: leading ??
+              Icon(
+                icon ?? Icons.info_outline,
+                size: 17,
+                color: CareersColors.primary,
+              ),
         ),
+        const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: width * 0.032,
-              fontWeight: FontWeight.w500,
-              color: ConstColors.textDark,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: textTheme.bodySmall),
+              const SizedBox(height: 2),
+              Text(
+                value.isEmpty ? '—' : value,
+                style: textTheme.titleMedium?.copyWith(color: valueColor),
+              ),
+            ],
           ),
         ),
       ],

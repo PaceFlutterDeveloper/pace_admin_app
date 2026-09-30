@@ -1,11 +1,12 @@
+import 'package:admin_app/UI/public/shared/components/careers_glass_card.dart';
+import 'package:admin_app/UI/public/shared/components/careers_hero_surface.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/components/careers_profile_image.dart';
-import 'package:admin_app/UI/public/user/components/shared/profile_card.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// Header card showing the candidate's identity and completion status.
+/// Header showing the candidate's identity and completion status on the
+/// careers hero gradient.
 class ProfileHeaderCard extends StatelessWidget {
   final String name;
   final String email;
@@ -26,86 +27,114 @@ class ProfileHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProfileCard(
+    return CareersHeroSurface(
+      padding: const EdgeInsets.symmetric(
+        horizontal: CareersSpacing.cardPadding,
+        vertical: CareersSpacing.section,
+      ),
       child: Column(
         children: [
-          CareersProfileImage(
-            remoteSource: avatarUrl,
-            size: AppSizes.avatarXl,
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.22),
+            ),
+            child: CareersProfileImage(remoteSource: avatarUrl, size: 84),
           ),
-          AppSpacing.vGapMd,
-          _buildUserInfo(context),
+          CareersSpacing.gap16,
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              letterSpacing: -0.3,
+              height: 1.25,
+            ),
+          ),
+          if (email.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              email,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13.5,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
           if (isComplete != null) ...[
-            AppSpacing.vGapMd,
-            _buildProfileStatus(context),
+            CareersSpacing.gap16,
+            _CompletionStrip(
+              isComplete: isComplete ?? false,
+              percentage: completionPercentage,
+            ),
           ],
         ],
       ),
     );
   }
+}
 
-  Widget _buildUserInfo(BuildContext context) {
-    final theme = Theme.of(context);
+class _CompletionStrip extends StatelessWidget {
+  final bool isComplete;
+  final int? percentage;
 
-    return Column(
-      children: [
-        Text(
-          name,
-          style: GoogleFonts.inter(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurface,
-            letterSpacing: -0.3,
-          ),
-        ),
-        AppSpacing.vGapXs,
-        Text(
-          email,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      ],
+  const _CompletionStrip({required this.isComplete, this.percentage});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = isComplete
+        ? 'Profile complete'
+        : percentage != null
+            ? 'Profile $percentage% complete'
+            : 'Profile incomplete';
+    final progress = ((percentage ?? (isComplete ? 100 : 0)) / 100).clamp(
+      0.0,
+      1.0,
     );
-  }
 
-  Widget _buildProfileStatus(BuildContext context) {
-    final complete = isComplete ?? false;
-    final color = complete ? AppColors.success : AppColors.warning;
-    final label = complete
-        ? 'Profile Complete'
-        : completionPercentage != null
-        ? 'Profile $completionPercentage% Complete'
-        : 'Profile Incomplete';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: AppRadius.borderRadiusPill,
-        border: Border.all(color: color),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    return CareersGlassCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            complete
-                ? CupertinoIcons.checkmark_circle_fill
-                : CupertinoIcons.exclamationmark_triangle_fill,
-            color: color,
-            size: AppSizes.iconXs,
+          Row(
+            children: [
+              Icon(
+                isComplete
+                    ? CupertinoIcons.checkmark_seal_fill
+                    : CupertinoIcons.exclamationmark_circle_fill,
+                size: 17,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
-          AppSpacing.hGapSm,
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: CareersRadius.pillAll,
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: Colors.white.withValues(alpha: 0.24),
+              valueColor: const AlwaysStoppedAnimation(Colors.white),
             ),
           ),
         ],

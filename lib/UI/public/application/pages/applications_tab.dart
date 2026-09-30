@@ -6,17 +6,16 @@ import 'package:admin_app/UI/public/application/widgets/application_card.dart';
 import 'package:admin_app/UI/public/application/widgets/application_empty_state.dart';
 import 'package:admin_app/UI/public/application/widgets/application_loading_state.dart';
 import 'package:admin_app/UI/public/application/widgets/status_filter_chip.dart';
+import 'package:admin_app/UI/public/shared/components/careers_empty_state.dart';
+import 'package:admin_app/UI/public/shared/components/careers_sign_in_prompt.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_states.dart';
-import 'package:admin_app/UI/public/user/pages/login_page.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
-import 'package:admin_app/core/widgets/app_button.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ApplicationsTab extends StatefulWidget {
   final VoidCallback? onBrowseJobs;
@@ -139,6 +138,7 @@ class _ApplicationsTabState extends State<ApplicationsTab>
         }
 
         return RefreshIndicator(
+          color: CareersColors.primary,
           onRefresh: () async {
             context.read<ApplicationBloc>().add(
               RefreshApplicationsEvent(candId: candidateId),
@@ -146,92 +146,18 @@ class _ApplicationsTabState extends State<ApplicationsTab>
           },
           child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                color: Theme.of(context).colorScheme.surface,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Filter by Status',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          StatusFilterChip(
-                            label: 'All',
-                            isSelected: state is ApplicationLoaded &&
-                                state.selectedStatus == null,
-                            onTap: () {
-                              context.read<ApplicationBloc>().add(
-                                FilterApplicationsByStatusEvent(
-                                  status: null,
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          ...ApplicationStatus.values.map(
-                            (status) => Padding(
-                              padding: const EdgeInsets.only(
-                                right: AppSpacing.sm,
-                              ),
-                              child: StatusFilterChip(
-                                label: status.displayName,
-                                isSelected: state is ApplicationLoaded &&
-                                    state.selectedStatus == status,
-                                onTap: () {
-                                  context.read<ApplicationBloc>().add(
-                                    FilterApplicationsByStatusEvent(
-                                      status: status,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              _StatusFilterBar(
+                selectedStatus:
+                    state is ApplicationLoaded ? state.selectedStatus : null,
+                onSelected: (status) {
+                  context.read<ApplicationBloc>().add(
+                    FilterApplicationsByStatusEvent(status: status),
+                  );
+                },
               ),
               Expanded(
                 child: state is ApplicationLoaded
-                    ? ListView.builder(
-                        controller: _scrollController,
-                        physics: const AlwaysScrollableScrollPhysics(
-                          parent: BouncingScrollPhysics(),
-                        ),
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        itemCount: state.filteredApplications.length +
-                            (state is ApplicationLoadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= state.filteredApplications.length) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(AppSpacing.md),
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          }
-
-                          final application = state.filteredApplications[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.md,
-                            ),
-                            child: ApplicationCard(application: application),
-                          );
-                        },
-                      )
+                    ? _buildList(state)
                     : const SizedBox.shrink(),
               ),
             ],
@@ -241,89 +167,115 @@ class _ApplicationsTabState extends State<ApplicationsTab>
     );
   }
 
-  Widget _buildLoginPrompt(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildList(ApplicationLoaded state) {
+    final applications = state.filteredApplications;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              CupertinoIcons.person_crop_circle_badge_exclam,
-              size: 56,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Sign in to view applications',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Log in to see jobs you have applied for.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AppButton.primary(
-              label: 'Login',
-              isFullWidth: false,
-              onPressed: () {
-                Navigator.of(context)
-                    .push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => const LoginPage(),
-                      ),
-                    )
-                    .then((_) {
-                      if (mounted) _onShown();
-                    });
-              },
-            ),
-          ],
-        ),
+    if (applications.isEmpty) {
+      return const CareersEmptyState(
+        icon: CupertinoIcons.line_horizontal_3_decrease,
+        title: 'Nothing in this status',
+        message: 'Try a different status filter to see your applications.',
+      );
+    }
+
+    final isLoadingMore = state is ApplicationLoadingMore;
+
+    return ListView.builder(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
       ),
+      padding: const EdgeInsets.fromLTRB(
+        CareersSpacing.screenH,
+        CareersSpacing.cardPadding,
+        CareersSpacing.screenH,
+        CareersSpacing.section,
+      ),
+      itemCount: applications.length + (isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= applications.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: CareersSpacing.cardPadding),
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: CareersSpacing.cardPadding),
+          child: ApplicationCard(application: applications[index]),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoginPrompt(BuildContext context) {
+    return CareersSignInPrompt(
+      title: 'Sign in to view applications',
+      message: 'Track the status of every role you have applied for.',
+      onReturn: () {
+        if (mounted) _onShown();
+      },
     );
   }
 
   Widget _buildErrorState(int candidateId, String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return CareersErrorState(
+      title: 'Could not load applications',
+      onRetry: () {
+        context.read<ApplicationBloc>().add(
+          LoadApplicationsEvent(candId: candidateId),
+        );
+      },
+    );
+  }
+}
+
+/// Horizontal status filter row. Pinned above the list so the active filter is
+/// always visible.
+class _StatusFilterBar extends StatelessWidget {
+  final ApplicationStatus? selectedStatus;
+  final ValueChanged<ApplicationStatus?> onSelected;
+
+  const _StatusFilterBar({
+    required this.selectedStatus,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: CareersColors.surface,
+        border: Border(bottom: BorderSide(color: CareersColors.divider)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: CareersSpacing.screenH,
+          vertical: 12,
+        ),
+        child: Row(
           children: [
-            Text(
-              'Something went wrong',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+            StatusFilterChip(
+              label: 'All',
+              isSelected: selectedStatus == null,
+              onTap: () => onSelected(null),
+            ),
+            for (final status in ApplicationStatus.values)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: StatusFilterChip(
+                  label: status.displayName,
+                  isSelected: selectedStatus == status,
+                  onTap: () => onSelected(status),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 14),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AppButton.primary(
-              label: 'Try Again',
-              isFullWidth: false,
-              onPressed: () {
-                context.read<ApplicationBloc>().add(
-                  LoadApplicationsEvent(candId: candidateId),
-                );
-              },
-            ),
           ],
         ),
       ),

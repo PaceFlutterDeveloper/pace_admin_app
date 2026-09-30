@@ -1,4 +1,4 @@
-import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,29 +13,31 @@ class CareersBottomNav extends StatelessWidget {
     required this.onTap,
   });
 
+  static const double _barHeight = 64;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceContainerDark : AppColors.cardBg,
-        border: Border(
-          top: BorderSide(
-            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: CareersColors.surface,
+        border: Border(top: BorderSide(color: CareersColors.divider)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A0F172A),
+            blurRadius: 18,
+            offset: Offset(0, -4),
           ),
-        ),
+        ],
       ),
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: AppSizes.bottomNavHeight,
+          height: _barHeight,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _NavItem(
                 icon: CupertinoIcons.house,
+                activeIcon: CupertinoIcons.house_fill,
                 label: 'Home',
                 index: 0,
                 currentIndex: currentIndex,
@@ -43,6 +45,7 @@ class CareersBottomNav extends StatelessWidget {
               ),
               _NavItem(
                 icon: CupertinoIcons.doc_text,
+                activeIcon: CupertinoIcons.doc_text_fill,
                 label: 'Applications',
                 index: 1,
                 currentIndex: currentIndex,
@@ -50,6 +53,7 @@ class CareersBottomNav extends StatelessWidget {
               ),
               _NavItem(
                 icon: CupertinoIcons.person,
+                activeIcon: CupertinoIcons.person_fill,
                 label: 'Profile',
                 index: 2,
                 currentIndex: currentIndex,
@@ -65,6 +69,7 @@ class CareersBottomNav extends StatelessWidget {
 
 class _NavItem extends StatelessWidget {
   final IconData icon;
+  final IconData activeIcon;
   final String label;
   final int index;
   final int currentIndex;
@@ -72,6 +77,7 @@ class _NavItem extends StatelessWidget {
 
   const _NavItem({
     required this.icon,
+    required this.activeIcon,
     required this.label,
     required this.index,
     required this.currentIndex,
@@ -80,38 +86,55 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isSelected = currentIndex == index;
-    final color = isSelected
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurface.withValues(alpha: 0.45);
+    final color =
+        isSelected ? CareersColors.primary : CareersColors.textTertiary;
 
     return Expanded(
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onTap(index),
-          child: SizedBox(
-            height: AppSizes.bottomNavHeight,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(height: 2),
-                Text(
+          splashColor: CareersColors.primarySoft,
+          highlightColor: CareersColors.primarySoft,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? CareersColors.primarySoft
+                      : Colors.transparent,
+                  borderRadius: CareersRadius.pillAll,
+                ),
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  color: color,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     height: 1.0,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: color,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

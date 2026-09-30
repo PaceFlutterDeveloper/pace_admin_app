@@ -1,5 +1,5 @@
+import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class StatusFilterChip extends StatelessWidget {
   final String label;
@@ -7,31 +7,36 @@ class StatusFilterChip extends StatelessWidget {
   final VoidCallback onTap;
 
   const StatusFilterChip({
-    Key? key,
+    super.key,
     required this.label,
     required this.isSelected,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue[600] : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20.r),
-          border: isSelected
-              ? Border.all(color: Colors.blue[600]!, width: 1.5)
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey[700],
+    return Material(
+      color: isSelected ? CareersColors.primary : CareersColors.surface,
+      borderRadius: CareersRadius.pillAll,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: CareersRadius.pillAll,
+            border: Border.all(
+              color: isSelected ? CareersColors.primary : CareersColors.border,
+            ),
+          ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: isSelected
+                      ? CareersColors.onPrimary
+                      : CareersColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
           ),
         ),
       ),
