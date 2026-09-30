@@ -443,6 +443,7 @@ class RecordEditorDialog extends StatelessWidget {
           child: Form(
             key: formKey,
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

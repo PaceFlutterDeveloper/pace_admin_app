@@ -1,6 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
+import 'package:admin_app/core/utils/dismiss_keyboard.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,12 +49,16 @@ class CareersAuthScaffold extends StatelessWidget {
   /// Links shown below the panel (sign up / sign in, continue as guest).
   final List<Widget> footer;
 
+  /// Hidden on the cold-start login gate, where there is no previous page.
+  final bool showBackButton;
+
   const CareersAuthScaffold({
     super.key,
     required this.title,
     required this.subtitle,
     required this.form,
     this.footer = const [],
+    this.showBackButton = true,
   });
 
   @override
@@ -98,6 +103,7 @@ class CareersAuthScaffold extends StatelessWidget {
                                 form: form,
                                 footer: footer,
                                 isNarrow: isNarrow,
+                                showBackButton: showBackButton,
                               ),
                             ),
                           ),
@@ -121,6 +127,7 @@ class _AuthContent extends StatelessWidget {
   final Widget form;
   final List<Widget> footer;
   final bool isNarrow;
+  final bool showBackButton;
 
   const _AuthContent({
     required this.title,
@@ -128,6 +135,7 @@ class _AuthContent extends StatelessWidget {
     required this.form,
     required this.footer,
     required this.isNarrow,
+    required this.showBackButton,
   });
 
   @override
@@ -135,10 +143,16 @@ class _AuthContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: _BackButton(onPressed: () => Navigator.of(context).pop()),
-        ),
+        if (showBackButton)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _BackButton(
+              onPressed: () {
+                dismissKeyboard();
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
         const Spacer(flex: 2),
         Align(
           alignment: Alignment.centerLeft,

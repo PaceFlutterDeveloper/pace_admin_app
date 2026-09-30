@@ -10,6 +10,7 @@ import 'package:admin_app/UI/public/user/pages/complete_profile/family_tab.dart'
 import 'package:admin_app/UI/public/user/pages/complete_profile/programs_tab.dart';
 import 'package:admin_app/UI/public/user/pages/complete_profile/references_tab.dart';
 import 'package:admin_app/UI/public/user/utils/profile_completion_mapper.dart';
+import 'package:admin_app/core/utils/dismiss_keyboard.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,12 +50,22 @@ class _CompleteProfilePageState extends State<CompleteProfilePage>
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabLabels.length, vsync: this);
+    _tabController.addListener(_dismissKeyboardOnTabChange);
     context.read<CareersProfileBloc>().add(const LoadProfileEvent());
     context.read<CareersProfileBloc>().add(const CheckProfileCompletionEvent());
   }
 
+  int _visibleTab = 0;
+
+  void _dismissKeyboardOnTabChange() {
+    if (_tabController.index == _visibleTab) return;
+    _visibleTab = _tabController.index;
+    dismissKeyboard();
+  }
+
   @override
   void dispose() {
+    _tabController.removeListener(_dismissKeyboardOnTabChange);
     _tabController.dispose();
     super.dispose();
   }

@@ -149,11 +149,15 @@ class _SalaryChip extends StatelessWidget {
         children: [
           const AedCurrencyIcon(color: CareersColors.success, size: 13),
           const SizedBox(width: 5),
-          Text(
-            range,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: CareersColors.success,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              range,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: CareersColors.success,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

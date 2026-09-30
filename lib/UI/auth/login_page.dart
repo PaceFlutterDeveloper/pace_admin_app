@@ -12,7 +12,6 @@ import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
@@ -117,7 +116,9 @@ class _LoginPageState extends State<LoginPage> {
               loginSuccess: () {
                 secretAdminLoginOpen.value = false;
                 context.read<HomeCubit>().getMenu();
-                context.go(Routes.home.path);
+                // This page is not under GoRouter, so navigation goes through
+                // the router instance rather than the overlay context.
+                AppRoute.router.go(Routes.home.path);
               },
               orElse: () {},
             );

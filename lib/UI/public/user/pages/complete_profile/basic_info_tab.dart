@@ -321,6 +321,7 @@ class _BasicInfoTabState extends State<BasicInfoTab>
     }
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Form(

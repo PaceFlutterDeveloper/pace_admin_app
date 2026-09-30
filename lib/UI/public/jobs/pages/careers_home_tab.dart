@@ -10,10 +10,12 @@ import 'package:admin_app/UI/public/jobs/models/school_model.dart';
 import 'package:admin_app/UI/public/shared/components/careers_empty_state.dart';
 import 'package:admin_app/UI/public/shared/components/careers_hero_surface.dart';
 import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
-import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
+import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
+import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class CareersHomeTab extends StatefulWidget {
   final bool isActive;
@@ -130,6 +132,7 @@ class _CareersHomeTabState extends State<CareersHomeTab>
         color: context.careers.accentText,
         onRefresh: () async => _refresh(),
         child: CustomScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -271,8 +274,8 @@ class _CareersHomeTabState extends State<CareersHomeTab>
   }
 }
 
-/// Greeting band. Uses the name already stored in the local careers session;
-/// falls back to a neutral greeting for guests.
+/// Greeting band. Listens to the careers session box so logout clears the
+/// name even when this widget's parent does not rebuild it.
 class _GreetingHero extends StatelessWidget {
   const _GreetingHero();
 
@@ -282,18 +285,34 @@ class _GreetingHero extends StatelessWidget {
     return 'Good evening';
   }
 
-  static String? _firstName() {
-    if (!CareersUserManager.isLoggedIn()) return null;
-    final name = CareersUserManager.getCurrentUser()?.name.trim() ?? '';
+  static String? _firstName(CareersUserModel? user) {
+    final name = user?.name.trim() ?? '';
     if (name.isEmpty) return null;
     return name.split(RegExp(r'\s+')).first;
   }
 
   @override
   Widget build(BuildContext context) {
-    final firstName = _firstName();
-    final greeting = _timeGreeting(DateTime.now());
+    return ValueListenableBuilder<Box<CareersUserModel>>(
+      valueListenable: locator<Box<CareersUserModel>>().listenable(),
+      builder: (context, box, _) {
+        return _GreetingBody(
+          greeting: _timeGreeting(DateTime.now()),
+          firstName: _firstName(box.get('current_user')),
+        );
+      },
+    );
+  }
+}
 
+class _GreetingBody extends StatelessWidget {
+  final String greeting;
+  final String? firstName;
+
+  const _GreetingBody({required this.greeting, required this.firstName});
+
+  @override
+  Widget build(BuildContext context) {
     return CareersHeroSurface(
       padding: const EdgeInsets.all(20),
       child: Column(

@@ -27,6 +27,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+/// Admin login drawn over careers. The page is outside [MaterialApp.router]'s
+/// [Router], so dropdowns and toasts need a navigator of their own.
+class _SecretAdminLogin extends StatelessWidget {
+  const _SecretAdminLogin();
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      onGenerateRoute: (settings) {
+        return PageRouteBuilder<void>(
+          settings: settings,
+          pageBuilder: (_, __, ___) => const LoginPage(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        );
+      },
+    );
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -115,7 +135,9 @@ class _MyAppState extends State<MyApp> {
                               fit: StackFit.expand,
                               children: [
                                 navigator!,
-                                if (open) const LoginPage(),
+                                // Login sits beside the app Router, so it needs
+                                // its own Navigator for the school dropdown menu.
+                                if (open) const _SecretAdminLogin(),
                               ],
                             );
                           },

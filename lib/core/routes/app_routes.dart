@@ -33,6 +33,7 @@ import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile
 import 'package:admin_app/UI/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
+import 'package:admin_app/core/utils/dismiss_keyboard.dart';
 import 'package:admin_app/core/update/app_update_controller.dart';
 import 'package:admin_app/core/utils/go_router_refresh_stream.dart';
 import 'package:admin_app/dependancy_injection.dart';
@@ -79,6 +80,7 @@ class AppRoute {
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.careers.path,
+    observers: [DismissKeyboardNavigatorObserver()],
     debugLogDiagnostics: kDebugMode,
     refreshListenable: GoRouterRefreshStream(context.watch<AuthCubit>().stream),
     routes: [
@@ -89,7 +91,7 @@ class AppRoute {
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
-        observers: [shellRouteObserver],
+        observers: [shellRouteObserver, DismissKeyboardNavigatorObserver()],
         builder: (context, state, child) {
           return ScaffoldWithNavBar(child: child);
         },
@@ -262,6 +264,7 @@ class AppRoute {
       // The shell only applies the careers design system; admin keeps AppTheme.
       ShellRoute(
         navigatorKey: GlobalKey<NavigatorState>(),
+        observers: [DismissKeyboardNavigatorObserver()],
         builder: (context, state, child) => CareersTheme.wrap(child),
         routes: [
           GoRoute(
@@ -286,7 +289,7 @@ class AppRoute {
                     create: (_) => locator<CareersProfileBloc>(),
                   ),
                 ],
-                child: JobsPage(initialTabIndex: initialTab),
+                child: CareersEntry(initialTabIndex: initialTab),
               );
             },
           ),

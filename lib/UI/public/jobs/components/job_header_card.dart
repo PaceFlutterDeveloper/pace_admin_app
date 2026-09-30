@@ -100,11 +100,13 @@ class JobHeaderCard extends StatelessWidget {
                     value: postedLabel ?? 'Recently',
                   ),
                 ),
+                const SizedBox(width: 14),
                 Container(
                   width: 1,
                   height: 30,
                   color: Colors.white.withValues(alpha: 0.2),
                 ),
+                const SizedBox(width: 14),
                 Expanded(
                   child: _HeroFact(
                     label: 'Deadline',

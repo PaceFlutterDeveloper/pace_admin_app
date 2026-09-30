@@ -1,11 +1,23 @@
 import 'package:admin_app/UI/public/notification/careers_fcm_service.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
 class CareersUserManager {
   static final CareersUserService _careersUserService =
       GetIt.instance<CareersUserService>();
+
+  /// Set when someone continues as a guest during this process.
+  /// A fresh launch starts signed-out users on the login page again.
+  static bool browsingAsGuest = false;
+
+  /// Bumped when login or guest mode should reveal the jobs home tab.
+  static final ValueNotifier<int> homeTabRequest = ValueNotifier(0);
+
+  static void openHomeTab() {
+    homeTabRequest.value++;
+  }
 
   // Get current careers user
   static CareersUserModel? getCurrentUser() {

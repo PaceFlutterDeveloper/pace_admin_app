@@ -1,5 +1,6 @@
 import 'package:admin_app/UI/public/jobs/models/school_model.dart';
 import 'package:admin_app/UI/public/shared/theme/careers_tokens.dart';
+import 'package:admin_app/core/utils/dismiss_keyboard.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -69,6 +70,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
   }
 
   Future<void> _openFilters() async {
+    dismissKeyboard();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -104,6 +106,7 @@ class _EnhancedSearchBarState extends State<EnhancedSearchBar> {
               controller: _searchController,
               onChanged: widget.onSearchChanged,
               textInputAction: TextInputAction.search,
+              onSubmitted: (_) => dismissKeyboard(),
               style: Theme.of(context).textTheme.bodyLarge,
               decoration: InputDecoration(
                 hintText: 'Search job title or keyword',
@@ -268,6 +271,7 @@ class _FilterSheetState extends State<_FilterSheet> {
   }
 
   void _apply() {
+    dismissKeyboard();
     final location = _locationController.text.trim();
     if (location != widget.location) {
       widget.onLocationChanged(location);
@@ -279,6 +283,7 @@ class _FilterSheetState extends State<_FilterSheet> {
   }
 
   void _reset() {
+    dismissKeyboard();
     _locationController.clear();
     setState(() => _school = null);
     if (widget.location.isNotEmpty) widget.onLocationChanged('');
@@ -304,6 +309,7 @@ class _FilterSheetState extends State<_FilterSheet> {
         child: SafeArea(
           top: false,
           child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(
               CareersSpacing.screenH,
               12,

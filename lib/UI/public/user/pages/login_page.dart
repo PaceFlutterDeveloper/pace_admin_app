@@ -1,16 +1,22 @@
+import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
 import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
 import 'package:admin_app/UI/public/user/bloc/user_events.dart';
 import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/UI/public/user/pages/signup_page.dart';
 import 'package:admin_app/UI/public/shared/components/careers_auth_scaffold.dart';
 import 'package:admin_app/UI/public/shared/theme/careers_theme.dart';
+import 'package:admin_app/core/utils/dismiss_keyboard.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  /// When set, sign-in and guest mode stay on this route and open the home
+  /// page instead of popping. Used for the cold-start login gate.
+  final VoidCallback? onContinue;
+
+  const LoginPage({super.key, this.onContinue});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -40,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
       listener: (context, state) {
         if (state is LoginSuccess) {
           AppToast.success(context, 'Welcome back, ${state.user.name}!');
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          _leaveToHome();
         } else if (state is LoginEmailNotVerified) {
           _showEmailNotVerifiedDialog(state.email);
         } else if (state is LoginError) {
@@ -54,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
       child: CareersAuthScaffold(
         title: 'Welcome back',
         subtitle: 'Sign in to continue your job search.',
+        showBackButton: widget.onContinue == null,
         form: Form(
           key: _formKey,
           child: AutofillGroup(
@@ -136,12 +143,26 @@ class _LoginPageState extends State<LoginPage> {
           Center(
             child: CareersAuthTextAction(
               label: 'Continue as guest',
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: _leaveToHome,
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _leaveToHome() {
+    dismissKeyboard();
+    if (!CareersUserManager.isLoggedIn()) {
+      CareersUserManager.browsingAsGuest = true;
+    }
+    CareersUserManager.openHomeTab();
+    final onContinue = widget.onContinue;
+    if (onContinue != null) {
+      onContinue();
+      return;
+    }
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   void _handleLogin() {
@@ -230,6 +251,7 @@ class _ForgotPasswordPageState extends State<_ForgotPasswordPage> {
             listener: (context, state) {
               if (state is ForgotPasswordSuccess) {
                 AppToast.success(context, state.message);
+                dismissKeyboard();
                 Navigator.of(context).pop();
               } else if (state is ForgotPasswordError) {
                 AppToast.error(context, state.message);
@@ -284,7 +306,10 @@ class _ForgotPasswordPageState extends State<_ForgotPasswordPage> {
                 CareersAuthLink(
                   leading: 'Remembered your password?',
                   action: 'Sign in',
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    dismissKeyboard();
+                    Navigator.of(context).pop();
+                  },
                 ),
               ],
             ),

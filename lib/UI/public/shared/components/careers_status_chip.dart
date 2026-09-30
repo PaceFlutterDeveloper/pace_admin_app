@@ -101,7 +101,14 @@ class CareersMetaChip extends StatelessWidget {
             Icon(icon, size: 13, color: palette.textSecondary),
             const SizedBox(width: 5),
           ],
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ),
         ],
       ),
     );

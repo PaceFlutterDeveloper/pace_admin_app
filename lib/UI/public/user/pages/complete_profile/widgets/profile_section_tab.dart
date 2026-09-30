@@ -130,6 +130,7 @@ class _ProfileSectionTabState<T> extends State<ProfileSectionTab<T>>
     return BlocListener<CareersProfileBloc, CareersProfileState>(
       listener: _onStateChange,
       child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           CareersSpacing.screenH,
