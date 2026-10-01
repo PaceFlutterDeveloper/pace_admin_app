@@ -12,6 +12,10 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
   final JobsApiService _jobsApiService;
   List<SchoolModel> _schoolsCache = [];
 
+  /// One page is enough for the open catalogue, so deadline order is across
+  /// every job rather than only the first ten the server returns.
+  static const int _jobsPageSize = 100;
+
   JobsBloc({required JobsApiService jobsApiService})
     : _jobsApiService = jobsApiService,
       super(JobsInitial()) {
@@ -25,6 +29,23 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     on<FilterByLocationEvent>(_onFilterByLocation);
     on<FilterBySearchEvent>(_onFilterBySearch);
     on<LoadMoreJobsEvent>(_onLoadMoreJobs);
+  }
+
+  /// Soonest deadline first. Jobs with no deadline stay at the end, and jobs
+  /// that share a deadline keep their previous order.
+  List<JobModel> _sortByDeadline(List<JobModel> jobs) {
+    final indexed = jobs.asMap().entries.toList();
+    indexed.sort((a, b) {
+      final aDate = a.value.deadlineDate;
+      final bDate = b.value.deadlineDate;
+      if (aDate == null && bDate == null) return a.key.compareTo(b.key);
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      final byDate = aDate.compareTo(bDate);
+      if (byDate != 0) return byDate;
+      return a.key.compareTo(b.key);
+    });
+    return indexed.map((entry) => entry.value).toList();
   }
 
   /// Search (title only), location, and school are applied client-side so each
@@ -78,7 +99,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       schoolId: event.schoolId,
       employmentType: event.filterBy,
       page: 1,
-      limit: 10,
+      limit: _jobsPageSize,
     );
 
     result.fold(
@@ -124,7 +145,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
 
           emit(
             JobsLoaded(
-              jobs: filteredJobs,
+              jobs: _sortByDeadline(filteredJobs),
               searchQuery: event.searchQuery ?? '',
               filterBy: event.filterBy ?? 'All',
               selectedSchoolId: event.schoolId,
@@ -287,7 +308,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             ? currentState.filterBy
             : null,
         page: 1,
-        limit: 10,
+        limit: _jobsPageSize,
       );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
@@ -299,7 +320,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
         );
         emit(
           JobsLoaded(
-            jobs: filteredJobs,
+            jobs: _sortByDeadline(filteredJobs),
             searchQuery: currentState.searchQuery,
             filterBy: currentState.filterBy,
             selectedSchoolId: event.schoolId,
@@ -322,12 +343,12 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
       final result = await _jobsApiService.fetchJobs(
         schoolId: event.schoolId,
         page: 1,
-        limit: 10,
+        limit: _jobsPageSize,
       );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
         if (response.data.isNotEmpty) {
-          List<JobModel> filteredJobs = response.data;
+          List<JobModel> filteredJobs = _sortByDeadline(response.data);
           emit(
             JobsLoaded(
               jobs: filteredJobs,
@@ -365,7 +386,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
             ? currentState.filterBy
             : null,
         page: currentState.currentPage + 1,
-        limit: 10,
+        limit: _jobsPageSize,
       );
 
       result.fold((error) => emit(JobsError(error.message)), (response) {
@@ -406,7 +427,7 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
 
           emit(
             currentState.copyWith(
-              jobs: [...currentState.jobs, ...newJobs],
+              jobs: _sortByDeadline([...currentState.jobs, ...newJobs]),
               currentPage: response.page,
               totalPages: response.totalPages,
               hasMoreJobs: response.hasNext,

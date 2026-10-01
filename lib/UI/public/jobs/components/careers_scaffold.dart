@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 class CareersScaffold extends StatelessWidget {
   final String title;
   final Widget body;
+  final Widget? leading;
   final List<Widget>? actions;
   final Widget? bottomNavigationBar;
   final bool centerTitle;
@@ -20,6 +21,7 @@ class CareersScaffold extends StatelessWidget {
     super.key,
     required this.title,
     required this.body,
+    this.leading,
     this.actions,
     this.bottomNavigationBar,
     this.centerTitle = false,
@@ -36,13 +38,15 @@ class CareersScaffold extends StatelessWidget {
       backgroundColor: palette.background,
       appBar: showAppBar
           ? AppBar(
+              leading: leading,
+              automaticallyImplyLeading: leading == null,
               title: _Title(
                 title: title,
                 onTap: onTitleTap,
                 branded: brandedTitle,
               ),
               centerTitle: centerTitle,
-              titleSpacing: CareersSpacing.screenH,
+              titleSpacing: leading == null ? CareersSpacing.screenH : 4,
               backgroundColor: palette.surface,
               elevation: 0,
               scrolledUnderElevation: 0,

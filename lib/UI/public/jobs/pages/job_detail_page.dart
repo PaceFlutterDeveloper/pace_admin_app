@@ -22,6 +22,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
+bool _isConnectionProblem(String message) {
+  final lower = message.toLowerCase();
+  return lower.contains('internet') ||
+      lower.contains('connection') ||
+      lower.contains('timed out') ||
+      lower.contains('network');
+}
+
 class JobDetailPage extends StatefulWidget {
   final int jobId;
 
@@ -88,8 +96,28 @@ class _JobDetailPageState extends State<JobDetailPage> {
     );
   }
 
+  void _leaveJobDetail(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(Routes.careers.name);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canPop = context.canPop();
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        context.goNamed(Routes.careers.name);
+      },
+      child: _buildPage(context),
+    );
+  }
+
+  Widget _buildPage(BuildContext context) {
     return MultiBlocListener(
       listeners: [
         BlocListener<ApplicationBloc, ApplicationState>(
@@ -155,6 +183,7 @@ class _JobDetailPageState extends State<JobDetailPage> {
 
           return CareersScaffold(
             title: 'Job Details',
+            leading: BackButton(onPressed: () => _leaveJobDetail(context)),
             bottomNavigationBar: job == null
                 ? null
                 : ApplyBottomBar(
@@ -172,16 +201,26 @@ class _JobDetailPageState extends State<JobDetailPage> {
 
   Widget _buildBody(JobsState state, JobModel? job) {
     if (state is JobDetailsError) {
+      final retry = () {
+        context.read<JobsBloc>().add(FetchJobDetailsEvent(widget.jobId));
+      };
+      final offline = _isConnectionProblem(state.message);
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(CareersSpacing.screenH),
-          child: AppErrorState.generic(
-            title: 'Unable to load this job',
-            message: 'Please check your connection and try again.',
-            onRetry: () {
-              context.read<JobsBloc>().add(FetchJobDetailsEvent(widget.jobId));
-            },
-          ),
+          child: offline
+              ? AppErrorState.network(
+                  title: 'Unable to load this job',
+                  message: 'Please check your connection and try again.',
+                  onRetry: retry,
+                )
+              : AppErrorState.notFound(
+                  title: 'This job is unavailable',
+                  message:
+                      'It may have expired or been removed. Go back to browse other jobs.',
+                  retryLabel: 'Try again',
+                  onRetry: retry,
+                ),
         ),
       );
     }

@@ -30,6 +30,14 @@ class ApplyButton extends StatelessWidget {
       );
     }
 
+    if (!job.isActive) {
+      return const AppButton.secondary(
+        label: 'Applications closed',
+        leadingIcon: CupertinoIcons.lock_fill,
+        onPressed: null,
+      );
+    }
+
     return AppButton.primary(
       label: isLoading ? 'Please wait...' : 'Apply now',
       leadingIcon: CupertinoIcons.paperplane_fill,

@@ -61,9 +61,26 @@ class DeepLinkService {
     _lastOpened = uri;
     _lastOpenedAt = now;
     log('DeepLinkService: opening job $jobId from $uri');
-    AppRoute.router.goNamed(
-      Routes.jobDetail.name,
-      queryParameters: {'job_id': jobId.toString()},
-    );
+    _openJob(jobId);
+  }
+
+  /// Opens the job on top of the careers home when that home is already
+  /// showing, so Back returns to the job list. A cold start from the link
+  /// is already on the job page; the detail screen sends Back there itself.
+  void _openJob(int jobId) {
+    final router = AppRoute.router;
+    final query = {'job_id': jobId.toString()};
+    final location = router.state.matchedLocation;
+    final sameJob =
+        location == Routes.jobDetail.path &&
+        router.state.uri.queryParameters['job_id'] == jobId.toString();
+    if (sameJob) return;
+
+    if (location == Routes.careers.path) {
+      router.pushNamed(Routes.jobDetail.name, queryParameters: query);
+      return;
+    }
+
+    router.goNamed(Routes.jobDetail.name, queryParameters: query);
   }
 }

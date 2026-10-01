@@ -86,10 +86,13 @@ class NotificationRouter {
     if (type == 'careers_job' ||
         (jobId != null && (type.isEmpty || page.contains('job-detail')))) {
       if (jobId != null) {
-        AppRoute.router.goNamed(
-          Routes.jobDetail.name,
-          queryParameters: {'job_id': jobId.toString()},
-        );
+        final router = AppRoute.router;
+        final query = {'job_id': jobId.toString()};
+        if (router.state.matchedLocation == Routes.careers.path) {
+          router.pushNamed(Routes.jobDetail.name, queryParameters: query);
+        } else {
+          router.goNamed(Routes.jobDetail.name, queryParameters: query);
+        }
         return;
       }
     }

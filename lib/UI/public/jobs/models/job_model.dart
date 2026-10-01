@@ -68,16 +68,22 @@ class JobModel {
   String get company => schoolName;
   String get salaryRange => salary?.range ?? '';
 
-  DateTime? get postedDate {
-    final raw = createdAt.trim();
-    if (raw.isEmpty) return null;
-    if (raw.contains('/')) {
-      final parts = raw.split('/');
+  DateTime? get postedDate => _parseJobDate(createdAt);
+
+  /// Application deadline. Empty or unparseable values are null so the list
+  /// can place those jobs after every job that has a real date.
+  DateTime? get deadlineDate => _parseJobDate(deadline);
+
+  static DateTime? _parseJobDate(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return null;
+    if (value.contains('/')) {
+      final parts = value.split('/');
       if (parts.length == 3) {
         return DateTime.tryParse('${parts[2]}-${parts[1]}-${parts[0]}');
       }
     }
-    return DateTime.tryParse(raw);
+    return DateTime.tryParse(value);
   }
 
   String get experienceLevel {
