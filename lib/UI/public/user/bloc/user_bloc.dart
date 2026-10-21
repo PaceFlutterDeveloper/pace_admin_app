@@ -7,10 +7,13 @@ import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/UI/public/user/managers/careers_user_manager.dart';
 import 'package:admin_app/UI/public/user/models/careers_user_model.dart';
 import 'package:admin_app/UI/public/user/services/auth_api_service.dart';
+import 'package:admin_app/UI/auth/models/auth_model.dart';
 import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/core/error/error_exception.dart';
+import 'package:admin_app/dependancy_injection.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
 
 /// Bloc for candidate (careers) authentication: login, signup, logout,
 /// password recovery and email verification.
@@ -64,6 +67,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         final user = CareersUserModel.fromJson(userJson);
         await _careersUserService.setCurrentCareersUser(user);
         await _careersUserService.updateLastLogin();
+        Hive.box('settingsBox').put('signedInSurface', 'careers');
         emit(LoginSuccess(user: user));
         unawaited(CareersFcmService.syncFromProfile(user: user));
       },
@@ -91,15 +95,28 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     emit(const LogoutLoading());
     try {
       await CareersUserManager.logoutUser();
+      _rememberRemainingStaff();
       emit(const LogoutSuccess());
     } catch (e) {
       log('UserBloc: Logout error - $e');
       try {
         await _careersUserService.clearCurrentCareersUser();
+        _rememberRemainingStaff();
         emit(const LogoutSuccess());
       } catch (clearError) {
         emit(LogoutError(message: 'Logout failed: ${clearError.toString()}'));
       }
+    }
+  }
+
+  void _rememberRemainingStaff() {
+    final staffStillIn = locator<Box<AuthModel>>().values.any(
+      (user) => user.isActive,
+    );
+    if (staffStillIn) {
+      Hive.box('settingsBox').put('signedInSurface', 'staff');
+    } else {
+      Hive.box('settingsBox').delete('signedInSurface');
     }
   }
 

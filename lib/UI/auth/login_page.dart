@@ -3,16 +3,13 @@ import 'dart:convert';
 import 'package:admin_app/UI/auth/cubit/auth_cubit.dart';
 import 'package:admin_app/UI/auth/models/startup_school.dart';
 import 'package:admin_app/UI/home/cubit/home_cubit.dart';
-import 'package:admin_app/config/themes/app_design_tokens.dart';
+import 'package:admin_app/UI/public/shared/components/careers_auth_scaffold.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
-import 'package:admin_app/core/widgets/app_button.dart';
-import 'package:admin_app/core/widgets/app_text_field.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 class LoginPage extends StatefulWidget {
@@ -72,6 +69,14 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _retrySchools() {
+    setState(() {
+      _loadingSchools = true;
+      _schoolLoadError = null;
+    });
+    _fetchSchools();
+  }
+
   void _backToCareers() {
     secretAdminLoginOpen.value = false;
   }
@@ -92,407 +97,97 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(CupertinoIcons.back, color: theme.colorScheme.onSurface),
-          onPressed: _backToCareers,
-        ),
-      ),
-      body: SafeArea(
-        child: BlocConsumer<AuthCubit, AuthState>(
-          listener: (context, state) {
-            state.maybeWhen(
-              loginFailure: (msg) => AppToast.error(context, msg),
-              loginSuccess: () {
-                secretAdminLoginOpen.value = false;
-                context.read<HomeCubit>().getMenu();
-                // This page is not under GoRouter, so navigation goes through
-                // the router instance rather than the overlay context.
-                AppRoute.router.go(Routes.home.path);
-              },
-              orElse: () {},
-            );
+    return BlocConsumer<AuthCubit, AuthState>(
+      listener: (context, state) {
+        state.maybeWhen(
+          loginFailure: (msg) => AppToast.error(context, msg),
+          loginSuccess: () {
+            secretAdminLoginOpen.value = false;
+            context.read<HomeCubit>().getMenu();
+            // This page is not under GoRouter, so navigation goes through
+            // the router instance rather than the overlay context.
+            AppRoute.router.go(Routes.home.path);
           },
-          builder: (context, state) {
-            final isLoading = state.maybeWhen(
-              loading: () => true,
-              orElse: () => false,
-            );
+          orElse: () {},
+        );
+      },
+      builder: (context, state) {
+        final isLoading = state.maybeWhen(
+          loading: () => true,
+          orElse: () => false,
+        );
 
-            final screenWidth = MediaQuery.sizeOf(context).width;
-            final isNarrow = screenWidth < 360;
-            final horizontalPadding = isNarrow ? AppSpacing.md : AppSpacing.lg;
-
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: 480,
-                    minHeight:
-                        MediaQuery.sizeOf(context).height -
-                        MediaQuery.paddingOf(context).top -
-                        MediaQuery.paddingOf(context).bottom -
-                        kToolbarHeight,
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: AppSpacing.md),
-
-                        // Logo
-                        Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Image.asset(
-                              "assets/logo/group.png",
-                              width: isNarrow ? 160 : 220,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: AppSpacing.xxl),
-
-                        // Welcome text
-                        Text(
-                          'Welcome back',
-                          style: GoogleFonts.inter(
-                            fontSize: isNarrow ? 24 : 28,
-                            fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.onSurface,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Sign in to continue to your account',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // School dropdown
-                        _buildSchoolDropdown(theme, isDark),
-
-                        const SizedBox(height: AppSpacing.md),
-
-                        // Username field
-                        AppTextField(
-                          label: 'Username',
-                          hint: 'Enter your username',
-                          controller: _userNameController,
-                          prefixIcon: CupertinoIcons.person,
-                          textInputAction: TextInputAction.next,
-                          validator: (v) => (v == null || v.isEmpty)
-                              ? 'Please enter your username'
-                              : null,
-                        ),
-
-                        const SizedBox(height: AppSpacing.md),
-
-                        // Password field
-                        AppTextField(
-                          label: 'Password',
-                          hint: 'Enter your password',
-                          controller: _passwordController,
-                          prefixIcon: CupertinoIcons.lock,
-                          obscureText: true,
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _handleLogin(),
-                          validator: (v) => (v == null || v.isEmpty)
-                              ? 'Please enter your password'
-                              : null,
-                        ),
-
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // Login button
-                        AppButton.primary(
-                          label: 'Sign In',
-                          onPressed: isLoading ? null : _handleLogin,
-                          isLoading: isLoading,
-                        ),
-
-                        const SizedBox(height: AppSpacing.lg),
-
-                        _buildOrDivider(theme),
-
-                        const SizedBox(height: AppSpacing.lg),
-
-                        _buildCareersEntry(theme, isDark),
-
-                        const SizedBox(height: AppSpacing.xl),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOrDivider(ThemeData theme) {
-    final dividerColor = theme.colorScheme.onSurface.withOpacity(0.15);
-    final labelColor = theme.colorScheme.onSurface.withOpacity(0.5);
-
-    return Row(
-      children: [
-        Expanded(child: Divider(color: dividerColor, height: 1)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Text(
-            'or',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: labelColor,
-            ),
-          ),
-        ),
-        Expanded(child: Divider(color: dividerColor, height: 1)),
-      ],
-    );
-  }
-
-  Widget _buildCareersEntry(ThemeData theme, bool isDark) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _backToCareers,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceContainerDark
-                : AppColors.surfaceContainerLight,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.25),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(
-                  CupertinoIcons.briefcase,
-                  color: theme.colorScheme.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Explore Careers',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                        letterSpacing: -0.2,
+        return CareersAuthScaffold(
+          title: 'Welcome back',
+          subtitle: 'Sign in to continue to your account.',
+          onBack: _backToCareers,
+          form: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CareersAuthDropdown<String>(
+                  label: 'School',
+                  hint: 'Select your school',
+                  icon: CupertinoIcons.building_2_fill,
+                  value: _selectedSchool,
+                  isLoading: _loadingSchools,
+                  loadingLabel: 'Loading schools...',
+                  loadError: _schoolLoadError,
+                  onRetry: _retrySchools,
+                  items: [
+                    for (final school in _schools)
+                      CareersAuthDropdownItem(
+                        value: school.schoolCode,
+                        label: school.schoolCode,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'View available job opportunities',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
                   ],
+                  onChanged: (value) => setState(() => _selectedSchool = value),
+                  validator: (value) =>
+                      value == null ? 'Please select a school' : null,
                 ),
-              ),
-              Icon(
-                CupertinoIcons.chevron_right,
-                size: 18,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSchoolDropdown(ThemeData theme, bool isDark) {
-    if (_loadingSchools) {
-      return Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.surfaceContainerDark
-              : AppColors.surfaceContainerLight,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.primary,
-              ),
+                const SizedBox(height: 16),
+                CareersAuthField(
+                  label: 'Username',
+                  hint: 'Enter your username',
+                  controller: _userNameController,
+                  icon: CupertinoIcons.person,
+                  textInputAction: TextInputAction.next,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter your username'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                CareersAuthField(
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  controller: _passwordController,
+                  icon: CupertinoIcons.lock,
+                  isPassword: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _handleLogin(),
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter your password'
+                      : null,
+                ),
+                const SizedBox(height: 18),
+                CareersAuthButton(
+                  label: 'Sign in',
+                  isLoading: isLoading,
+                  onPressed: isLoading ? null : _handleLogin,
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Text(
-              'Loading schools...',
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
+          ),
+          footer: [
+            CareersAuthLink(
+              leading: 'Looking for a role?',
+              action: 'Explore careers',
+              onPressed: _backToCareers,
             ),
           ],
-        ),
-      );
-    }
-
-    if (_schoolLoadError != null) {
-      return Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.iosRed.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.iosRed.withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              CupertinoIcons.exclamationmark_circle,
-              color: AppColors.iosRed,
-              size: 20,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                _schoolLoadError!,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.iosRed,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _loadingSchools = true;
-                  _schoolLoadError = null;
-                });
-                _fetchSchools();
-              },
-              child: Text(
-                'Retry',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'School',
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface.withOpacity(0.8),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceContainerDark
-                : AppColors.surfaceContainerLight,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: _selectedSchool == null
-                ? null
-                : Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: _selectedSchool,
-            decoration: InputDecoration(
-              hintText: 'Select your school',
-              hintStyle: GoogleFonts.inter(
-                fontSize: 15,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
-              ),
-              prefixIcon: Icon(
-                CupertinoIcons.building_2_fill,
-                color: isDark
-                    ? AppColors.iosSystemGrayDark
-                    : AppColors.iosSystemGray,
-                size: 20,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: 14,
-              ),
-            ),
-            icon: Icon(
-              CupertinoIcons.chevron_down,
-              size: 18,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
-            ),
-            dropdownColor: isDark
-                ? AppColors.surfaceElevatedDark
-                : AppColors.surfaceElevatedLight,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            items: _schools.map((s) {
-              return DropdownMenuItem(
-                value: s.schoolCode,
-                child: Text(
-                  s.schoolCode,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }).toList(),
-            onChanged: (val) => setState(() => _selectedSchool = val),
-            validator: (v) => v == null ? 'Please select a school' : null,
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

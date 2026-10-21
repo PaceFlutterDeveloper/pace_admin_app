@@ -29,6 +29,7 @@ import 'package:admin_app/UI/public/jobs/pages/jobs_page.dart';
 import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
 import 'package:admin_app/UI/public/shared/theme/careers_theme.dart';
 import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
+import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
 import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile_page.dart';
 import 'package:admin_app/UI/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
@@ -43,6 +44,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+
+const _signedInSurfaceKey = 'signedInSurface';
+
+bool _hasActiveStaff() {
+  return locator<Box<AuthModel>>().values.any((login) => login.isActive);
+}
+
+/// Staff home when that session is still active. Careers when a candidate is
+/// the latest session, or when nobody is signed in.
+String _resumeLocation() {
+  final surface = Hive.box('settingsBox').get(_signedInSurfaceKey) as String?;
+  final candidate = locator<CareersUserService>().isCareersUserLoggedIn();
+  if (surface == 'careers' && candidate) return Routes.careers.path;
+  if (_hasActiveStaff()) return Routes.home.path;
+  return Routes.careers.path;
+}
 
 final List<String> globalPaths = [
   Routes.home.path,
@@ -79,7 +96,7 @@ class AppRoute {
 
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: Routes.careers.path,
+    initialLocation: _resumeLocation(),
     observers: [DismissKeyboardNavigatorObserver()],
     debugLogDiagnostics: kDebugMode,
     refreshListenable: GoRouterRefreshStream(context.watch<AuthCubit>().stream),
@@ -87,7 +104,7 @@ class AppRoute {
       GoRoute(
         path: Routes.root.path,
         name: Routes.root.name,
-        redirect: (_, __) => Routes.careers.path,
+        redirect: (_, __) => _resumeLocation(),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
@@ -414,10 +431,11 @@ class AppRoute {
         return Routes.careers.path;
       }
 
-      // Case 3: Root always opens careers
+      // Case 3: Root resumes the signed-in staff home, otherwise careers.
       if (state.matchedLocation == Routes.root.path) {
-        log("Redirecting from root to careers.");
-        return Routes.careers.path;
+        final start = _resumeLocation();
+        log("Redirecting from root to $start.");
+        return start;
       }
 
       // Log that access to the route is allowed

@@ -5,6 +5,7 @@ import 'package:admin_app/UI/public/user/bloc/user_states.dart';
 import 'package:admin_app/UI/public/user/pages/signup_page.dart';
 import 'package:admin_app/UI/public/shared/components/careers_auth_scaffold.dart';
 import 'package:admin_app/UI/public/shared/theme/careers_theme.dart';
+import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/utils/dismiss_keyboard.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:flutter/cupertino.dart';
@@ -61,6 +62,14 @@ class _LoginPageState extends State<LoginPage> {
         title: 'Welcome back',
         subtitle: 'Sign in to continue your job search.',
         showBackButton: widget.onContinue == null,
+        headerAction: CareersAuthHeaderButton(
+          label: 'Staff login',
+          icon: CupertinoIcons.person_crop_circle,
+          onPressed: () {
+            dismissKeyboard();
+            secretAdminLoginOpen.value = true;
+          },
+        ),
         form: Form(
           key: _formKey,
           child: AutofillGroup(

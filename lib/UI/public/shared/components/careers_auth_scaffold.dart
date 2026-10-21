@@ -31,12 +31,11 @@ class _AuthColors {
 const _fieldRadius = BorderRadius.all(Radius.circular(14));
 const _panelRadius = BorderRadius.all(Radius.circular(28));
 
-/// Shared shell for the careers login and signup pages: midnight backdrop
+/// Shared shell for the careers and staff auth screens: midnight backdrop
 /// with the form on a frosted glass panel.
 ///
-/// Content is laid out to fill the viewport without scrolling. Scrolling only
-/// engages when the content genuinely does not fit, e.g. while the keyboard is
-/// open, so the focused field can stay visible.
+/// Content fills the viewport when it fits. When it is taller than the screen,
+/// including while the keyboard is open, the page scrolls.
 class CareersAuthScaffold extends StatelessWidget {
   static const double _maxContentWidth = 440;
 
@@ -52,6 +51,12 @@ class CareersAuthScaffold extends StatelessWidget {
   /// Hidden on the cold-start login gate, where there is no previous page.
   final bool showBackButton;
 
+  /// Replaces the default pop. Staff login closes its overlay instead.
+  final VoidCallback? onBack;
+
+  /// Pinned to the top-right of the screen, opposite the back button.
+  final Widget? headerAction;
+
   const CareersAuthScaffold({
     super.key,
     required this.title,
@@ -59,6 +64,8 @@ class CareersAuthScaffold extends StatelessWidget {
     required this.form,
     this.footer = const [],
     this.showBackButton = true,
+    this.onBack,
+    this.headerAction,
   });
 
   @override
@@ -76,6 +83,14 @@ class CareersAuthScaffold extends StatelessWidget {
             SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
+                  const topPad = 8.0;
+                  const bottomPad = 12.0;
+                  final horizontal = isNarrow ? 16.0 : 20.0;
+                  final minContentHeight = (constraints.maxHeight -
+                          topPad -
+                          bottomPad)
+                      .clamp(0.0, double.infinity);
+
                   return SingleChildScrollView(
                     physics: const ClampingScrollPhysics(),
                     keyboardDismissBehavior:
@@ -84,27 +99,28 @@ class CareersAuthScaffold extends StatelessWidget {
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight,
                       ),
-                      child: IntrinsicHeight(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontal,
+                          topPad,
+                          horizontal,
+                          bottomPad,
+                        ),
                         child: Center(
+                          heightFactor: 1,
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(
+                            constraints: BoxConstraints(
                               maxWidth: _maxContentWidth,
+                              minHeight: minContentHeight,
                             ),
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                isNarrow ? 16 : 20,
-                                8,
-                                isNarrow ? 16 : 20,
-                                12,
-                              ),
-                              child: _AuthContent(
-                                title: title,
-                                subtitle: subtitle,
-                                form: form,
-                                footer: footer,
-                                isNarrow: isNarrow,
-                                showBackButton: showBackButton,
-                              ),
+                            child: _AuthContent(
+                              title: title,
+                              subtitle: subtitle,
+                              form: form,
+                              footer: footer,
+                              isNarrow: isNarrow,
+                              showBackButton: showBackButton,
+                              onBack: onBack,
                             ),
                           ),
                         ),
@@ -114,7 +130,73 @@ class CareersAuthScaffold extends StatelessWidget {
                 },
               ),
             ),
+            if (headerAction != null)
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 8,
+                right: isNarrow ? 16 : 20,
+                child: headerAction!,
+              ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Frosted action pinned to the top of the auth screens.
+class CareersAuthHeaderButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const CareersAuthHeaderButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.1),
+            shape: StadiumBorder(
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onPressed,
+              child: SizedBox(
+                height: 40,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 15, color: _AuthColors.text),
+                      const SizedBox(width: 6),
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.1,
+                          color: _AuthColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -128,6 +210,7 @@ class _AuthContent extends StatelessWidget {
   final List<Widget> footer;
   final bool isNarrow;
   final bool showBackButton;
+  final VoidCallback? onBack;
 
   const _AuthContent({
     required this.title,
@@ -136,11 +219,13 @@ class _AuthContent extends StatelessWidget {
     required this.footer,
     required this.isNarrow,
     required this.showBackButton,
+    required this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showBackButton)
@@ -149,44 +234,60 @@ class _AuthContent extends StatelessWidget {
             child: _BackButton(
               onPressed: () {
                 dismissKeyboard();
+                final back = onBack;
+                if (back != null) {
+                  back();
+                  return;
+                }
                 Navigator.of(context).pop();
               },
             ),
-          ),
-        const Spacer(flex: 2),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Image.asset(
-            'assets/logo/group.png',
-            height: isNarrow ? 36 : 42,
-            fit: BoxFit.contain,
-            semanticLabel: 'Pace Group',
-          ),
+          )
+        else
+          const SizedBox.shrink(),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Image.asset(
+                'assets/logo/group.png',
+                height: isNarrow ? 36 : 42,
+                fit: BoxFit.contain,
+                semanticLabel: 'Pace Group',
+              ),
+            ),
+            SizedBox(height: isNarrow ? 16 : 20),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: isNarrow ? 25 : 28,
+                fontWeight: FontWeight.w700,
+                color: _AuthColors.text,
+                letterSpacing: -0.9,
+                height: 1.1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                color: _AuthColors.textMuted,
+              ),
+            ),
+            SizedBox(height: isNarrow ? 18 : 22),
+            _GlassPanel(child: form),
+          ],
         ),
-        SizedBox(height: isNarrow ? 16 : 20),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: isNarrow ? 25 : 28,
-            fontWeight: FontWeight.w700,
-            color: _AuthColors.text,
-            letterSpacing: -0.9,
-            height: 1.1,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.4,
-            color: _AuthColors.textMuted,
-          ),
-        ),
-        SizedBox(height: isNarrow ? 18 : 22),
-        _GlassPanel(child: form),
-        const Spacer(flex: 3),
-        if (footer.isNotEmpty) ...[const SizedBox(height: 16), ...footer],
+        if (footer.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [const SizedBox(height: 16), ...footer],
+          )
+        else
+          const SizedBox.shrink(),
       ],
     );
   }
@@ -478,6 +579,209 @@ class _CareersAuthFieldState extends State<CareersAuthField> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class CareersAuthDropdownItem<T> {
+  final T value;
+  final String label;
+
+  const CareersAuthDropdownItem({required this.value, required this.label});
+}
+
+/// Glass select that matches [CareersAuthField], including loading and error.
+class CareersAuthDropdown<T> extends StatelessWidget {
+  final String label;
+  final String hint;
+  final IconData icon;
+  final T? value;
+  final List<CareersAuthDropdownItem<T>> items;
+  final ValueChanged<T?>? onChanged;
+  final FormFieldValidator<T>? validator;
+  final bool isLoading;
+  final String? loadError;
+  final VoidCallback? onRetry;
+  final String loadingLabel;
+
+  const CareersAuthDropdown({
+    super.key,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.validator,
+    this.isLoading = false,
+    this.loadError,
+    this.onRetry,
+    this.loadingLabel = 'Loading...',
+  });
+
+  OutlineInputBorder _border(Color color, [double width = 1]) {
+    return OutlineInputBorder(
+      borderRadius: _fieldRadius,
+      borderSide: BorderSide(color: color, width: width),
+    );
+  }
+
+  Widget _fieldLabel() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, bottom: 7),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.1,
+          color: _AuthColors.textMuted,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _fieldLabel(),
+        if (isLoading)
+          _StatusShell(
+            child: Row(
+              children: [
+                CupertinoActivityIndicator(color: _AuthColors.textMuted),
+                const SizedBox(width: 10),
+                Text(
+                  loadingLabel,
+                  style: TextStyle(fontSize: 15, color: _AuthColors.textMuted),
+                ),
+              ],
+            ),
+          )
+        else if (loadError != null)
+          _StatusShell(
+            borderColor: _AuthColors.error.withValues(alpha: 0.7),
+            child: Row(
+              children: [
+                const Icon(
+                  CupertinoIcons.exclamationmark_circle,
+                  size: 18,
+                  color: _AuthColors.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    loadError!,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                      color: _AuthColors.error,
+                    ),
+                  ),
+                ),
+                if (onRetry != null)
+                  CareersAuthTextAction(
+                    label: 'Retry',
+                    emphasized: true,
+                    onPressed: onRetry!,
+                  ),
+              ],
+            ),
+          )
+        else
+          DropdownButtonFormField<T>(
+            key: ValueKey<Object?>(value),
+            initialValue: value,
+            isExpanded: true,
+            menuMaxHeight: 280,
+            borderRadius: _fieldRadius,
+            dropdownColor: _AuthColors.indigoNight,
+            icon: Icon(
+              CupertinoIcons.chevron_down,
+              size: 16,
+              color: _AuthColors.textMuted,
+            ),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: _AuthColors.text,
+            ),
+            hint: Text(
+              hint,
+              style: TextStyle(fontSize: 15, color: _AuthColors.textSubtle),
+            ),
+            items: [
+              for (final item in items)
+                DropdownMenuItem<T>(
+                  value: item.value,
+                  child: Text(
+                    item.label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: _AuthColors.text,
+                    ),
+                  ),
+                ),
+            ],
+            onChanged: onChanged,
+            validator: validator,
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: WidgetStateColor.resolveWith(
+                (states) => states.contains(WidgetState.focused)
+                    ? _AuthColors.fieldFillFocused
+                    : _AuthColors.fieldFill,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 13,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 14, right: 10),
+                child: Icon(icon, size: 18, color: _AuthColors.textMuted),
+              ),
+              prefixIconConstraints: const BoxConstraints(minHeight: 0),
+              border: _border(_AuthColors.fieldBorder),
+              enabledBorder: _border(_AuthColors.fieldBorder),
+              focusedBorder: _border(_AuthColors.fieldBorderFocused, 1.2),
+              errorBorder: _border(_AuthColors.error.withValues(alpha: 0.7)),
+              focusedErrorBorder: _border(_AuthColors.error, 1.2),
+              errorStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: _AuthColors.error,
+              ),
+              errorMaxLines: 2,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _StatusShell extends StatelessWidget {
+  final Widget child;
+  final Color? borderColor;
+
+  const _StatusShell({required this.child, this.borderColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _AuthColors.fieldFill,
+        borderRadius: _fieldRadius,
+        border: Border.all(color: borderColor ?? _AuthColors.fieldBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: child,
+      ),
     );
   }
 }

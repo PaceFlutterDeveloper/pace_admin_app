@@ -9,7 +9,8 @@ class CareersUserManager {
       GetIt.instance<CareersUserService>();
 
   /// Set when someone continues as a guest during this process.
-  /// A fresh launch starts signed-out users on the login page again.
+  /// A saved candidate stays signed in across launches until they sign out.
+  /// A fresh launch shows the login page only when nobody is saved.
   static bool browsingAsGuest = false;
 
   /// Bumped when login or guest mode should reveal the jobs home tab.

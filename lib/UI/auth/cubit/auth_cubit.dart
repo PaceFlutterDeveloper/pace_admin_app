@@ -56,39 +56,22 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthState.loginFailure(res.left.message ?? "Something went wrong"));
     } else {
       if (res.right['status']) {
-        final exists = await AuthData.doesUserExist(
+        // Replaces a saved account for this school and activates the new token.
+        await AuthData.addNewUser(
           schoolCode: schoolCode,
           userName: userName,
+          password: password,
+          token: res.right['data']['token'],
+          designation: res.right['data']['designation'],
+          profilePicture: res.right['data']['photo'],
+          name: res.right['data']['name'],
           userId: res.right['data']['id'],
+          logo: res.right['data']['sch_logo'],
+          schoolName: res.right['data']['sch_name'],
         );
-        if (exists) {
-          emit(AuthState.loginFailure('User already exists'));
-        } else {
-          // Authentication is successful
-          // Add new user information without deactivating others
-          await AuthData.addNewUser(
-            schoolCode: schoolCode,
-            userName: userName,
-            password: password,
-            token: res.right['data']['token'],
-            designation: res.right['data']['designation'],
-            profilePicture: res.right['data']['photo'],
-            name: res.right['data']['name'],
-            userId: res.right['data']['id'],
-            logo: res.right['data']['sch_logo'],
-            schoolName: res.right['data']['sch_name'],
-          );
 
-          // After adding the new user, deactivate other users and set this one as active
-          // await AuthData.deactivateAllUsersExcept(
-          //   userName,
-          //   schoolCode,
-          //   res.right['data']['id'],
-          // );
-
-          // Emit loginSuccess to trigger GoRouter redirect
-          emit(const AuthState.loginSuccess());
-        }
+        Hive.box('settingsBox').put('signedInSurface', 'staff');
+        emit(const AuthState.loginSuccess());
       } else {
         emit(AuthState.loginFailure(res.right['message']));
       }
@@ -107,13 +90,14 @@ class AuthCubit extends Cubit<AuthState> {
     await box.put(
         'schoolCode', schoolCode); // Retrieve the selected school code
     context.read<HomeCubit>().getMenu();
-    // Emit loginSuccess to trigger GoRouter redirect
+    Hive.box('settingsBox').put('signedInSurface', 'staff');
     emit(const AuthState.userSwitch());
   }
 
   /// Logs out the active user by deactivating them
   void logout() async {
     await AuthData.logoutCurrentUser();
+    Hive.box('settingsBox').delete('signedInSurface');
     emit(const AuthState.loggedOut());
   }
 }
