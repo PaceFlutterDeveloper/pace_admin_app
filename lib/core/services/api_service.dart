@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:admin_app/core/error/error_exception.dart';
 import 'package:admin_app/core/services/careers_session_expired_handler.dart';
+import 'package:admin_app/core/services/staff_session_expired_handler.dart';
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 
@@ -286,7 +287,12 @@ class ApiService {
     DioException error, {
     required bool useSessionToken,
   }) {
-    if (!useSessionToken) return;
+    if (!useSessionToken) {
+      if (StaffSessionExpiredHandler.isExpiredSessionError(error)) {
+        StaffSessionExpiredHandler.handleExpired();
+      }
+      return;
+    }
     if (!CareersSessionExpiredHandler.isExpiredSessionError(error)) return;
     CareersSessionExpiredHandler.handleExpired();
   }

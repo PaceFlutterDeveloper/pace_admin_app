@@ -1,0 +1,52 @@
+---
+description: Staff mini-ERP foundation and careers isolation. Careers stays a frozen production system; staff work is the mobile layer for the nine schools.
+alwaysApply: true
+---
+
+# Staff mini-ERP foundation
+
+Smart PACE is one Flutter app with two audiences. Treat this as the product foundation for every session.
+
+## Two products
+
+- **Careers** is the candidate product already in production. It is an independent system. Do not change its screens, theme, auth, APIs, deep links, or notification behavior unless the user explicitly asks for a careers change.
+- **Staff** is the next product: a phone-sized mini-ERP for every staff member of the 9 schools — principals, supervisors, teachers, nannies, maintenance, admin staff, and directors. The desktop ERP stays the system of record. This app is for moderate operations and for reading important details without a desktop.
+- When staff UI work is requested, make it professional and as easy as a daily app such as Instagram: obvious, fast, and low-friction. Do not start a redesign until the user asks for a specific change.
+
+## Where each side lives
+
+Careers is frozen:
+
+- `lib/careers/**` (`jobs`, `application`, `user`, `shared`, `notification`)
+- Careers-only core: `lib/core/services/careers_session_expired_handler.dart`, `lib/core/utils/constants/job_share_links.dart`, `careersUserBox` in `lib/core/const/db_names.dart`, and the careers block in `lib/core/utils/constants/api_constant.dart` (`careersMediaBaseUrl` downward).
+- Careers routes in `lib/core/routes/app_routes.dart`: `/careers`, `/careers/index.php`, `/job-detail`, `/careers-profile`, `/careers-complete-profile`, plus `_resumeLocation` careers behavior and the careers redirect cases.
+
+Staff work belongs in `lib/staff/**`:
+
+- `home`, `auth`, `account` (personal info and password), `profile`, `attendance_calendar`, `face_attendance`, `class_attendance`, `students`, `tickets`, `transport`, `notification`, `components`, `roles`
+- New staff features go in `lib/staff/<feature>/` with `domain/`, `data/`, and `presentation/`. Dependencies point inward: presentation to domain, data to domain. Move an old staff screen into those layers only when that screen is already being changed.
+
+## Shared files
+
+These files wire both products. Edit only the staff branch. Leave careers behavior identical to production:
+
+- `lib/app.dart`
+- `lib/core/routes/app_routes.dart`
+- `lib/dependancy_injection.dart`
+- `lib/core/services/api_service.dart` (the careers session-expiry path stays as-is)
+- `lib/core/services/deep_link_service.dart`
+- `lib/staff/notification/services/notification_router.dart`
+- `lib/staff/notification/services/firebase_service.dart`
+- Staff endpoint helpers above the careers block in `lib/core/utils/constants/api_constant.dart`
+
+Do not restyle or refactor a shared widget in a way that changes a careers screen. Do not add new imports of staff UI into careers, or careers UI into staff. Existing cross-imports stay until a task explicitly separates them: careers `user_bloc.dart` uses the staff auth model, staff `login_page.dart` uses the careers auth scaffold, and `firebase_service.dart` uses the careers FCM helper.
+
+```dart
+// BAD — staff work editing a careers screen or careers route
+// lib/careers/jobs/pages/jobs_page.dart
+// Routes.careers redirect in app_routes.dart
+
+// GOOD — staff UI in a staff folder; careers files untouched
+// lib/staff/home/home_page.dart
+// a new staff route added beside the existing careers routes
+```

@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 
 class AuthenticationService {
@@ -33,9 +32,19 @@ class AuthenticationService {
         biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
-    } on PlatformException catch (e) {
-      log("❌ Authentication error: ${e.message}");
-      return true; // Allow access if authentication fails
+    } on LocalAuthException catch (e) {
+      // Cancel is a normal outcome (user dismissed Face ID / Touch ID).
+      // Do not grant access, and do not let it surface as an unhandled error.
+      if (e.code == LocalAuthExceptionCode.userCanceled ||
+          e.code == LocalAuthExceptionCode.systemCanceled) {
+        log("Authentication canceled.");
+        return false;
+      }
+      log("Authentication error: ${e.code.name} ${e.description}");
+      return false;
+    } catch (e) {
+      log("Authentication error: $e");
+      return false;
     }
   }
 }

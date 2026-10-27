@@ -112,19 +112,19 @@ curl "https://paceeducation.com/careers/erp-api/get-profile.php?cand_id=YOUR_ID"
 
 ## 📋 Files Modified
 
-1. `lib/UI/public/user/pages/complete_profile_page.dart`
+1. `lib/careers/user/pages/complete_profile_page.dart`
    - Added profile fetching logic
    - Added loading state
    - Added debug logging
 
-2. `lib/UI/public/user/bloc/user_bloc.dart`
+2. `lib/careers/user/bloc/user_bloc.dart`
    - Added `_onGetFullProfile` handler
    - Added `ProfileApiService` integration
 
-3. `lib/UI/public/user/bloc/user_events.dart`
+3. `lib/careers/user/bloc/user_events.dart`
    - Added `GetFullProfileEvent`
 
-4. `lib/UI/public/user/bloc/user_states.dart`
+4. `lib/careers/user/bloc/user_states.dart`
    - Added `FullProfileLoading`
    - Added `FullProfileSuccess`
    - Added `FullProfileError`

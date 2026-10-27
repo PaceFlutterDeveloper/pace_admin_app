@@ -17,8 +17,8 @@ These were left in place. Do not recreate them.
 - Route `Routes.nfcMapping` (`/nfcMapping`) and `NfcMapyScreen` in `lib/core/routes/app_routes.dart`
 - `NfcProvider` registration in `lib/app.dart`
 - `NfcMappRepository` registration in `lib/dependancy_injection.dart`
-- NFC mapping API in `lib/UI/employee/transport/nfc_mappy/repository/repository.dart`
-- Menu icon case `'nfcMapping'` in `lib/UI/home/components/menu_component.dart`
+- NFC mapping API in `lib/staff/transport/nfc_mappy/repository/repository.dart`
+- Menu icon case `'nfcMapping'` in `lib/staff/home/components/menu_component.dart`
 - Attendance bloc, page, and `CaptureAndVerifyFaceUseCase` registration
 - Face ID (`NSFaceIDUsageDescription` and `local_auth`). That is account unlock, not face detection.
 - Photo library permission strings
@@ -132,23 +132,23 @@ Run this from the repo root. It overwrites the careers-build stubs with the impl
 
 ```bash
 git checkout ce36fce65486154d38503adb6a79fed26c8c685a -- \
-  lib/UI/employee/transport/nfc_mappy/provider/nfc_provider.dart \
-  lib/UI/employee/transport/nfc_mappy/nfc_available.dart \
-  lib/UI/employee/transport/nfc_mappy/widgets/barcode_scanner_page.dart \
-  lib/features/attendance/domain/usecases/capture_and_verify_face_usecase.dart \
-  lib/features/attendance/presentation/widgets/face_capture_widget.dart \
-  lib/features/attendance/presentation/bloc/attendance_event.dart \
-  lib/features/attendance/presentation/bloc/attendance_bloc.dart \
-  lib/features/attendance/presentation/pages/attendance_page.dart \
-  lib/features/attendance/utils/attendance_permissions_helper.dart \
-  lib/UI/home/home_page.dart \
-  lib/UI/home/data/dummy_home_menu.dart \
+  lib/staff/transport/nfc_mappy/provider/nfc_provider.dart \
+  lib/staff/transport/nfc_mappy/nfc_available.dart \
+  lib/staff/transport/nfc_mappy/widgets/barcode_scanner_page.dart \
+  lib/staff/face_attendance/domain/usecases/capture_and_verify_face_usecase.dart \
+  lib/staff/face_attendance/presentation/widgets/face_capture_widget.dart \
+  lib/staff/face_attendance/presentation/bloc/attendance_event.dart \
+  lib/staff/face_attendance/presentation/bloc/attendance_bloc.dart \
+  lib/staff/face_attendance/presentation/pages/attendance_page.dart \
+  lib/staff/face_attendance/utils/attendance_permissions_helper.dart \
+  lib/staff/home/home_page.dart \
+  lib/staff/home/data/dummy_home_menu.dart \
   lib/core/widgets/app_glass_nav_bar.dart
 ```
 
 If that commit is no longer reachable, the sections below describe what each file lost.
 
-### NFC hardware — `lib/UI/employee/transport/nfc_mappy/provider/nfc_provider.dart`
+### NFC hardware — `lib/staff/transport/nfc_mappy/provider/nfc_provider.dart`
 
 The careers build reports NFC as unavailable and never starts a session. The HTTP mapping method `upinsert` is still there.
 
@@ -167,7 +167,7 @@ And implement again:
 - `_extractTagId()` using `NfcTagAndroid` on Android and `MiFareIos` / `Iso7816Ios` / `Iso15693Ios` / `FeliCaIos` on iOS
 - `_stopSession()` and `_safeStopSession()`
 
-### Student barcode — `lib/UI/employee/transport/nfc_mappy/nfc_available.dart` and `widgets/barcode_scanner_page.dart`
+### Student barcode — `lib/staff/transport/nfc_mappy/nfc_available.dart` and `widgets/barcode_scanner_page.dart`
 
 `_scanStudentCode()` must request `Permission.camera`, open `BarcodeScannerPage`, and keep only the digits from the scan.
 
@@ -177,13 +177,13 @@ And implement again:
 
 | File | Careers build | Restore |
 | --- | --- | --- |
-| `lib/features/attendance/presentation/widgets/face_capture_widget.dart` | Static “not available” message. No camera. | Front-camera preview, 3-second auto capture, `CameraController`, callback `(XFile file, int sensorOrientation)`. |
-| `lib/features/attendance/domain/usecases/capture_and_verify_face_usecase.dart` | Always returns “Face verification is not available in this version.” | ML Kit `FaceDetector` on the captured JPEG: one face, centered, not low light, then compress to 800px. Takes an `XFile`. |
-| `lib/features/attendance/presentation/bloc/attendance_event.dart` | `FaceCapturedEvent.imagePath` is a `String`. | `import 'package:camera/camera.dart';` and `final XFile image`. |
-| `lib/features/attendance/presentation/bloc/attendance_bloc.dart` | Passes `event.imagePath` into the use case. | Pass `event.image` (`XFile`) and log `event.image.path`. |
-| `lib/features/attendance/presentation/pages/attendance_page.dart` | Same callback shape, but the file is a `String`. | Pass the `XFile` from `FaceCaptureWidget` into `FaceCapturedEvent`. |
+| `lib/staff/face_attendance/presentation/widgets/face_capture_widget.dart` | Static “not available” message. No camera. | Front-camera preview, 3-second auto capture, `CameraController`, callback `(XFile file, int sensorOrientation)`. |
+| `lib/staff/face_attendance/domain/usecases/capture_and_verify_face_usecase.dart` | Always returns “Face verification is not available in this version.” | ML Kit `FaceDetector` on the captured JPEG: one face, centered, not low light, then compress to 800px. Takes an `XFile`. |
+| `lib/staff/face_attendance/presentation/bloc/attendance_event.dart` | `FaceCapturedEvent.imagePath` is a `String`. | `import 'package:camera/camera.dart';` and `final XFile image`. |
+| `lib/staff/face_attendance/presentation/bloc/attendance_bloc.dart` | Passes `event.imagePath` into the use case. | Pass `event.image` (`XFile`) and log `event.image.path`. |
+| `lib/staff/face_attendance/presentation/pages/attendance_page.dart` | Same callback shape, but the file is a `String`. | Pass the `XFile` from `FaceCaptureWidget` into `FaceCapturedEvent`. |
 
-### Attendance permission prompt — `lib/features/attendance/utils/attendance_permissions_helper.dart`
+### Attendance permission prompt — `lib/staff/face_attendance/utils/attendance_permissions_helper.dart`
 
 `areMarkAttendancePermissionsGranted()` must require both location and `Permission.camera`.
 
@@ -195,7 +195,7 @@ And implement again:
 
 ### Entry points that were hidden
 
-**Home card** in `lib/UI/home/home_page.dart`, in the Tools section, before the Profile card. Also restore `import 'package:google_fonts/google_fonts.dart';`.
+**Home card** in `lib/staff/home/home_page.dart`, in the Tools section, before the Profile card. Also restore `import 'package:google_fonts/google_fonts.dart';`.
 
 The card title is `NFC Mapping`, subtitle `Configure NFC tags & access points`, and `onTap` is `context.push(Routes.nfcMapping.path)`.
 
@@ -216,7 +216,7 @@ The Mark Attendance dialog on that page must again say location and camera are u
 
 `glassShellTabIndex` must use those same indexes. The careers build uses 6 for Profile, 3 for Alerts, 4 for Reports, and 5 for Schedule.
 
-**Debug menu** in `lib/UI/home/data/dummy_home_menu.dart`. Restore the dummy item after Staff profile:
+**Debug menu** in `lib/staff/home/data/dummy_home_menu.dart`. Restore the dummy item after Staff profile:
 
 - `id`: `dummy-nfc`
 - `menuKey`: `dummy_nfc`

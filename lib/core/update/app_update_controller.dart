@@ -29,8 +29,9 @@ class AppUpdateController extends ChangeNotifier {
     unawaited(_apply(json, epoch));
   }
 
-  /// One jobs request for cold starts that never load the jobs list.
-  /// Skipped once any jobs payload has already been evaluated.
+  /// One jobs request for careers cold starts that never load the jobs list.
+  /// Staff must not call this. Skipped once any jobs payload has already
+  /// been evaluated.
   Future<void> check() async {
     if (_settled || _checkStarted) return;
     _checkStarted = true;

@@ -46,6 +46,22 @@ class ApiConstants {
     return "${baseUrl}index.php?page=userMenu";
   }
 
+  static Future<String> getEvents() async {
+    String baseUrl = await getBaseUrl();
+    return "${baseUrl}index.php?page=events";
+  }
+
+  /// `index.php?page=<page>` on the active school host.
+  static Future<String> staffPage(String page) async {
+    String baseUrl = await getBaseUrl();
+    return "${baseUrl}index.php?page=$page";
+  }
+
+  static Future<String> getTasks() async {
+    String baseUrl = await getBaseUrl();
+    return "${baseUrl}index.php?page=tasks";
+  }
+
   // API Endpoints for getting employee profile
   static Future<String> getEmpProfile() async {
     String baseUrl = await getBaseUrl();

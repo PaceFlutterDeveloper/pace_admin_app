@@ -89,7 +89,7 @@ This document lists the API integrations that are **missing** from the Flutter a
 
 ## 4. Attendance / geofence / face verification (contract TBD)
 
-Geofence config, attendance submission, and face-verification endpoints are **not finalized**. Product/managers will define paths, payloads, and auth (e.g. `GET .../school-geofence`, `POST .../attendance/mark`). The Flutter layer under `lib/features/attendance/` uses placeholder or provisional URLs in `ApiConstants` / `AttendanceRemoteDataSource` — **update request/response models and repository mapping when the backend contract is ready.**
+Geofence config, attendance submission, and face-verification endpoints are **not finalized**. Product/managers will define paths, payloads, and auth (e.g. `GET .../school-geofence`, `POST .../attendance/mark`). The Flutter layer under `lib/staff/face_attendance/` uses placeholder or provisional URLs in `ApiConstants` / `AttendanceRemoteDataSource` — **update request/response models and repository mapping when the backend contract is ready.**
 
 ## Implementation Priority
 
@@ -112,20 +112,20 @@ Geofence config, attendance submission, and face-verification endpoints are **no
 ## Files That Need Creation/Updates
 
 ### New Files to Create
-1. `lib/UI/public/profile/services/profile_api_service.dart` - Profile management APIs
-2. `lib/UI/public/profile/bloc/profile_bloc.dart` - Profile state management
-3. `lib/UI/public/profile/bloc/profile_events.dart` - Profile events
-4. `lib/UI/public/profile/bloc/profile_states.dart` - Profile states
-5. `lib/UI/public/profile/pages/profile_page.dart` - Main profile UI
-6. `lib/UI/public/profile/components/education_form.dart` - Education input form
-7. `lib/UI/public/profile/components/experience_form.dart` - Experience input form
+1. `lib/careers/profile/services/profile_api_service.dart` - Profile management APIs
+2. `lib/careers/profile/bloc/profile_bloc.dart` - Profile state management
+3. `lib/careers/profile/bloc/profile_events.dart` - Profile events
+4. `lib/careers/profile/bloc/profile_states.dart` - Profile states
+5. `lib/careers/profile/pages/profile_page.dart` - Main profile UI
+6. `lib/careers/profile/components/education_form.dart` - Education input form
+7. `lib/careers/profile/components/experience_form.dart` - Experience input form
 
 ### Files to Update
 1. ✅ `lib/core/utils/constants/api_constant.dart` - **DONE** - All profile endpoints added
-2. `lib/UI/public/application/services/application_api_service.dart` - Add apply-job method
-3. `lib/UI/public/jobs/components/apply_dialog.dart` - Connect to actual API
-4. `lib/UI/public/jobs/services/jobs_api_service.dart` - Add countries fetching if missing
-5. ✅ Profile models and services created in `lib/UI/public/user/`
+2. `lib/careers/application/services/application_api_service.dart` - Add apply-job method
+3. `lib/careers/jobs/components/apply_dialog.dart` - Connect to actual API
+4. `lib/careers/jobs/services/jobs_api_service.dart` - Add countries fetching if missing
+5. ✅ Profile models and services created in `lib/careers/user/`
 
 ## Implementation Notes
 

@@ -81,14 +81,14 @@ If face attendance is restored in the same pass, also add `PERMISSION_CAMERA=1` 
 
 ## 4. Dart
 
-### `lib/features/attendance/utils/attendance_permissions_helper.dart`
+### `lib/staff/face_attendance/utils/attendance_permissions_helper.dart`
 
 Restore imports:
 
 ```dart
 import 'dart:async';
 
-import 'package:admin_app/features/attendance/utils/attendance_logger.dart';
+import 'package:admin_app/staff/face_attendance/utils/attendance_logger.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -175,7 +175,7 @@ Future<AttendancePermissionOutcome> requestMarkAttendancePermissions() async {
 
 `Permission.locationAlways.request()` is the background-location prompt. Remove that block if you restore while-in-use location only and want to stay off Play’s background-location review.
 
-### `lib/features/attendance/data/repositories/attendance_repository_impl.dart`
+### `lib/staff/face_attendance/data/repositories/attendance_repository_impl.dart`
 
 Add:
 
@@ -254,7 +254,7 @@ Future<Either<Failure, GeofenceCheckResult>> checkGeofence() async {
 
 `submitAttendance()` already calls `checkGeofence()`. Restoring this method restores that gate.
 
-### `lib/features/attendance/presentation/bloc/attendance_bloc.dart`
+### `lib/staff/face_attendance/presentation/bloc/attendance_bloc.dart`
 
 Add `import 'dart:async';` and `import 'package:geolocator/geolocator.dart';`.
 
@@ -296,13 +296,13 @@ Future<void> close() {
 
 `_onInitializeAttendance` already calls `_startBackgroundLocationMonitoring()` after permissions succeed. No other change is required there.
 
-### `lib/UI/home/home_page.dart`
+### `lib/staff/home/home_page.dart`
 
 Restore:
 
 ```dart
 import 'package:admin_app/core/widgets/app_dialogs.dart';
-import 'package:admin_app/features/attendance/utils/attendance_permissions_helper.dart';
+import 'package:admin_app/staff/face_attendance/utils/attendance_permissions_helper.dart';
 import 'package:flutter/scheduler.dart';
 ```
 

@@ -1,6 +1,6 @@
-import 'package:admin_app/UI/notification/services/firebase_messaging_background.dart';
-import 'package:admin_app/UI/notification/services/firebase_service.dart';
-import 'package:admin_app/UI/notification/services/notification_service.dart';
+import 'package:admin_app/staff/notification/services/firebase_messaging_background.dart';
+import 'package:admin_app/staff/notification/services/firebase_service.dart';
+import 'package:admin_app/staff/notification/services/notification_service.dart';
 import 'package:admin_app/app.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/firebase_options.dart';

@@ -1,4 +1,4 @@
-import 'package:admin_app/features/attendance/data/models/geofence_config_model.dart';
+import 'package:admin_app/staff/face_attendance/data/models/geofence_config_model.dart';
 
 /// Default campus boundary when the geofence API is unavailable and Hive has no cache.
 abstract final class AttendanceGeofenceFallback {

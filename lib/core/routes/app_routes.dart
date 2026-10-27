@@ -1,44 +1,56 @@
 import 'dart:developer';
 
-import 'package:admin_app/UI/auth/cubit/auth_cubit.dart';
-import 'package:admin_app/UI/auth/login_page.dart';
-import 'package:admin_app/UI/auth/models/auth_model.dart';
-import 'package:admin_app/UI/auth/users_page.dart';
-import 'package:admin_app/UI/class_attendance/page/grade_attendance_page.dart';
-import 'package:admin_app/UI/components/scaffold_with_navbar.dart';
-import 'package:admin_app/UI/employee/attendance/page/emp_attendance_page.dart';
-import 'package:admin_app/UI/employee/profile/page/profile_page.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_bloc.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_event.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/pages/manage_ticket_detail_page.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/pages/manage_ticket_list_page.dart';
-import 'package:admin_app/UI/employee/tickets/tickets/cubit/tickets_cubit.dart';
-import 'package:admin_app/UI/employee/tickets/tickets/pages/ticket_detail_page.dart';
-import 'package:admin_app/UI/employee/tickets/tickets/pages/ticket_listing_page.dart';
-import 'package:admin_app/UI/employee/transport/nfc_mappy/page/page.dart';
-import 'package:admin_app/UI/home/components/sub_menu_page.dart';
-import 'package:admin_app/UI/home/home_page.dart';
-import 'package:admin_app/UI/home/models/menu_model.dart';
-import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
-import 'package:admin_app/UI/notification/page/notification_page.dart';
-import 'package:admin_app/UI/profile/components/update_password_page.dart';
-import 'package:admin_app/UI/public/application/bloc/application_bloc.dart';
-import 'package:admin_app/UI/public/jobs/bloc/jobs_bloc.dart';
-import 'package:admin_app/UI/public/jobs/pages/job_detail_page.dart';
-import 'package:admin_app/UI/public/jobs/pages/jobs_page.dart';
-import 'package:admin_app/UI/public/jobs/services/jobs_api_service.dart';
-import 'package:admin_app/UI/public/shared/theme/careers_theme.dart';
-import 'package:admin_app/UI/public/user/bloc/profile/careers_profile_bloc.dart';
-import 'package:admin_app/UI/public/user/services/careers_user_service.dart';
-import 'package:admin_app/UI/public/user/pages/complete_profile/complete_profile_page.dart';
-import 'package:admin_app/UI/students/pages/students_page.dart';
+import 'package:admin_app/staff/auth/cubit/auth_cubit.dart';
+import 'package:admin_app/staff/auth/login_page.dart';
+import 'package:admin_app/staff/auth/models/auth_model.dart';
+import 'package:admin_app/staff/auth/users_page.dart';
+import 'package:admin_app/staff/class_attendance/page/grade_attendance_page.dart';
+import 'package:admin_app/staff/shell/staff_shell.dart';
+import 'package:admin_app/staff/theme/staff_theme.dart';
+import 'package:admin_app/staff/home/menu/staff_menu_page.dart';
+import 'package:admin_app/staff/events/presentation/events_page.dart';
+import 'package:admin_app/staff/home/pages/staff_coming_soon_page.dart';
+import 'package:admin_app/staff/tasks/presentation/tasks_page.dart';
+import 'package:admin_app/staff/attendance_calendar/page/emp_attendance_page.dart';
+import 'package:admin_app/staff/profile/page/profile_page.dart';
+import 'package:admin_app/staff/tickets/manage_tickets/bloc/list/manage_ticket_list_bloc.dart';
+import 'package:admin_app/staff/tickets/manage_tickets/bloc/list/manage_ticket_list_event.dart';
+import 'package:admin_app/staff/tickets/manage_tickets/pages/manage_ticket_detail_page.dart';
+import 'package:admin_app/staff/tickets/manage_tickets/pages/manage_ticket_list_page.dart';
+import 'package:admin_app/staff/tickets/tickets/cubit/tickets_cubit.dart';
+import 'package:admin_app/staff/tickets/tickets/pages/ticket_detail_page.dart';
+import 'package:admin_app/staff/tickets/tickets/pages/ticket_listing_page.dart';
+import 'package:admin_app/staff/transport/nfc_mappy/page/page.dart';
+import 'package:admin_app/staff/home/components/sub_menu_page.dart';
+import 'package:admin_app/staff/home/home_page.dart';
+import 'package:admin_app/staff/home/models/menu_model.dart';
+import 'package:admin_app/staff/notification/cubit/notification_cubit.dart';
+import 'package:admin_app/staff/notification/page/notification_page.dart';
+import 'package:admin_app/staff/account/components/update_password_page.dart';
+import 'package:admin_app/staff/leave/presentation/leave_page.dart';
+import 'package:admin_app/staff/approvals/presentation/approvals_page.dart';
+import 'package:admin_app/staff/notices/presentation/notices_page.dart';
+import 'package:admin_app/staff/directory/presentation/directory_page.dart';
+import 'package:admin_app/staff/timetable/presentation/timetable_page.dart';
+import 'package:admin_app/staff/reports/presentation/reports_page.dart';
+import 'package:admin_app/staff/notification_settings/presentation/notification_settings_page.dart';
+import 'package:admin_app/careers/application/bloc/application_bloc.dart';
+import 'package:admin_app/careers/jobs/bloc/jobs_bloc.dart';
+import 'package:admin_app/careers/jobs/pages/job_detail_page.dart';
+import 'package:admin_app/careers/jobs/pages/jobs_page.dart';
+import 'package:admin_app/careers/jobs/services/jobs_api_service.dart';
+import 'package:admin_app/careers/shared/theme/careers_theme.dart';
+import 'package:admin_app/careers/user/bloc/profile/careers_profile_bloc.dart';
+import 'package:admin_app/careers/user/services/careers_user_service.dart';
+import 'package:admin_app/careers/user/pages/complete_profile/complete_profile_page.dart';
+import 'package:admin_app/staff/students/pages/students_page.dart';
 import 'package:admin_app/core/routes/shell_route_observer.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/utils/dismiss_keyboard.dart';
 import 'package:admin_app/core/update/app_update_controller.dart';
 import 'package:admin_app/core/utils/go_router_refresh_stream.dart';
 import 'package:admin_app/dependancy_injection.dart';
-import 'package:admin_app/features/attendance/presentation/pages/attendance_page.dart';
+import 'package:admin_app/staff/face_attendance/presentation/pages/attendance_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,6 +72,10 @@ String _resumeLocation() {
   if (_hasActiveStaff()) return Routes.home.path;
   return Routes.careers.path;
 }
+
+/// Staff launches stay off the careers jobs API. Careers still uses it for
+/// the minimum app version when the jobs list has not loaded yet.
+bool opensStaffHome() => _resumeLocation() == Routes.home.path;
 
 final List<String> globalPaths = [
   Routes.home.path,
@@ -91,6 +107,48 @@ int? _jobIdFromGoState(GoRouterState state) {
   return int.tryParse(state.uri.queryParameters['job_id'] ?? '');
 }
 
+/// How long a dock destination takes to fade in.
+const Duration _staffTabFade = Duration(milliseconds: 220);
+
+/// Dock destinations, and the transparent drill-downs (notification centre,
+/// sub menus), fade through: the previous tab fades out in the first
+/// part of the transition, then the new tab fades in. The staff pages are
+/// transparent over the shell backdrop, so a plain fade-in or slide would show
+/// both tabs merged on top of each other.
+Page<void> _staffFadePage(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    name: state.name,
+    child: child,
+    transitionDuration: _staffTabFade,
+    transitionsBuilder: (context, animation, secondaryAnimation, page) {
+      final fadeIn = CurvedAnimation(
+        parent: animation,
+        curve: const Interval(0.4, 1, curve: Curves.easeOut),
+      );
+      final fadeOut = ReverseAnimation(
+        CurvedAnimation(
+          parent: secondaryAnimation,
+          curve: const Interval(0, 0.4, curve: Curves.easeIn),
+        ),
+      );
+      return FadeTransition(
+        opacity: fadeOut,
+        child: FadeTransition(opacity: fadeIn, child: page),
+      );
+    },
+  );
+}
+
+/// Screen title: the API menu name when the page was opened from the menu.
+String _menuTitle(GoRouterState state, String fallback) {
+  final extra = state.extra;
+  if (extra is MenuModel && extra.menuName.trim().isNotEmpty) {
+    return extra.menuName.trim();
+  }
+  return fallback;
+}
+
 class AppRoute {
   static late BuildContext context;
 
@@ -110,76 +168,115 @@ class AppRoute {
         navigatorKey: _shellNavigatorKey,
         observers: [shellRouteObserver, DismissKeyboardNavigatorObserver()],
         builder: (context, state, child) {
-          return ScaffoldWithNavBar(child: child);
+          return StaffTheme.wrap(StaffShell(child: child));
         },
         routes: [
           GoRoute(
             path: Routes.home.path,
             name: Routes.home.name,
-            builder: (_, __) => const HomeScreen(),
+            pageBuilder: (_, state) =>
+                _staffFadePage(state, const HomeScreen()),
           ),
           GoRoute(
-            path: Routes.navAttendance.path,
-            name: Routes.navAttendance.name,
-            builder: (context, _) => Scaffold(
-              body: Center(
-                child: Text(
-                  'Attendance',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
+            path: Routes.menu.path,
+            name: Routes.menu.name,
+            pageBuilder: (_, state) =>
+                _staffFadePage(state, const StaffMenuPage()),
+          ),
+          GoRoute(
+            path: Routes.tasks.path,
+            name: Routes.tasks.name,
+            pageBuilder: (_, state) => _staffFadePage(state, const TasksPage()),
+          ),
+          GoRoute(
+            path: Routes.events.path,
+            name: Routes.events.name,
+            pageBuilder: (_, state) =>
+                _staffFadePage(state, const EventsPage()),
+          ),
+          GoRoute(
+            path: Routes.leave.path,
+            name: Routes.leave.name,
+            builder: (_, state) => LeavePage(title: _menuTitle(state, 'Leave')),
+          ),
+          GoRoute(
+            path: Routes.approvals.path,
+            name: Routes.approvals.name,
+            builder: (_, state) =>
+                ApprovalsPage(title: _menuTitle(state, 'Approvals')),
+          ),
+          GoRoute(
+            path: Routes.notices.path,
+            name: Routes.notices.name,
+            builder: (_, state) =>
+                NoticesPage(title: _menuTitle(state, 'Notices')),
+          ),
+          GoRoute(
+            path: Routes.staff.path,
+            name: Routes.staff.name,
+            builder: (_, state) =>
+                DirectoryPage(title: _menuTitle(state, 'Staff')),
+          ),
+          GoRoute(
+            path: Routes.timetable.path,
+            name: Routes.timetable.name,
+            builder: (_, state) =>
+                TimetablePage(title: _menuTitle(state, 'Timetable')),
+          ),
+          GoRoute(
+            path: Routes.reports.path,
+            name: Routes.reports.name,
+            builder: (_, state) =>
+                ReportsPage(title: _menuTitle(state, 'Reports')),
+          ),
+          GoRoute(
+            path: Routes.notificationSettings.path,
+            name: Routes.notificationSettings.name,
+            builder: (_, state) => NotificationSettingsPage(
+              title: _menuTitle(state, 'Notification settings'),
             ),
           ),
           GoRoute(
-            path: Routes.navReports.path,
-            name: Routes.navReports.name,
-            builder: (context, _) => Scaffold(
-              body: Center(
-                child: Text(
-                  'Reports',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-            ),
-          ),
-          GoRoute(
-            path: Routes.navSchedule.path,
-            name: Routes.navSchedule.name,
-            builder: (context, _) => Scaffold(
-              body: Center(
-                child: Text(
-                  'Schedule',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
+            path: Routes.comingSoon.path,
+            name: Routes.comingSoon.name,
+            builder: (_, state) => StaffComingSoonPage(
+              args: state.extra is ComingSoonArgs
+                  ? state.extra as ComingSoonArgs
+                  : ComingSoonArgs.settings,
             ),
           ),
           GoRoute(
             path: Routes.getNotifications.path,
             name: Routes.getNotifications.name,
-            builder: (_, __) => BlocProvider.value(
-              value: locator<NotificationCubit>()..fetchNotifications(),
-              child: const NotificationPage(),
+            pageBuilder: (_, state) => _staffFadePage(
+              state,
+              BlocProvider.value(
+                value: locator<NotificationCubit>()..fetchNotifications(),
+                child: const NotificationPage(),
+              ),
             ),
           ),
           GoRoute(
             path: Routes.subMenuPage.path,
             name: Routes.subMenuPage.name,
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final menuModel = state.extra as MenuModel;
 
-              return SubMenuPage(menuModel: menuModel);
+              return _staffFadePage(state, SubMenuPage(menuModel: menuModel));
             },
           ),
           GoRoute(
             path: Routes.userProfile.path,
             name: Routes.userProfile.name,
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final menuModel = state.extra is MenuModel
                   ? state.extra as MenuModel
                   : null;
 
-              return ProfilePage(appTitle: menuModel?.menuName ?? 'My Profile');
+              return _staffFadePage(
+                state,
+                ProfilePage(appTitle: menuModel?.menuName ?? 'My Profile'),
+              );
             },
           ),
           GoRoute(
@@ -373,7 +470,7 @@ class AppRoute {
       GoRoute(
         path: Routes.updatePassword.path,
         name: Routes.updatePassword.name,
-        builder: (_, __) => UpdatePasswordScreen(),
+        builder: (_, __) => StaffTheme.wrap(const UpdatePasswordScreen()),
       ),
       GoRoute(
         path: Routes.loginPage.path,
@@ -385,12 +482,12 @@ class AppRoute {
       GoRoute(
         path: Routes.usersPage.path,
         name: Routes.usersPage.name,
-        builder: (_, __) => const UsersPage(),
+        builder: (_, __) => StaffTheme.wrap(const UsersPage()),
       ),
       GoRoute(
         path: Routes.nfcMapping.path,
         name: Routes.nfcMapping.name,
-        builder: (_, __) => const NfcMapyScreen(),
+        builder: (_, __) => StaffTheme.wrap(const NfcMapyScreen()),
       ),
     ],
     redirect: (_, GoRouterState state) async {
@@ -476,10 +573,20 @@ enum Routes {
   /// Face + geofence check-in (new). Legacy calendar stays on [userAttendance].
   faceAttendance('/faceAttendance'),
 
-  /// Bottom-nav placeholders (scrollable shell tabs).
-  navAttendance('/navAttendance'),
-  navReports('/navReports'),
-  navSchedule('/navSchedule');
+  /// Staff dock destinations and the shared coming-soon page.
+  menu('/menu'),
+  tasks('/tasks'),
+  events('/events'),
+  comingSoon('/comingSoon'),
+
+  /// Modules the API menu lists by these page names.
+  leave('/leave'),
+  approvals('/approvals'),
+  notices('/notices'),
+  staff('/staff'),
+  timetable('/timetable'),
+  reports('/reports'),
+  notificationSettings('/notificationSettings');
 
   final String path;
 

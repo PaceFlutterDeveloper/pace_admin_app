@@ -1,19 +1,19 @@
-import 'package:admin_app/UI/auth/cubit/auth_cubit.dart';
-import 'package:admin_app/UI/auth/login_page.dart';
-import 'package:admin_app/UI/class_attendance/cubit/grade_attendance_cubit.dart';
-import 'package:admin_app/UI/employee/attendance/cubit/attendance_cubit.dart';
-import 'package:admin_app/UI/employee/profile/cubit/profile_cubit.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/detail/manage_ticket_detail_bloc.dart';
-import 'package:admin_app/UI/employee/tickets/manage_tickets/bloc/list/manage_ticket_list_bloc.dart';
-import 'package:admin_app/UI/employee/tickets/tickets/cubit/tickets_cubit.dart';
-import 'package:admin_app/UI/employee/transport/nfc_mappy/provider/nfc_provider.dart';
-import 'package:admin_app/UI/home/cubit/home_cubit.dart';
-import 'package:admin_app/UI/notification/cubit/notification_cubit.dart';
-import 'package:admin_app/UI/notification/services/firebase_service.dart';
-import 'package:admin_app/UI/public/user/bloc/user_bloc.dart';
-import 'package:admin_app/UI/public/user/components/logout_dialog.dart';
-import 'package:admin_app/UI/students/bloc/student_attendance_bloc.dart';
-import 'package:admin_app/UI/students/cubit/students_cubit.dart';
+import 'package:admin_app/staff/auth/cubit/auth_cubit.dart';
+import 'package:admin_app/staff/auth/login_page.dart';
+import 'package:admin_app/staff/class_attendance/cubit/grade_attendance_cubit.dart';
+import 'package:admin_app/staff/attendance_calendar/cubit/attendance_cubit.dart';
+import 'package:admin_app/staff/profile/cubit/profile_cubit.dart';
+import 'package:admin_app/staff/tickets/manage_tickets/bloc/detail/manage_ticket_detail_bloc.dart';
+import 'package:admin_app/staff/tickets/manage_tickets/bloc/list/manage_ticket_list_bloc.dart';
+import 'package:admin_app/staff/tickets/tickets/cubit/tickets_cubit.dart';
+import 'package:admin_app/staff/transport/nfc_mappy/provider/nfc_provider.dart';
+import 'package:admin_app/staff/home/cubit/home_cubit.dart';
+import 'package:admin_app/staff/notification/cubit/notification_cubit.dart';
+import 'package:admin_app/staff/notification/services/firebase_service.dart';
+import 'package:admin_app/careers/user/bloc/user_bloc.dart';
+import 'package:admin_app/careers/user/components/logout_dialog.dart';
+import 'package:admin_app/staff/students/bloc/student_attendance_bloc.dart';
+import 'package:admin_app/staff/students/cubit/students_cubit.dart';
 import 'package:admin_app/config/themes/app_theme.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/services/deep_link_service.dart';
@@ -21,7 +21,7 @@ import 'package:admin_app/core/update/app_update_controller.dart';
 import 'package:admin_app/core/update/force_update_screen.dart';
 import 'package:admin_app/core/themes/const_colors.dart';
 import 'package:admin_app/dependancy_injection.dart';
-import 'package:admin_app/features/attendance/presentation/bloc/attendance_bloc.dart';
+import 'package:admin_app/staff/face_attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -59,7 +59,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      locator<AppUpdateController>().check();
+      if (!opensStaffHome()) {
+        locator<AppUpdateController>().check();
+      }
       FirebaseService.handlePendingInitialMessage();
       FirebaseService.restoreCareersTopics();
       DeepLinkService.instance.start();

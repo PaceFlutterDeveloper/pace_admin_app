@@ -15,11 +15,11 @@ The careers module lets **candidates** browse Pace Group jobs and (when fully wi
 
 | Area | Primary paths | Role |
 |------|----------------|------|
-| Jobs listing | `lib/UI/public/jobs/pages/jobs_page.dart` | Search, filter, browse jobs |
-| Job detail | `lib/UI/public/jobs/pages/job_detail_page.dart` | View job + apply entry point |
-| Candidate auth | `lib/UI/public/user/pages/login_page.dart`, `signup_page.dart` | Login / register |
-| Profile | `lib/UI/public/user/pages/profile_page.dart`, `complete_profile_page.dart` | View / edit candidate profile |
-| Applications | `lib/UI/public/application/` | My applications (built, not wired) |
+| Jobs listing | `lib/careers/jobs/pages/jobs_page.dart` | Search, filter, browse jobs |
+| Job detail | `lib/careers/jobs/pages/job_detail_page.dart` | View job + apply entry point |
+| Candidate auth | `lib/careers/user/pages/login_page.dart`, `signup_page.dart` | Login / register |
+| Profile | `lib/careers/user/pages/profile_page.dart`, `complete_profile_page.dart` | View / edit candidate profile |
+| Applications | `lib/careers/application/` | My applications (built, not wired) |
 | Routing | `lib/core/routes/app_routes.dart` | `/careers`, `/job-detail` ShellRoute |
 
 ### Entry flow
@@ -53,7 +53,7 @@ Constants: [`lib/core/utils/constants/api_constant.dart`](lib/core/utils/constan
 
 ### 2.2 Implemented in services + BLoC; UI usage varies
 
-Profile APIs are implemented in [`ProfileApiService`](lib/UI/public/user/services/profile_api_service.dart) with handlers in [`UserBloc`](lib/UI/public/user/bloc/user_bloc.dart). **`MISSING_API_INTEGRATIONS.md` is outdated** for these—they are no longer “missing” at the service layer.
+Profile APIs are implemented in [`ProfileApiService`](lib/careers/user/services/profile_api_service.dart) with handlers in [`UserBloc`](lib/careers/user/bloc/user_bloc.dart). **`MISSING_API_INTEGRATIONS.md` is outdated** for these—they are no longer “missing” at the service layer.
 
 | Endpoint | Service | Primary UI |
 |----------|---------|------------|
@@ -80,7 +80,7 @@ Profile APIs are implemented in [`ProfileApiService`](lib/UI/public/user/service
 
 | Endpoint | What exists | Gap |
 |----------|-------------|-----|
-| `GET …/my-applications` | `ApplicationApiService`, `ApplicationBloc`, `MyApplicationsPage` | **`ApplicationBloc` not registered** in [`dependancy_injection.dart`](lib/dependancy_injection.dart) or [`app.dart`](lib/app.dart). **No navigation** to `MyApplicationsPage`. Bottom nav **My Jobs** opens empty [`MyJobsPage`](lib/UI/public/user/pages/my_jobs_page.dart) instead. |
+| `GET …/my-applications` | `ApplicationApiService`, `ApplicationBloc`, `MyApplicationsPage` | **`ApplicationBloc` not registered** in [`dependancy_injection.dart`](lib/dependancy_injection.dart) or [`app.dart`](lib/app.dart). **No navigation** to `MyApplicationsPage`. Bottom nav **My Jobs** opens empty [`MyJobsPage`](lib/careers/user/pages/my_jobs_page.dart) instead. |
 
 ### 2.4 URL in constants only — no fetch / no UI
 
@@ -103,7 +103,7 @@ Profile APIs are implemented in [`ProfileApiService`](lib/UI/public/user/service
 | **`POST apply-job`** | No constant, service, or submit flow. **Candidates cannot submit applications.** |
 | **`GET check-application`** | No constant or service. Cannot show “already applied” on job detail. |
 
-Apply UI: [`apply_dialog.dart`](lib/UI/public/jobs/components/apply_dialog.dart) is still a placeholder. Apply button runs profile completion check only—no application POST.
+Apply UI: [`apply_dialog.dart`](lib/careers/jobs/components/apply_dialog.dart) is still a placeholder. Apply button runs profile completion check only—no application POST.
 
 ---
 
@@ -138,9 +138,9 @@ Apply UI: [`apply_dialog.dart`](lib/UI/public/jobs/components/apply_dialog.dart)
 | Tab | User expectation | Actual behavior |
 |-----|------------------|-----------------|
 | Home | Job list | ✅ `JobsPage` |
-| My Jobs | Saved jobs or applications | ❌ Empty [`MyJobsPage`](lib/UI/public/user/pages/my_jobs_page.dart); ignores bookmarks and `MyApplicationsPage` |
-| Messages | Employer chat | ❌ Empty [`MessagesPage`](lib/UI/public/user/pages/messages_page.dart); no API |
-| Profile | Candidate profile | ⚠️ [`ProfilePage`](lib/UI/public/user/pages/profile_page.dart) — Hive data only |
+| My Jobs | Saved jobs or applications | ❌ Empty [`MyJobsPage`](lib/careers/user/pages/my_jobs_page.dart); ignores bookmarks and `MyApplicationsPage` |
+| Messages | Employer chat | ❌ Empty [`MessagesPage`](lib/careers/user/pages/messages_page.dart); no API |
+| Profile | Candidate profile | ⚠️ [`ProfilePage`](lib/careers/user/pages/profile_page.dart) — Hive data only |
 
 ### 3.4 Candidate authentication
 
@@ -240,15 +240,15 @@ Apply UI: [`apply_dialog.dart`](lib/UI/public/jobs/components/apply_dialog.dart)
 | Concern | Files |
 |---------|--------|
 | Routes | `lib/core/routes/app_routes.dart` |
-| Job API | `lib/UI/public/jobs/services/jobs_api_service.dart` |
-| Job state | `lib/UI/public/jobs/bloc/jobs_bloc.dart` |
-| Jobs UI | `lib/UI/public/jobs/pages/jobs_page.dart`, `components/enhanced_search_bar.dart`, `careers_bottom_nav.dart` |
-| Apply | `lib/UI/public/jobs/components/apply_button.dart`, `apply_dialog.dart` |
-| Auth API | `lib/UI/public/user/services/auth_api_service.dart` |
-| Profile API | `lib/UI/public/user/services/profile_api_service.dart` |
-| User state | `lib/UI/public/user/bloc/user_bloc.dart` |
-| Local candidate session | `lib/UI/public/user/services/careers_user_service.dart` |
-| Applications (unwired) | `lib/UI/public/application/` |
+| Job API | `lib/careers/jobs/services/jobs_api_service.dart` |
+| Job state | `lib/careers/jobs/bloc/jobs_bloc.dart` |
+| Jobs UI | `lib/careers/jobs/pages/jobs_page.dart`, `components/enhanced_search_bar.dart`, `careers_bottom_nav.dart` |
+| Apply | `lib/careers/jobs/components/apply_button.dart`, `apply_dialog.dart` |
+| Auth API | `lib/careers/user/services/auth_api_service.dart` |
+| Profile API | `lib/careers/user/services/profile_api_service.dart` |
+| User state | `lib/careers/user/bloc/user_bloc.dart` |
+| Local candidate session | `lib/careers/user/services/careers_user_service.dart` |
+| Applications (unwired) | `lib/careers/application/` |
 | API URLs | `lib/core/utils/constants/api_constant.dart` |
 | DI | `lib/dependancy_injection.dart`, `lib/app.dart` |
 
@@ -260,8 +260,8 @@ Apply UI: [`apply_dialog.dart`](lib/UI/public/jobs/components/apply_dialog.dart)
 |----------|--------|
 | [`MISSING_API_INTEGRATIONS.md`](MISSING_API_INTEGRATIONS.md) | Original API gap list (partially outdated for profile) |
 | [`PROFILE_API_IMPLEMENTATION.md`](PROFILE_API_IMPLEMENTATION.md) | Profile service methods and models |
-| [`lib/UI/public/jobs/README.md`](lib/UI/public/jobs/README.md) | Jobs component notes |
-| [`lib/UI/public/user/README_PROFILE_COMPLETION.md`](lib/UI/public/user/README_PROFILE_COMPLETION.md) | Profile completion API usage |
+| [`lib/careers/jobs/README.md`](lib/careers/jobs/README.md) | Jobs component notes |
+| [`lib/careers/user/README_PROFILE_COMPLETION.md`](lib/careers/user/README_PROFILE_COMPLETION.md) | Profile completion API usage |
 
 ---
 

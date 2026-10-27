@@ -16,7 +16,7 @@ Added the following endpoints:
 - `updateProfessionalProgramsUrl` - Update professional programs
 - `updateCompleteProfileUrl` - Update complete profile
 
-### 2. Data Models (`lib/UI/public/user/models/profile_data_models.dart`)
+### 2. Data Models (`lib/careers/user/models/profile_data_models.dart`)
 
 Created comprehensive data models:
 
@@ -51,7 +51,7 @@ Created comprehensive data models:
 
 - **CompleteProfileModel** - Complete profile with all sections
 
-### 3. Profile API Service (`lib/UI/public/user/services/profile_api_service.dart`)
+### 3. Profile API Service (`lib/careers/user/services/profile_api_service.dart`)
 
 Implemented 8 API methods:
 
