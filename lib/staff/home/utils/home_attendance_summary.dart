@@ -1,5 +1,6 @@
 import 'package:admin_app/staff/attendance_calendar/models/attendance_model.dart';
 import 'package:admin_app/staff/attendance_calendar/utils/attendance_record_status.dart';
+import 'package:admin_app/staff/dashboard/domain/staff_dashboard.dart';
 import 'package:admin_app/staff/home/widgets/home_dashboard_models.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -22,10 +23,16 @@ Color heroAttendancePillDotColor(String statusLabel) {
       return const Color(0xFFFF5252);
     case 'Holiday':
       return const Color(0xFF64B5F6);
+    case 'Late':
+      return const Color(0xFFFFB74D);
+    case 'Leave':
     case 'Casual Leave':
     case 'Sick Leave':
     case 'Annual Leave':
       return const Color(0xFFFFB74D);
+    case 'Weekend':
+    case 'Not marked':
+      return const Color(0xFF9E9E9E);
     default:
       return const Color(0xFFFF9500);
   }
@@ -54,6 +61,60 @@ DateTime? _mergeDateWithParsedTime(DateTime calendarDate, String timeStr) {
     } catch (_) {}
   }
   return null;
+}
+
+String _dashboardStatusLabel(String status) {
+  switch (status.trim().toLowerCase()) {
+    case 'p':
+    case 'present':
+      return 'Present';
+    case 'a':
+    case 'absent':
+      return 'Absent';
+    case 'late':
+      return 'Late';
+    case 'leave':
+      return 'Leave';
+    case 'holiday':
+      return 'Holiday';
+    case 'weekend':
+      return 'Weekend';
+    default:
+      return 'Not marked';
+  }
+}
+
+/// Home hero numbers from `page=dashboard`, which already belongs to the
+/// signed-in person. `userAttendance` rows use a different employee id.
+({TodayAttendanceSummary today, MonthlyAttendanceSummary month})
+summariesFromDashboard(DashboardAttendance attendance, DateTime now) {
+  final month = MonthlyAttendanceSummary(
+    percentage: attendance.percentage,
+    absences: attendance.absentDays,
+    presentDays: attendance.presentDays,
+  );
+  final label = _dashboardStatusLabel(attendance.todayStatus);
+  final checkIn = attendance.checkIn?.trim() ?? '';
+  if (label == 'Present' && checkIn.isNotEmpty) {
+    final day = DateTime(now.year, now.month, now.day);
+    final merged = _mergeDateWithParsedTime(day, checkIn);
+    return (
+      today: TodayAttendanceSummary(
+        markedAt: merged,
+        timeDisplayRaw: merged == null ? checkIn : null,
+        pillLabel: 'Present',
+        pillDotColor: heroAttendancePillDotColor('Present'),
+      ),
+      month: month,
+    );
+  }
+  return (
+    today: TodayAttendanceSummary(
+      pillLabel: label,
+      pillDotColor: heroAttendancePillDotColor(label),
+    ),
+    month: month,
+  );
 }
 
 ({TodayAttendanceSummary today, MonthlyAttendanceSummary month})

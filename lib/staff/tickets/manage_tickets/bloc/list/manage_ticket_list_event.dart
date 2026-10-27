@@ -7,6 +7,10 @@ abstract class ManageTicketListEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class ClearTicketListEvent extends ManageTicketListEvent {
+  const ClearTicketListEvent();
+}
+
 class FetchTicketListEvent extends ManageTicketListEvent {
   final String? action;
   final int? endStat;

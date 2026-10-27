@@ -5,6 +5,7 @@ import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/notification/models/notification_model.dart';
 import 'package:admin_app/staff/notification/repository/notification_repository.dart';
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/utils/load_marker.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -20,17 +21,29 @@ class NotificationCubit extends Cubit<NotificationState> {
   bool _hasMore = true;
   bool _isFetching = false;
   static const int _perPage = 10;
+  final SessionScope _scope = SessionScope();
 
   NotificationCubit() : super(const NotificationState.initial());
 
   bool get hasMore => _hasMore;
   bool get isFetching => _isFetching;
 
+  /// Drops the inbox so the next account cannot see it.
+  void dropSession() {
+    _scope.invalidate();
+    _all.clear();
+    _page = 0;
+    _hasMore = true;
+    _isFetching = false;
+    if (!isClosed) emit(const NotificationState.initial());
+  }
+
   /// Fetch (or load more) notifications
   Future<void> fetchNotifications({bool loadMore = false}) async {
     if (_isFetching) return;
     if (loadMore && !_hasMore) return;
 
+    final stamp = _scope.begin();
     _isFetching = true;
     if (!loadMore) {
       // reset state
@@ -41,6 +54,10 @@ class NotificationCubit extends Cubit<NotificationState> {
     }
 
     final res = await _repo.fetchNotifications(limit2: _perPage, pageNo: _page);
+    if (isClosed || !_scope.current(stamp)) {
+      _isFetching = false;
+      return;
+    }
 
     res.fold(
       (err) {

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:admin_app/staff/shared/read_json.dart';
+
 class StudentAttModel {
   final String id;
   final String studcode;
@@ -15,25 +17,27 @@ class StudentAttModel {
     required this.att,
   });
 
+  bool get isMarked => att == attendancePresent || att == attendanceAbsent;
+
   factory StudentAttModel.fromJson(String str) =>
-      StudentAttModel.fromMap(json.decode(str));
+      StudentAttModel.fromMap(json.decode(str) as Map<String, dynamic>);
 
   String toJson() => json.encode(toMap());
 
   factory StudentAttModel.fromMap(Map<String, dynamic> json) => StudentAttModel(
-    id: json["id"] ?? "",
-    studcode: json["studcode"] ?? "",
-    comment: json["comment"] ?? "",
-    remark: json["remark"] ?? "",
-    att: json["att"] ?? "",
+    id: readString(json['id']),
+    studcode: readString(json['studcode']),
+    comment: readString(json['comment']),
+    remark: readString(json['remark']),
+    att: readString(json['att'] ?? json['status']),
   );
 
-  Map<String, dynamic> toMap() => {
-    "id": id,
-    "studcode": studcode,
-    "comment": comment,
-    "remark": remark,
-    "att": att,
+  Map<String, String> toMap() => {
+    'id': id,
+    'studcode': studcode,
+    'comment': comment,
+    'remark': remark,
+    'att': att,
   };
 
   StudentAttModel copyWith({
@@ -52,3 +56,6 @@ class StudentAttModel {
     );
   }
 }
+
+const String attendancePresent = '0';
+const String attendanceAbsent = '1';

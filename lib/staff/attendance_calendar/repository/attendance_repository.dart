@@ -16,9 +16,14 @@ class AttendanceRepository {
     int year,
   ) async {
     AuthModel? authModel = await AuthData.getActiveUser();
+    if (authModel == null || authModel.userId.isEmpty) {
+      return const Left(
+        MyError(key: AppError.apiError, message: 'Please sign in again'),
+      );
+    }
     // Create FormData object and add form fields
     FormData formData = FormData.fromMap({
-      'admin_id': authModel!.userId,
+      'admin_id': authModel.userId,
       'month': month,
       'year': year,
       'token': authModel.token,
@@ -44,6 +49,9 @@ class AttendanceRepository {
           ),
         );
       }
+      // Row `user_id` is the employee id. The login id can be different
+      // (this account is 755, the rows say 772), so the token's payload
+      // is shown as returned.
       return Right(model);
     }
   }

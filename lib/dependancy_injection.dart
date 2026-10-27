@@ -139,13 +139,17 @@ Future<void> serviceLocators() async {
     () => StaffSessionService(apiService: locator<ApiService>()),
   );
   StaffSessionExpiredHandler.onExpired = () async {
-    await locator<AuthCubit>().logout(notifyServer: false);
+    final othersRemain = await locator<AuthCubit>().logout(notifyServer: false);
+    AppRoute.router.go(
+      othersRemain ? Routes.usersPage.path : Routes.careers.path,
+    );
+    if (!othersRemain) return;
     final overlay =
         AppRoute.router.routerDelegate.navigatorKey.currentState?.overlay;
     if (overlay != null) {
       AppToast.warning(
         overlay.context,
-        'Your session has ended. Please sign in again.',
+        'This session ended. Choose another profile.',
       );
     }
   };
@@ -153,6 +157,7 @@ Future<void> serviceLocators() async {
     () => AuthCubit(
       authRepository: locator<AuthRepository>(),
       session: locator<StaffSessionService>(),
+      openLogin: () => secretAdminLoginOpen.value = true,
     ),
   );
 

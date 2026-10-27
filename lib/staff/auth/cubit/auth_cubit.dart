@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/attendance_calendar/cubit/attendance_cubit.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
+import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/auth/repository/auth_repository.dart';
 import 'package:admin_app/staff/home/cubit/home_cubit.dart';
+import 'package:admin_app/staff/session/staff_memory.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hive/hive.dart';
@@ -13,10 +16,18 @@ import 'package:hive/hive.dart';
 part 'auth_cubit.freezed.dart';
 part 'auth_state.dart';
 
+/// Login JSON uses ints for ids and sometimes null for optional text.
+String _loginText(dynamic value) => value?.toString() ?? '';
+
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository authRepository;
   final StaffSessionService? session;
-  AuthCubit({required this.authRepository, this.session})
+
+  /// Opens the staff login screen. Set from app startup; the cubit cannot
+  /// import the router.
+  final void Function()? openLogin;
+
+  AuthCubit({required this.authRepository, this.session, this.openLogin})
     : super(const AuthState.initial());
 
   /// Logs in a user with the provided credentials and school code.
@@ -59,18 +70,21 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthState.loginFailure(res.left.message ?? "Something went wrong"));
     } else {
       if (res.right['status']) {
-        // Replaces a saved account for this school and activates the new token.
+        // The login payload mixes strings, ints, and nulls. Hive stores
+        // every account field as text, so coerce here.
+        final data = res.right['data'];
+        clearStaffSessionMemory();
         await AuthData.addNewUser(
           schoolCode: schoolCode,
           userName: userName,
           password: password,
-          token: res.right['data']['token'],
-          designation: res.right['data']['designation'],
-          profilePicture: res.right['data']['photo'],
-          name: res.right['data']['name'],
-          userId: res.right['data']['id'],
-          logo: res.right['data']['sch_logo'],
-          schoolName: res.right['data']['sch_name'],
+          token: _loginText(data['token']),
+          designation: _loginText(data['designation']),
+          profilePicture: _loginText(data['photo']),
+          name: _loginText(data['name']),
+          userId: _loginText(data['id']),
+          logo: _loginText(data['sch_logo']),
+          schoolName: _loginText(data['sch_name']),
         );
 
         Hive.box('settingsBox').put('signedInSurface', 'staff');
@@ -85,28 +99,57 @@ class AuthCubit extends Cubit<AuthState> {
     required String userName,
     required String schoolCode,
     required String userId,
-    required BuildContext context,
   }) async {
     emit(const AuthState.loading());
-    // After adding the new user, deactivate other users and set this one as active
+    // Drop the previous account before Hive points at the next one, so a
+    // screen that is still mounted cannot paint that account's rows.
+    clearStaffSessionMemory();
     await AuthData.deactivateAllUsersExcept(userName, schoolCode, userId);
     var box = await Hive.openBox('settingsBox');
     await box.put(
       'schoolCode',
       schoolCode,
     ); // Retrieve the selected school code
-    context.read<HomeCubit>().getMenu();
+    final now = DateTime.now();
+    await Future.wait([
+      locator<HomeCubit>().getMenu(),
+      locator<AttendanceCubit>().getAttendance(
+        month: now.month,
+        year: now.year,
+      ),
+    ]);
     Hive.box('settingsBox').put('signedInSurface', 'staff');
     emit(const AuthState.userSwitch());
   }
 
-  /// Signs the active user out. The server revokes the token and drops this
-  /// phone's push token first, unless the token is already dead
-  /// ([notifyServer] false).
-  Future<void> logout({bool notifyServer = true}) async {
+  /// Signs the active profile out. Other profiles saved on this phone stay,
+  /// and the router sends the person to choose one. Returns true when at
+  /// least one other profile remains.
+  ///
+  /// The server revokes the token and drops this phone's push token first,
+  /// unless the token is already dead ([notifyServer] false). When this was
+  /// the last profile, the staff login screen opens.
+  Future<bool> logout({bool notifyServer = true}) async {
     if (notifyServer) await session?.signOutOnServer();
     await AuthData.logoutCurrentUser();
-    Hive.box('settingsBox').delete('signedInSurface');
+    final othersRemain = locator<Box<AuthModel>>().isNotEmpty;
+    _finishLocalSignOut(othersRemain: othersRemain);
+    return othersRemain;
+  }
+
+  /// Signs every saved profile out and opens the staff login screen.
+  Future<void> logoutAll({bool notifyServer = true}) async {
+    if (notifyServer) await session?.signOutAllOnServer();
+    await AuthData.deactivateAllUsers();
+    _finishLocalSignOut(othersRemain: false);
+  }
+
+  void _finishLocalSignOut({required bool othersRemain}) {
+    clearStaffSessionMemory();
+    if (!othersRemain) {
+      Hive.box('settingsBox').delete('signedInSurface');
+      openLogin?.call();
+    }
     emit(const AuthState.loggedOut());
   }
 }

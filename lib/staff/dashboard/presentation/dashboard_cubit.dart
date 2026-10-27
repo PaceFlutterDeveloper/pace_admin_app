@@ -13,16 +13,26 @@ class DashboardCubit extends Cubit<StaffDashboard?> {
 
   final DashboardRepository _repository;
   final LoadMarker _loaded = LoadMarker();
+  final SessionScope _scope = SessionScope();
 
   bool get isFresh => _loaded.isFresh();
+
+  /// Drops the counters so the next account cannot see them.
+  void dropSession() {
+    _scope.invalidate();
+    _loaded.clear();
+    if (!isClosed) emit(null);
+  }
 
   Future<void> load() async {
     // Numbers of another account must not flash while this one loads.
     if (!_loaded.holds()) emit(null);
+    final stamp = _scope.begin();
     try {
       final data = await _repository.load();
+      if (isClosed || !_scope.current(stamp)) return;
       _loaded.mark();
-      if (!isClosed) emit(data);
+      emit(data);
     } catch (_) {
       // Counters are a convenience; the screens behind them show the errors.
     }

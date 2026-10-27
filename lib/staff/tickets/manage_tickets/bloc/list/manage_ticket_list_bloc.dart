@@ -1,4 +1,5 @@
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/utils/load_marker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../models/manage_ticket_response_model.dart';
@@ -11,22 +12,35 @@ class ManageTicketListBloc
     extends Bloc<ManageTicketListEvent, ManageTicketListState> {
   final ManageTicketRepository _ticketRepository =
       locator<ManageTicketRepository>();
+  final SessionScope _scope = SessionScope();
   CountsModel? countsModel;
 
   ManageTicketListBloc() : super(ManageTicketListInitial()) {
+    on<ClearTicketListEvent>((_, emit) {
+      countsModel = null;
+      emit(ManageTicketListInitial());
+    });
     on<FetchTicketListEvent>(_onFetchTicketList);
+  }
+
+  /// Drops the queue so the next account cannot see it.
+  void dropSession() {
+    _scope.invalidate();
+    add(const ClearTicketListEvent());
   }
 
   Future<void> _onFetchTicketList(
     FetchTicketListEvent event,
     Emitter<ManageTicketListState> emit,
   ) async {
+    final stamp = _scope.begin();
     emit(ManageTicketListLoading());
 
     final res = await _ticketRepository.getTickets(
       action: event.action,
       endStat: event.endStat,
     );
+    if (isClosed || !_scope.current(stamp)) return;
 
     res.fold(
       (error) => emit(

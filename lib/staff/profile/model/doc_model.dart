@@ -14,6 +14,7 @@ class DocModel {
   final dynamic fileName;
   final String expiryDate;
   final String issueDate;
+  final String downloadUrl;
 
   DocModel({
     required this.id,
@@ -27,6 +28,7 @@ class DocModel {
     required this.fileName,
     required this.expiryDate,
     required this.issueDate,
+    this.downloadUrl = '',
   });
   factory DocModel.fromJson(String str) => DocModel.fromMap(json.decode(str));
 
@@ -44,6 +46,7 @@ class DocModel {
     fileName: json["file_name"],
     expiryDate: readString(json["expiry_date"]),
     issueDate: readString(json["issue_date"]),
+    downloadUrl: readString(json["download_url"]),
   );
 
   Map<String, dynamic> toMap() => {
@@ -58,5 +61,6 @@ class DocModel {
     "file_name": fileName,
     "expiry_date": expiryDate,
     "issue_date": issueDate,
+    "download_url": downloadUrl,
   };
 }

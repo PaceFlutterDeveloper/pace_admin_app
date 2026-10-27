@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:admin_app/staff/profile/model/doc_model.dart';
 import 'package:admin_app/staff/profile/model/emp_profile_model.dart';
 import 'package:admin_app/staff/profile/model/user_profile_model.dart';
+import 'package:admin_app/staff/shared/read_json.dart';
 
 class ProfileDataModel {
   final UserProfileModel user;
   final EmpProfileModel? emp;
   final int documentStatus;
   final String photo;
+  final String schoolName;
   final List<DocModel> doc;
 
   ProfileDataModel({
@@ -17,6 +19,7 @@ class ProfileDataModel {
     required this.photo,
     required this.doc,
     required this.documentStatus,
+    this.schoolName = '',
   });
 
   factory ProfileDataModel.fromJson(String str) =>
@@ -30,6 +33,7 @@ class ProfileDataModel {
         emp: json["emp"] == null ? null : EmpProfileModel.fromMap(json["emp"]),
         documentStatus: int.tryParse(json['alert']?.toString() ?? '') ?? 0,
         photo: json["photo"] ?? "",
+        schoolName: _schoolName(json["school"]),
         doc: json["doc"] == null
             ? []
             : List<DocModel>.from(json["doc"].map((x) => DocModel.fromMap(x))),
@@ -39,6 +43,12 @@ class ProfileDataModel {
     "user": user.toMap(),
     "emp": emp!.toMap(),
     "photo": photo,
+    "school": {"name": schoolName},
     "doc": List<dynamic>.from(doc.map((x) => x.toMap())),
   };
+}
+
+String _schoolName(dynamic school) {
+  if (school is Map) return readString(school["name"]);
+  return '';
 }

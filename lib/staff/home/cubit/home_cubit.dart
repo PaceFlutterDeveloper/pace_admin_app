@@ -14,11 +14,19 @@ class HomeCubit extends Cubit<HomeState> {
   final HomeRepository _homeRepository = locator<HomeRepository>();
 
   final LoadMarker _loaded = LoadMarker();
+  final SessionScope _scope = SessionScope();
 
   HomeCubit() : super(const HomeState.initial());
 
   /// Whether the menu was loaded recently for the active user.
   bool get isFresh => _loaded.isFresh();
+
+  /// Drops the menu so the next account cannot see it.
+  void dropSession() {
+    _scope.invalidate();
+    _loaded.clear();
+    if (!isClosed) emit(const HomeState.initial());
+  }
 
   /// With [quiet] the menu already on screen stays visible while it
   /// refreshes; no loading state is emitted and errors are ignored.
@@ -27,18 +35,21 @@ class HomeCubit extends Cubit<HomeState> {
         quiet &&
         _loaded.holds() &&
         state.maybeWhen(success: (_) => true, orElse: () => false);
+    final stamp = _scope.begin();
     if (!keep) emit(const HomeState.loading());
 
     var res = await _homeRepository.getMenu();
+    if (isClosed || !_scope.current(stamp)) return;
 
     res.fold(
       (error) {
-        if (!keep) {
+        if (!keep && !isClosed && _scope.current(stamp)) {
           emit(HomeState.error(error.message ?? "Something went wrong"));
         }
       },
       (menuData) async {
         AuthModel? auth = await AuthData.getActiveUser();
+        if (isClosed || !_scope.current(stamp)) return;
         if (auth != null && menuData.count != null) {
           if (menuData.count > auth.notificationCount) {
             // 🔄 Replace with new count
@@ -51,6 +62,7 @@ class HomeCubit extends Cubit<HomeState> {
           }
         }
 
+        if (isClosed || !_scope.current(stamp)) return;
         _loaded.mark();
         emit(HomeState.success(menuData.data));
       },

@@ -36,11 +36,20 @@ class EventsAgendaCubit extends Cubit<EventsAgendaState> {
   final EventsRepository _repository;
   final DateTime Function() _clock;
   final LoadMarker _loaded = LoadMarker();
+  final SessionScope _scope = SessionScope();
 
   bool get isFresh => _loaded.isFresh();
 
+  /// Drops the agenda so the next account cannot see it.
+  void dropSession() {
+    _scope.invalidate();
+    _loaded.clear();
+    if (!isClosed) emit(const EventsAgendaLoading());
+  }
+
   Future<void> load({bool quiet = false}) async {
     final keep = quiet && _loaded.holds() && state is EventsAgendaLoaded;
+    final stamp = _scope.begin();
     if (!keep) emit(const EventsAgendaLoading());
     try {
       final now = _clock();
@@ -49,10 +58,13 @@ class EventsAgendaCubit extends Cubit<EventsAgendaState> {
         from,
         from.add(const Duration(days: kEventsAgendaDays)),
       );
+      if (isClosed || !_scope.current(stamp)) return;
       _loaded.mark();
       emit(EventsAgendaLoaded(events));
     } catch (error) {
-      if (!keep) emit(EventsAgendaFailed(staffErrorMessage(error)));
+      if (!keep && !isClosed && _scope.current(stamp)) {
+        emit(EventsAgendaFailed(staffErrorMessage(error)));
+      }
     }
   }
 }

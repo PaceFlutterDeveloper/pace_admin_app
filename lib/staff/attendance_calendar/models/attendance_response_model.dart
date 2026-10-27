@@ -20,15 +20,16 @@ class AttendanceResponseModel {
 
   factory AttendanceResponseModel.fromMap(Map<String, dynamic> json) {
     final dataRaw = json['data'];
-    final List<AttendanceModel> rows;
+    final rows = <AttendanceModel>[];
     if (dataRaw is List) {
-      rows = dataRaw
-          .map(
-            (x) => AttendanceModel.fromMap(Map<String, dynamic>.from(x as Map)),
-          )
-          .toList();
-    } else {
-      rows = [];
+      for (final item in dataRaw) {
+        if (item is! Map) continue;
+        try {
+          rows.add(AttendanceModel.fromMap(Map<String, dynamic>.from(item)));
+        } on FormatException {
+          // One bad day must not hide the rest of the month.
+        }
+      }
     }
     return AttendanceResponseModel(
       status: json['status'] == true,

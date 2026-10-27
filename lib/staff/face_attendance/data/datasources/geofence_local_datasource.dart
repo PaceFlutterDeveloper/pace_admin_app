@@ -6,20 +6,28 @@ class GeofenceLocalDataSource {
   static const String _settingsBox = 'settingsBox';
   static const String _geofenceKey = 'schoolGeofenceConfig';
 
+  /// One fence per school, so switching accounts cannot reuse another campus.
+  String _cacheKey(Box box) {
+    final school = box.get('schoolCode')?.toString().trim() ?? '';
+    return school.isEmpty ? _geofenceKey : '$_geofenceKey:$school';
+  }
+
   Future<void> cacheGeofenceConfig(GeofenceConfigModel config) async {
+    final box = await Hive.openBox(_settingsBox);
+    final key = _cacheKey(box);
     AttendanceLogger.log(
-      'Hive cache WRITE $_geofenceKey '
+      'Hive cache WRITE $key '
       '(school="${config.schoolName}")',
     );
-    final box = await Hive.openBox(_settingsBox);
-    await box.put(_geofenceKey, config.toJson());
+    await box.put(key, config.toJson());
   }
 
   Future<GeofenceConfigModel?> getCachedGeofenceConfig() async {
     final box = await Hive.openBox(_settingsBox);
-    final raw = box.get(_geofenceKey);
+    final key = _cacheKey(box);
+    final raw = box.get(key);
     if (raw is! Map) {
-      AttendanceLogger.log('Hive cache READ $_geofenceKey → miss');
+      AttendanceLogger.log('Hive cache READ $key → miss');
       return null;
     }
     return GeofenceConfigModel.fromJson(Map<String, dynamic>.from(raw));

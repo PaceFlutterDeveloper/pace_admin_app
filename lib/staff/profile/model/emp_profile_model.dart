@@ -59,6 +59,36 @@ class EmpProfileModel {
   final String emplSpouse;
   final String empStat;
   final String salFromHere;
+  final String personalCode;
+  final String alias;
+  final DateTime? labourJoinDate;
+  final DateTime? schoolJoinDate;
+  final String department;
+  final String localEmirate;
+  final String localRegion;
+  final String localStreet;
+  final String localBuilding;
+  final String localLandmark;
+  final String phoneCug;
+  final String phoneExt;
+  final String relRelation;
+  final String ministryDesignation;
+  final String linkedin;
+  final String facebook;
+  final String whatsapp;
+  final String instagram;
+  final String yearlyLeave;
+  final String biometricId;
+  final String birthPlace;
+  final String birthCountry;
+  final String religion;
+  final String occupation;
+  final String nearestAirport;
+  final String healthExpDate;
+  final String moeStat;
+  final String busNo;
+  final String foodPref;
+  final String ppIssuePlace;
 
   EmpProfileModel({
     required this.empId,
@@ -117,6 +147,36 @@ class EmpProfileModel {
     required this.emplSpouse,
     required this.empStat,
     required this.salFromHere,
+    this.personalCode = '',
+    this.alias = '',
+    this.labourJoinDate,
+    this.schoolJoinDate,
+    this.department = '',
+    this.localEmirate = '',
+    this.localRegion = '',
+    this.localStreet = '',
+    this.localBuilding = '',
+    this.localLandmark = '',
+    this.phoneCug = '',
+    this.phoneExt = '',
+    this.relRelation = '',
+    this.ministryDesignation = '',
+    this.linkedin = '',
+    this.facebook = '',
+    this.whatsapp = '',
+    this.instagram = '',
+    this.yearlyLeave = '',
+    this.biometricId = '',
+    this.birthPlace = '',
+    this.birthCountry = '',
+    this.religion = '',
+    this.occupation = '',
+    this.nearestAirport = '',
+    this.healthExpDate = '',
+    this.moeStat = '',
+    this.busNo = '',
+    this.foodPref = '',
+    this.ppIssuePlace = '',
   });
 
   factory EmpProfileModel.fromJson(String str) =>
@@ -181,6 +241,36 @@ class EmpProfileModel {
     emplSpouse: readString(json["empl_spouse"]),
     empStat: readString(json["emp_stat"]),
     salFromHere: readString(json["sal_from_here"]),
+    personalCode: readString(json["personal_code"]),
+    alias: readString(json["alias"]),
+    labourJoinDate: readDate(json["labour_join_date"]),
+    schoolJoinDate: readDate(json["school_join_date"]),
+    department: readString(json["department"]),
+    localEmirate: readString(json["local_emirate"]),
+    localRegion: readString(json["local_region"]),
+    localStreet: readString(json["local_street"]),
+    localBuilding: readString(json["local_building"]),
+    localLandmark: readString(json["local_landmark"]),
+    phoneCug: readString(json["phone_cug"]),
+    phoneExt: readString(json["phone_ext"]),
+    relRelation: readString(json["rel_relation"]),
+    ministryDesignation: readString(json["ministry_designation"]),
+    linkedin: readString(json["linkedin"]),
+    facebook: readString(json["facebook"]),
+    whatsapp: readString(json["whatsapp"]),
+    instagram: readString(json["instagram"]),
+    yearlyLeave: readString(json["yearly_leave"]),
+    biometricId: readString(json["biometric_id"]),
+    birthPlace: readString(json["birth_place"]),
+    birthCountry: readString(json["birth_country"] ?? json["birth_counrty"]),
+    religion: readString(json["religion"]),
+    occupation: readString(json["occupation"]),
+    nearestAirport: readString(json["nearest_airport"]),
+    healthExpDate: readString(json["health_exp_date"]),
+    moeStat: readString(json["moe_stat"]),
+    busNo: readString(json["busNo"]),
+    foodPref: readString(json["food_pref"]),
+    ppIssuePlace: readString(json["pp_issue_place"]),
   );
 
   Map<String, dynamic> toMap() => {
@@ -240,6 +330,36 @@ class EmpProfileModel {
     "empl_spouse": emplSpouse,
     "emp_stat": empStat,
     "sal_from_here": salFromHere,
+    "personal_code": personalCode,
+    "alias": alias,
+    "labour_join_date": _ymd(labourJoinDate),
+    "school_join_date": _ymd(schoolJoinDate),
+    "department": department,
+    "local_emirate": localEmirate,
+    "local_region": localRegion,
+    "local_street": localStreet,
+    "local_building": localBuilding,
+    "local_landmark": localLandmark,
+    "phone_cug": phoneCug,
+    "phone_ext": phoneExt,
+    "rel_relation": relRelation,
+    "ministry_designation": ministryDesignation,
+    "linkedin": linkedin,
+    "facebook": facebook,
+    "whatsapp": whatsapp,
+    "instagram": instagram,
+    "yearly_leave": yearlyLeave,
+    "biometric_id": biometricId,
+    "birth_place": birthPlace,
+    "birth_country": birthCountry,
+    "religion": religion,
+    "occupation": occupation,
+    "nearest_airport": nearestAirport,
+    "health_exp_date": healthExpDate,
+    "moe_stat": moeStat,
+    "busNo": busNo,
+    "food_pref": foodPref,
+    "pp_issue_place": ppIssuePlace,
   };
 }
 

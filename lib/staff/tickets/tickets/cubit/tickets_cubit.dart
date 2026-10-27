@@ -13,11 +13,21 @@ class TicketsCubit extends Cubit<TicketsState> {
   final TicketRepository _ticketRepo = locator<TicketRepository>();
 
   final LoadMarker _loaded = LoadMarker();
+  final SessionScope _scope = SessionScope();
+  final SessionScope _detail = SessionScope();
 
   TicketsCubit() : super(TicketsLoading());
 
   /// Whether the list was loaded recently for the active user.
   bool get isFresh => _loaded.isFresh();
+
+  /// Drops tickets so the next account cannot see them.
+  void dropSession() {
+    _scope.invalidate();
+    _detail.invalidate();
+    _loaded.clear();
+    if (!isClosed) emit(TicketsLoading());
+  }
 
   /// 1️⃣ Fetch all (or “my”) tickets.
   ///
@@ -26,12 +36,14 @@ class TicketsCubit extends Cubit<TicketsState> {
   Future<void> fetchTickets({bool quiet = false}) async {
     DebugLogger.log('📦 [CUBIT] fetchTickets() called');
     final keep = quiet && _loaded.holds() && state is TicketsLoadingSuccess;
+    final stamp = _scope.begin();
     if (!keep) {
       emit(TicketsLoading());
       DebugLogger.log('🔄 [CUBIT] State changed to: TicketsLoading');
     }
 
     final result = await _ticketRepo.getTickets();
+    if (isClosed || !_scope.current(stamp)) return;
     result.fold(
       (error) {
         DebugLogger.log('❌ [CUBIT] Ticket fetch error: ${error.message}');
@@ -53,8 +65,10 @@ class TicketsCubit extends Cubit<TicketsState> {
   /// Fetch a single ticket by ID
 
   Future<void> fetchSingleTicket({required int id}) async {
+    final stamp = _detail.begin();
     emit(SingleTicketLoading());
     final result = await _ticketRepo.getSingleTicket(id: id);
+    if (isClosed || !_detail.current(stamp)) return;
     result.fold(
       (error) => emit(SingleTicketError(message: error.message)),
       (resp) => emit(SingleTicketSuccess(ticketResponseModel: resp)),

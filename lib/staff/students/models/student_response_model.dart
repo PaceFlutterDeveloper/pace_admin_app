@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:admin_app/staff/shared/read_json.dart';
 import 'package:admin_app/staff/students/models/student_att_model.dart';
 
 class StudenstsResponseModel {
@@ -14,46 +15,53 @@ class StudenstsResponseModel {
   });
 
   factory StudenstsResponseModel.fromJson(String str) =>
-      StudenstsResponseModel.fromMap(json.decode(str));
+      StudenstsResponseModel.fromMap(json.decode(str) as Map<String, dynamic>);
 
   String toJson() => json.encode(toMap());
 
-  factory StudenstsResponseModel.fromMap(Map<String, dynamic> json) =>
-      StudenstsResponseModel(
-        status: json["status"],
-        message: json["message"],
-        data: StudenstsDataModel.fromMap(json["data"]),
-      );
+  factory StudenstsResponseModel.fromMap(Map<String, dynamic> json) {
+    final data = json['data'];
+    return StudenstsResponseModel(
+      status: readBool(json['status']),
+      message: readString(json['message']),
+      data: data is Map
+          ? StudenstsDataModel.fromMap(Map<String, dynamic>.from(data))
+          : StudenstsDataModel(remarks: const [], students: const []),
+    );
+  }
 
   Map<String, dynamic> toMap() => {
-    "status": status,
-    "message": message,
-    "data": data.toMap(),
+    'status': status,
+    'message': message,
+    'data': data.toMap(),
   };
 }
 
 class StudenstsDataModel {
   final List<StudentModel> students;
   final List<Remark> remarks;
+
   StudenstsDataModel({required this.remarks, required this.students});
 
   factory StudenstsDataModel.fromJson(String str) =>
-      StudenstsDataModel.fromMap(json.decode(str));
+      StudenstsDataModel.fromMap(json.decode(str) as Map<String, dynamic>);
 
   String toJson() => json.encode(toMap());
 
   factory StudenstsDataModel.fromMap(Map<String, dynamic> json) =>
       StudenstsDataModel(
-        remarks: List<Remark>.from(
-          json["remarks"].map((x) => Remark.fromMap(x)),
-        ),
-        students: List<StudentModel>.from(
-          json["students"].map((x) => StudentModel.fromMap(x)),
-        ),
+        remarks: [
+          for (final item in objectList(json['remarks'])) Remark.fromMap(item),
+        ],
+        students: [
+          for (final item in objectList(json['students']))
+            StudentModel.fromMap(item),
+        ],
       );
 
   Map<String, dynamic> toMap() => {
-    "students": List<dynamic>.from(students.map((x) => x.toMap())),
+    'students': List<dynamic>.from(students.map((x) => x.toMap())),
+    'remarks': List<dynamic>.from(remarks.map((x) => x.toMap())),
   };
 }
 
@@ -104,56 +112,70 @@ class StudentModel {
     required this.att,
   });
 
+  String get displayName => fullname.isNotEmpty ? fullname : studcode;
+
+  /// Date of birth as the server sent it. `BIRTH_DATE` wins over `DOB`.
+  String get bornOn => birthDate.isNotEmpty ? birthDate : dob;
+
   factory StudentModel.fromJson(String str) =>
-      StudentModel.fromMap(json.decode(str));
+      StudentModel.fromMap(json.decode(str) as Map<String, dynamic>);
 
   String toJson() => json.encode(toMap());
 
   factory StudentModel.fromMap(Map<String, dynamic> json) => StudentModel(
-    studcode: json["studcode"],
-    fullname: json["fullname"],
-    famcode: json["famcode"],
-    fname: json["fname"],
-    mobile: json["mobile"],
-    studentClass: json["class"],
-    section: json["section"],
-    lastYrClass: json["last_yr_class"] ?? "",
-    lastYrSec: json["last_yr_sec"] ?? "",
-    joinStat: json["join_stat"],
-    secondlang: json["SECONDLANG"],
-    stdsex: json["STDSEX"],
-    acdyear: json["acdyear"],
-    religion: json["RELIGION"],
-    joindate: json["JOINDATE"],
-    att: json['att'] == null ? null : StudentAttModel.fromMap(json['att']),
-    national: json["NATIONAL"],
-    house: json["HOUSE"],
-    dob: json["DOB"],
-    birthDate: json["BIRTH_DATE"],
-    photo: json['photo'] as String,
+    studcode: readString(json['studcode']),
+    fullname: readString(json['fullname']),
+    famcode: readString(json['famcode']),
+    fname: readString(json['fname']),
+    mobile: readString(json['mobile']),
+    studentClass: readString(json['class']),
+    section: readString(json['section']),
+    lastYrClass: readString(json['last_yr_class']),
+    lastYrSec: readString(json['last_yr_sec']),
+    joinStat: readString(json['join_stat']),
+    secondlang: readString(json['SECONDLANG']),
+    stdsex: readString(json['STDSEX']),
+    acdyear: readString(json['acdyear']),
+    religion: readString(json['RELIGION']),
+    joindate: json['JOINDATE'],
+    att: readStudentAttendance(json['att']),
+    national: readString(json['NATIONAL']),
+    house: readString(json['HOUSE']),
+    dob: readString(json['DOB']),
+    birthDate: readString(json['BIRTH_DATE']),
+    photo: readString(json['photo']),
   );
 
   Map<String, dynamic> toMap() => {
-    "studcode": studcode,
-    "fullname": fullname,
-    "famcode": famcode,
-    "fname": fname,
-    "mobile": mobile,
-    "class": studentClass,
-    "section": section,
-    "last_yr_class": lastYrClass,
-    "last_yr_sec": lastYrSec,
-    "join_stat": joinStat,
-    "SECONDLANG": secondlang,
-    "STDSEX": stdsex,
-    "acdyear": acdyear,
-    "RELIGION": religion,
-    "JOINDATE": joindate,
-    "NATIONAL": national,
-    "HOUSE": house,
-    "DOB": dob,
-    "BIRTH_DATE": birthDate,
+    'studcode': studcode,
+    'fullname': fullname,
+    'famcode': famcode,
+    'fname': fname,
+    'mobile': mobile,
+    'class': studentClass,
+    'section': section,
+    'last_yr_class': lastYrClass,
+    'last_yr_sec': lastYrSec,
+    'join_stat': joinStat,
+    'SECONDLANG': secondlang,
+    'STDSEX': stdsex,
+    'acdyear': acdyear,
+    'RELIGION': religion,
+    'JOINDATE': joindate,
+    'NATIONAL': national,
+    'HOUSE': house,
+    'DOB': dob,
+    'BIRTH_DATE': birthDate,
+    'photo': photo,
+    'att': att?.toMap(),
   };
+}
+
+StudentAttModel? readStudentAttendance(dynamic raw) {
+  if (raw is! Map || raw.isEmpty) return null;
+  final att = StudentAttModel.fromMap(Map<String, dynamic>.from(raw));
+  if (!att.isMarked && att.remark.isEmpty && att.id.isEmpty) return null;
+  return att;
 }
 
 class Remark {
@@ -163,19 +185,20 @@ class Remark {
 
   Remark({required this.key, required this.value, required this.remarkType});
 
-  factory Remark.fromJson(String str) => Remark.fromMap(json.decode(str));
+  factory Remark.fromJson(String str) =>
+      Remark.fromMap(json.decode(str) as Map<String, dynamic>);
 
   String toJson() => json.encode(toMap());
 
   factory Remark.fromMap(Map<String, dynamic> json) => Remark(
-    key: json["key"],
-    value: json["value"],
-    remarkType: json["remark_type"],
+    key: readString(json['key']),
+    value: readString(json['value']),
+    remarkType: readString(json['remark_type']),
   );
 
   Map<String, dynamic> toMap() => {
-    "key": key,
-    "value": value,
-    "remark_type": remarkType,
+    'key': key,
+    'value': value,
+    'remark_type': remarkType,
   };
 }

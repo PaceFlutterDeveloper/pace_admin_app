@@ -1,11 +1,12 @@
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:admin_app/core/const/db_names.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/utils/constants/api_constant.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
+import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/shared/read_json.dart';
 import 'package:admin_app/staff/shared/staff_post.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -64,19 +65,44 @@ class StaffSessionService {
     try {
       final auth = await AuthData.getActiveUser();
       if (auth == null) return;
-      String fcm = '';
-      try {
-        fcm = (await _pushToken())?.trim() ?? '';
-      } catch (_) {}
-      await postStaffPage(
-        api: apiService,
-        url: ApiConstants.staffPage('logout'),
-        fields: {'fcm_token': fcm, 'device_id': deviceId()},
-      ).timeout(const Duration(seconds: 4));
+      await signOutAccount(auth);
+    } finally {
+      _lastRegistered = null;
+    }
+  }
+
+  /// Revokes every saved profile. Each school has its own host, so the calls
+  /// run one after another. Never throws.
+  Future<void> signOutAllOnServer() async {
+    try {
+      final users = Hive.box<AuthModel>(LoginBox).values.toList();
+      for (final user in users) {
+        await signOutAccount(user);
+      }
     } catch (e) {
       debugPrint('logout call skipped: $e');
     } finally {
       _lastRegistered = null;
+    }
+  }
+
+  /// Revokes [auth] on that profile's school. Never throws.
+  Future<void> signOutAccount(AuthModel auth) async {
+    try {
+      String fcm = '';
+      try {
+        fcm = (await _pushToken())?.trim() ?? '';
+      } catch (_) {}
+      await _onSchool(auth.schoolCode, () {
+        return postStaffPage(
+          api: apiService,
+          url: ApiConstants.staffPage('logout'),
+          asUser: auth,
+          fields: {'fcm_token': fcm, 'device_id': deviceId()},
+        ).timeout(const Duration(seconds: 4));
+      });
+    } catch (e) {
+      debugPrint('logout call skipped: $e');
     }
   }
 

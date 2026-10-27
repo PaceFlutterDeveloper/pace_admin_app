@@ -282,9 +282,12 @@ class AppRoute {
           GoRoute(
             path: Routes.classAttendance.path,
             name: Routes.classAttendance.name,
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final menuModel = state.extra as MenuModel;
-              return GradeAttendanceScreen(appTitle: menuModel.menuName);
+              return _staffFadePage(
+                state,
+                GradeAttendanceScreen(appTitle: menuModel.menuName),
+              );
             },
           ),
           GoRoute(
@@ -338,21 +341,13 @@ class AppRoute {
           GoRoute(
             path: Routes.students.path,
             name: Routes.students.name,
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final grade = state.uri.queryParameters['grade'] ?? '';
-              final section =
-                  state.uri.queryParameters['section'] ??
-                  ''; // Ensure key matches
-              final title = state.uri.queryParameters['title'] ?? 'Students';
-
-              if (grade.isEmpty || section.isEmpty) {
-                return const Center(child: Text("Invalid student data"));
-              }
-
-              return StudentsPage(
-                grade: grade,
-                section: section,
-                appTitle: title,
+              final section = state.uri.queryParameters['section'] ?? '';
+              final title = state.uri.queryParameters['title'] ?? 'Class';
+              return _staffFadePage(
+                state,
+                StudentsPage(grade: grade, section: section, appTitle: title),
               );
             },
           ),
@@ -519,6 +514,7 @@ class AppRoute {
         return null;
       }
       if (!hasActiveUser && loginBox.values.isNotEmpty) {
+        if (state.matchedLocation == Routes.usersPage.path) return null;
         log("No active user found. users is existing.");
         return Routes.usersPage.path;
       }

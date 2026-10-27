@@ -24,15 +24,21 @@ class AttendanceModel {
 
   String toJson() => json.encode(toMap());
 
-  factory AttendanceModel.fromMap(Map<String, dynamic> json) => AttendanceModel(
-    userId: json["user_id"],
-    attDate: DateTime.parse(json["attDate"]),
-    checkIn: json["check_in"],
-    checkOut: json["check_out"],
-    checkInTime: json["check_in_time"],
-    checkOutTime: json["check_out_time"],
-    status: json["stat"],
-  );
+  factory AttendanceModel.fromMap(Map<String, dynamic> json) {
+    final attDate = DateTime.tryParse(json['attDate']?.toString() ?? '');
+    if (attDate == null) {
+      throw const FormatException('Attendance row has no attDate');
+    }
+    return AttendanceModel(
+      userId: json['user_id']?.toString() ?? '',
+      attDate: attDate,
+      checkIn: _asFlag(json['check_in']),
+      checkOut: _asFlag(json['check_out']),
+      checkInTime: json['check_in_time']?.toString() ?? '',
+      checkOutTime: json['check_out_time']?.toString() ?? '',
+      status: json['stat']?.toString() ?? '',
+    );
+  }
 
   Map<String, dynamic> toMap() => {
     "user_id": userId,
@@ -42,5 +48,12 @@ class AttendanceModel {
     "check_out": checkOut,
     "check_in_time": checkInTime,
     "check_out_time": checkOutTime,
+    "stat": status,
   };
+}
+
+int _asFlag(dynamic value) {
+  if (value is bool) return value ? 1 : 0;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString().trim() ?? '') ?? 0;
 }

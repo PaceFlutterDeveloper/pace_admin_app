@@ -1,19 +1,24 @@
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
+import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/shared/read_json.dart';
 import 'package:dio/dio.dart';
 
 /// Posts one staff `index.php?page=` call and returns the JSON object.
 ///
 /// Sends the active user's `admin_id` and `token` unless [authenticated] is
-/// false (password reset runs before anyone is signed in).
+/// false (password reset runs before anyone is signed in). [asUser] signs the
+/// call as that saved profile instead of whoever is active.
 Future<Map<String, dynamic>> postStaffPage({
   required ApiService api,
   required Future<String> url,
   required Map<String, dynamic> fields,
   bool authenticated = true,
+  AuthModel? asUser,
 }) async {
-  final auth = authenticated ? await AuthData.getActiveUser() : null;
+  final auth = !authenticated
+      ? null
+      : (asUser ?? await AuthData.getActiveUser());
   if (authenticated && auth == null) {
     throw const StaffApiException('Not signed in');
   }

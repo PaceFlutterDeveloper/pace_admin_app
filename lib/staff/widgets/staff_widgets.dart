@@ -682,12 +682,17 @@ class StaffPageHeader extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.onBack,
+    this.showBack = true,
   });
 
   final String title;
   final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onBack;
+
+  /// Pushed screens show back. The profile gate hides it when nobody is
+  /// signed in, because there is no screen to return to.
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -696,12 +701,14 @@ class StaffPageHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
-          StaffIconButton(
-            glyph: StaffGlyphs.chevronLeft,
-            semanticLabel: 'Back',
-            onTap: onBack ?? () => Navigator.of(context).maybePop(),
-          ),
-          const SizedBox(width: 12),
+          if (showBack) ...[
+            StaffIconButton(
+              glyph: StaffGlyphs.chevronLeft,
+              semanticLabel: 'Back',
+              onTap: onBack ?? () => Navigator.of(context).maybePop(),
+            ),
+            const SizedBox(width: 12),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

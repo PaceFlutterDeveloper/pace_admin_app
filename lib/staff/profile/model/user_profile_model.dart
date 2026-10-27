@@ -16,6 +16,8 @@ class UserProfileModel {
   final String academicStat;
   final String phone;
   final String email;
+  final String role;
+  final String empId;
 
   UserProfileModel({
     required this.id,
@@ -31,6 +33,8 @@ class UserProfileModel {
     required this.academicStat,
     required this.phone,
     required this.email,
+    this.role = '',
+    this.empId = '',
   });
 
   factory UserProfileModel.fromJson(String str) =>
@@ -53,6 +57,8 @@ class UserProfileModel {
         academicStat: readString(json["academic_stat"]),
         phone: readString(json["phone"]),
         email: readString(json["email"]),
+        role: readString(json["role"]),
+        empId: readString(json["emp_id"]),
       );
 
   Map<String, dynamic> toMap() => {
@@ -69,5 +75,7 @@ class UserProfileModel {
     "academic_stat": academicStat,
     "phone": phone,
     "email": email,
+    "role": role,
+    "emp_id": empId,
   };
 }

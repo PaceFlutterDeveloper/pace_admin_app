@@ -1,10 +1,10 @@
 import 'package:admin_app/staff/profile/components/document_section.dart';
 import 'package:admin_app/staff/profile/model/profile_data_model.dart';
+import 'package:admin_app/staff/profile/personal_details.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 Future<void> _showStaffSheet(
   BuildContext context, {
@@ -87,7 +87,7 @@ class _Row extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 128,
             child: Text(
               label,
               style: sora(12.5, weight: FontWeight.w500, color: p.muted),
@@ -136,49 +136,35 @@ class _Group extends StatelessWidget {
   }
 }
 
-/// Personal and emergency details from the staff profile.
+/// Personal, work, contact and emergency details from the staff profile.
 Future<void> showPersonalInfoSheet(
   BuildContext context,
   ProfileDataModel data,
 ) {
-  final emp = data.emp;
-  final dob = emp?.dob == null
-      ? ''
-      : DateFormat('d MMM yyyy').format(emp!.dob!);
+  final groups = personalDetailGroups(data);
   return _showStaffSheet(
     context,
     title: 'Personal information',
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _Group(
-          title: 'PRIMARY DETAILS',
-          rows: [
-            _Row('Name', data.user.name),
-            _Row('Employee ID', emp?.empId ?? ''),
-            _Row('Designation', emp?.designation ?? data.user.designation),
-            _Row('Nationality', emp?.nationality ?? ''),
-            _Row('Date of birth', dob),
-            _Row(
-              'Email',
-              emp?.email.isNotEmpty == true ? emp!.email : data.user.email,
-            ),
-            _Row(
-              'Phone',
-              emp?.phone1.isNotEmpty == true ? emp!.phone1 : data.user.phone,
-            ),
-          ],
-        ),
-        if (emp != null)
-          _Group(
-            title: 'EMERGENCY CONTACT',
-            rows: [
-              _Row('Contact name', emp.relName),
-              _Row('Phone', emp.relTelMob),
+    child: groups.isEmpty
+        ? const StaffStateMessage(
+            glyph: StaffGlyphs.user,
+            title: 'No personal details',
+            message: 'Details on your staff file will appear here.',
+            accent: StaffAccent.blue,
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final group in groups)
+                _Group(
+                  title: group.title,
+                  rows: [
+                    for (final line in group.lines)
+                      _Row(line.label, line.value),
+                  ],
+                ),
             ],
           ),
-      ],
-    ),
   );
 }
 

@@ -36,3 +36,20 @@ class LoadMarker {
 
   void clear() => _at = null;
 }
+
+/// Drops in-flight results when a newer load starts or the session changes.
+class SessionScope {
+  int _ticket = 0;
+
+  /// Bumps the ticket so a load already in flight cannot publish.
+  void invalidate() => _ticket++;
+
+  /// Starts a load. Only the latest one for this user may publish.
+  ({int ticket, String owner}) begin() {
+    _ticket++;
+    return (ticket: _ticket, owner: LoadMarker.sessionKey());
+  }
+
+  bool current(({int ticket, String owner}) stamp) =>
+      stamp.ticket == _ticket && stamp.owner == LoadMarker.sessionKey();
+}

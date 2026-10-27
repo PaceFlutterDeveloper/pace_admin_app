@@ -11,11 +11,19 @@ part 'profile_state.dart';
 class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _profileRepository = locator<ProfileRepository>();
   final LoadMarker _loaded = LoadMarker();
+  final SessionScope _scope = SessionScope();
 
   ProfileCubit() : super(const ProfileState.initial());
 
   /// Whether the profile was loaded recently for the active user.
   bool get isFresh => _loaded.isFresh();
+
+  /// Drops the profile so the next account cannot see it.
+  void dropSession() {
+    _scope.invalidate();
+    _loaded.clear();
+    if (!isClosed) emit(const ProfileState.initial());
+  }
 
   /// With [quiet] the profile already on screen stays visible while it
   /// refreshes; no loading state is emitted and errors are ignored.
@@ -24,9 +32,11 @@ class ProfileCubit extends Cubit<ProfileState> {
         quiet &&
         _loaded.holds() &&
         state.maybeWhen(success: (_) => true, orElse: () => false);
+    final stamp = _scope.begin();
     if (!keep) emit(const ProfileState.loading());
 
     var res = await _profileRepository.getEmpProfile();
+    if (isClosed || !_scope.current(stamp)) return;
 
     return res.fold(
       (error) {

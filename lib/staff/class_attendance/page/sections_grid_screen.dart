@@ -1,98 +1,102 @@
-import 'package:admin_app/staff/class_attendance/model/grade_model.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
-import 'package:admin_app/core/themes/const_colors.dart';
-import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
+import 'package:admin_app/staff/class_attendance/model/grade_model.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
+import 'package:admin_app/staff/theme/staff_theme.dart';
+import 'package:admin_app/staff/widgets/staff_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+void openClassRoll(
+  BuildContext context, {
+  required String grade,
+  required String section,
+  required String title,
+}) {
+  context.pushNamed(
+    Routes.students.name,
+    queryParameters: {'title': title, 'grade': grade, 'section': section},
+  );
+}
 
 class SectionsGridScreen extends StatelessWidget {
   final GradeModel grade;
 
-  const SectionsGridScreen({Key? key, required this.grade}) : super(key: key);
+  const SectionsGridScreen({super.key, required this.grade});
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("${grade.className} - Sections"),
-        centerTitle: true,
-      ),
-      backgroundColor: context.staff.background,
-      body: Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: screenWidth * 0.04,
-          horizontal: screenWidth * 0.03,
-        ),
-        child: GridView.builder(
-          padding: EdgeInsets.symmetric(
-            vertical: screenHeight * 0.015,
-            horizontal: screenWidth * 0.015,
+    final p = context.staff;
+    final sections = grade.sections;
+    return StaffPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          StaffPageHeader(
+            title: grade.label,
+            subtitle: sections.length == 1
+                ? '1 section'
+                : '${sections.length} sections',
           ),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: screenWidth > 1200
-                ? 6
-                : screenWidth > 900
-                ? 4
-                : 3,
-            crossAxisSpacing: screenWidth * 0.02,
-            mainAxisSpacing: screenHeight * 0.02,
-            childAspectRatio: screenWidth > 600 ? 1.2 : 1.0,
-          ),
-          itemCount: grade.sections.length,
-          itemBuilder: (context, index) {
-            final String section = grade.sections[index];
-
-            return InkWell(
-              onTap: () {
-                context.pushNamed(
-                  Routes.students.name,
-                  queryParameters: {
-                    "title": "${grade.className} - $section",
-                    "grade": grade.className,
-                    "section": section, // Ensure key matches with GoRoute
-                  },
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.staff.surface,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 5),
+          Expanded(
+            child: sections.isEmpty
+                ? const StaffStateMessage(
+                    glyph: StaffGlyphs.users,
+                    title: 'No sections',
+                    message:
+                        'This class has no sections to take attendance for.',
+                    accent: StaffAccent.blue,
+                  )
+                : GridView.builder(
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const FaIcon(
-                      FontAwesomeIcons.chalkboard,
-                      color: Colors.blueAccent,
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-                    Center(
-                      child: Text(
-                        section,
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.04,
-                          fontWeight: FontWeight.bold,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.05,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+                    itemCount: sections.length,
+                    itemBuilder: (context, index) {
+                      final section = sections[index];
+                      return StaffCard(
+                        radius: 20,
+                        onTap: () => openClassRoll(
+                          context,
+                          grade: grade.gradeCode,
+                          section: section,
+                          title: '${grade.label} · $section',
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              section,
+                              style: sora(
+                                22,
+                                weight: FontWeight.w800,
+                                color: p.text,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Section',
+                              style: sora(
+                                11,
+                                weight: FontWeight.w600,
+                                color: p.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

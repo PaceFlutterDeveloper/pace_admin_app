@@ -2,6 +2,7 @@ import 'package:admin_app/staff/students/models/student_att_model.dart';
 import 'package:admin_app/staff/students/models/student_response_model.dart';
 import 'package:admin_app/staff/students/repository/students_repository.dart';
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/utils/load_marker.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -12,11 +13,19 @@ class StudentsCubit extends Cubit<StudentsState> {
   StudentsCubit() : super(const StudentsState.initial());
 
   final StudentsRepository _studentsRepository = locator<StudentsRepository>();
+  final SessionScope _scope = SessionScope();
+
+  /// Drops the class list so the next account cannot see it.
+  void dropSession() {
+    _scope.invalidate();
+    if (!isClosed) emit(const StudentsState.initial());
+  }
 
   Future<void> getSterudents({
     required String grade,
     required String section,
   }) async {
+    final stamp = _scope.begin();
     emit(
       StudentsState.loading(attlist: state.attlist, students: state.students),
     );
@@ -24,6 +33,7 @@ class StudentsCubit extends Cubit<StudentsState> {
       grade: grade,
       section: section,
     );
+    if (isClosed || !_scope.current(stamp)) return;
     res.fold(
       (left) => emit(
         StudentsState.failure(

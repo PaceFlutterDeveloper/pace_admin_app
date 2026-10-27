@@ -7,17 +7,27 @@ abstract class StudentAttendanceEvent extends Equatable {
   List<Object> get props => [];
 }
 
+class ClearStudentAttendanceEvent extends StudentAttendanceEvent {}
+
 class FetchStudentsEvent extends StudentAttendanceEvent {
   final String grade;
   final String section;
 
-  const FetchStudentsEvent({required this.grade, required this.section});
+  /// Keeps the current roll on screen while a newer copy loads.
+  final bool quiet;
+
+  const FetchStudentsEvent({
+    required this.grade,
+    required this.section,
+    this.quiet = false,
+  });
+
+  @override
+  List<Object> get props => [grade, section, quiet];
 }
 
 class MarkAllStudentEvent extends StudentAttendanceEvent {}
 
-/// Updated event which now takes a complete StudentAttModel
-/// along with the student identifier.
 class UpdateStudentAttendanceEvent extends StudentAttendanceEvent {
   final String studcode;
   final StudentAttModel studentAttendance;
@@ -32,9 +42,7 @@ class UpdateStudentAttendanceEvent extends StudentAttendanceEvent {
 }
 
 class PostAttendanceEvent extends StudentAttendanceEvent {
-  final List<StudentModel> students;
   final String type;
-  final List<Remark> remarks;
   final String grade;
   final String section;
 
@@ -42,7 +50,8 @@ class PostAttendanceEvent extends StudentAttendanceEvent {
     required this.grade,
     required this.type,
     required this.section,
-    required this.students,
-    required this.remarks,
   });
+
+  @override
+  List<Object> get props => [grade, type, section];
 }

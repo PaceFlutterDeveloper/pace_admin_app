@@ -12,6 +12,7 @@ import 'package:admin_app/staff/profile/components/appearance_toggle.dart';
 import 'package:admin_app/staff/profile/components/profile_sheets.dart';
 import 'package:admin_app/staff/profile/cubit/profile_cubit.dart';
 import 'package:admin_app/staff/profile/model/profile_data_model.dart';
+import 'package:admin_app/staff/profile/personal_details.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
@@ -30,6 +31,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  bool _signingOut = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,13 +43,21 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _signOut() async {
+    if (_signingOut) return;
+    final others = locator<Box<AuthModel>>().values.any(
+      (user) => !user.isActive,
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         final p = context.staff;
         return AlertDialog(
           title: const Text('Sign out'),
-          content: const Text('Are you sure you want to sign out?'),
+          content: Text(
+            others
+                ? 'Sign out of this profile? Other profiles on this phone stay available, and you can continue as one of them.'
+                : 'Are you sure you want to sign out?',
+          ),
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           actions: [
             TextButton(
@@ -63,7 +74,15 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       },
     );
-    if (confirmed == true) locator<AuthCubit>().logout();
+    if (confirmed != true || !mounted) return;
+    setState(() => _signingOut = true);
+    try {
+      final othersRemain = await locator<AuthCubit>().logout();
+      if (!mounted) return;
+      context.go(othersRemain ? Routes.usersPage.path : Routes.careers.path);
+    } finally {
+      if (mounted) setState(() => _signingOut = false);
+    }
   }
 
   @override
@@ -159,7 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     _SettingsRow(
                       glyph: StaffGlyphs.swap,
                       accent: StaffAccent.green,
-                      label: 'Switch user',
+                      label: 'Switch profile',
                       onTap: () => context.push(Routes.usersPage.path),
                     ),
                   ],
@@ -188,7 +207,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: _SignOutButton(onPressed: _signOut),
+                  child: _SignOutButton(
+                    onPressed: _signOut,
+                    loading: _signingOut,
+                  ),
                 ),
               ],
             ),
@@ -216,19 +238,31 @@ class _ProfileHero extends StatelessWidget {
       valueListenable: staffSessionListenable(),
       builder: (context, box, _) {
         final user = activeStaffUser();
-        final name = (data?.user.name.trim().isNotEmpty ?? false)
+        final rawName = (data?.user.name.trim().isNotEmpty ?? false)
             ? data!.user.name.trim()
-            : user.name.trim();
-        final designation = (data?.emp?.designation.trim().isNotEmpty ?? false)
-            ? data!.emp!.designation.trim()
-            : user.designation.trim();
+            : ((data?.emp?.emplName.trim().isNotEmpty ?? false)
+                  ? data!.emp!.emplName.trim()
+                  : user.name.trim());
+        final name = staffDisplayText(rawName);
+        final designation = staffDisplayText(
+          (data?.emp?.designation.trim().isNotEmpty ?? false)
+              ? data!.emp!.designation.trim()
+              : user.designation.trim(),
+        );
+        final department = staffDisplayText(data?.emp?.department.trim() ?? '');
+        final school = user.schoolName.trim().isNotEmpty
+            ? user.schoolName.trim()
+            : staffDisplayText(data?.schoolName ?? '');
         final subtitle = [
           if (designation.isNotEmpty) designation,
-          if (user.schoolName.trim().isNotEmpty) user.schoolName.trim(),
+          if (department.isNotEmpty) department,
+          if (school.isNotEmpty) school,
         ].join(' · ');
-        final photo = (data?.photo.trim().isNotEmpty ?? false)
-            ? data!.photo.trim()
-            : user.profilePicture.trim();
+        final photo = profilePhotoUrl(
+          rootPhoto: data?.photo ?? '',
+          userPhoto: data?.user.photo,
+          sessionPhoto: user.profilePicture,
+        );
 
         final p = context.staff;
         final titleColor = p.heroTitle;
@@ -267,14 +301,26 @@ class _ProfileHero extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: BlocBuilder<AttendanceCubit, AttendanceState>(
-                      builder: (context, s) {
-                        final pct = s.maybeWhen(
-                          loadingSuccess: (list) =>
-                              '${buildAttendanceDashboardSummaries(list, DateTime.now()).month.percentage.round()}%',
-                          orElse: () => '-',
+                    child: BlocBuilder<DashboardCubit, StaffDashboard?>(
+                      bloc: locator<DashboardCubit>(),
+                      builder: (context, dashboard) {
+                        final server = dashboard?.attendance;
+                        if (server != null) {
+                          return HeroStat(
+                            value: '${server.percentage.round()}%',
+                            label: 'Attendance',
+                          );
+                        }
+                        return BlocBuilder<AttendanceCubit, AttendanceState>(
+                          builder: (context, s) {
+                            final pct = s.maybeWhen(
+                              loadingSuccess: (list) =>
+                                  '${buildAttendanceDashboardSummaries(list, DateTime.now()).month.percentage.round()}%',
+                              orElse: () => '-',
+                            );
+                            return HeroStat(value: pct, label: 'Attendance');
+                          },
                         );
-                        return HeroStat(value: pct, label: 'Attendance');
                       },
                     ),
                   ),
@@ -487,9 +533,10 @@ class _SettingsRow extends StatelessWidget {
 }
 
 class _SignOutButton extends StatelessWidget {
-  const _SignOutButton({required this.onPressed});
+  const _SignOutButton({required this.onPressed, this.loading = false});
 
   final VoidCallback onPressed;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -497,13 +544,22 @@ class _SignOutButton extends StatelessWidget {
     return SizedBox(
       height: 46,
       child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: StaffIcon(
-          StaffGlyphs.logout,
-          size: 18,
-          color: p.dangerText,
-          strokeWidth: 2,
-        ),
+        onPressed: loading ? null : onPressed,
+        icon: loading
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: p.dangerText,
+                ),
+              )
+            : StaffIcon(
+                StaffGlyphs.logout,
+                size: 18,
+                color: p.dangerText,
+                strokeWidth: 2,
+              ),
         label: Text(
           'Sign out',
           style: sora(13.5, weight: FontWeight.w700, color: p.dangerText),

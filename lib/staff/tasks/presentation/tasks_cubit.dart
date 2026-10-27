@@ -33,18 +33,30 @@ class TasksCubit extends Cubit<TasksState> {
 
   final TasksRepository _repository;
   final LoadMarker _loaded = LoadMarker();
+  final SessionScope _scope = SessionScope();
 
   bool get isFresh => _loaded.isFresh();
 
+  /// Drops the task list so the next account cannot see it.
+  void dropSession() {
+    _scope.invalidate();
+    _loaded.clear();
+    if (!isClosed) emit(const TasksLoading());
+  }
+
   Future<void> load({bool quiet = false}) async {
     final keep = quiet && _loaded.holds() && state is TasksLoaded;
+    final stamp = _scope.begin();
     if (!keep) emit(const TasksLoading());
     try {
       final result = await _repository.myTasks();
+      if (isClosed || !_scope.current(stamp)) return;
       _loaded.mark();
       emit(TasksLoaded(tasks: result.tasks, counts: result.counts));
     } catch (error) {
-      if (!keep) emit(TasksFailed(staffErrorMessage(error)));
+      if (!keep && !isClosed && _scope.current(stamp)) {
+        emit(TasksFailed(staffErrorMessage(error)));
+      }
     }
   }
 }

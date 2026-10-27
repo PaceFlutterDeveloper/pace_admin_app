@@ -16,6 +16,7 @@ import 'package:admin_app/staff/home/menu/staff_menu_catalog.dart';
 import 'package:admin_app/staff/leave/presentation/leave_format.dart';
 import 'package:admin_app/staff/home/menu/staff_menu_tile.dart';
 import 'package:admin_app/staff/home/models/menu_model.dart';
+import 'package:admin_app/staff/home/utils/active_staff_user.dart';
 import 'package:admin_app/staff/home/utils/home_attendance_summary.dart';
 import 'package:admin_app/staff/home/utils/menu_route_helper.dart';
 import 'package:admin_app/staff/home/widgets/attendance_hero_card.dart';
@@ -23,6 +24,7 @@ import 'package:admin_app/staff/home/widgets/dashboard_home_header.dart';
 import 'package:admin_app/staff/home/widgets/home_dashboard_models.dart';
 import 'package:admin_app/staff/home/widgets/home_sections.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
+import 'package:admin_app/staff/utils/load_marker.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
@@ -54,15 +56,29 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   final TodayEventsCubit _events = locator<TodayEventsCubit>();
   final TasksCubit _tasks = locator<TasksCubit>();
   final DashboardCubit _dashboard = locator<DashboardCubit>();
+  String _sessionUser = '';
 
   @override
   void initState() {
     super.initState();
+    _sessionUser = activeStaffKey();
+    staffSessionListenable().addListener(_onSession);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _loadAll();
       unawaited(locator<StaffSessionService>().registerDevice());
     });
+  }
+
+  /// Home stays alive under other routes. When the signed-in account changes,
+  /// reload instead of keeping the previous person's attendance on screen.
+  void _onSession() {
+    if (!mounted) return;
+    final next = activeStaffKey();
+    if (next == _sessionUser) return;
+    _sessionUser = next;
+    if (activeStaffUser().userId.isEmpty) return;
+    _loadAll(force: true);
   }
 
   @override
@@ -77,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
   @override
   void dispose() {
+    staffSessionListenable().removeListener(_onSession);
     shellRouteObserver.unsubscribe(this);
     super.dispose();
   }
@@ -144,20 +161,32 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             padding: const EdgeInsets.only(bottom: 24),
             children: [
               const DashboardHomeHeader(),
-              BlocBuilder<AttendanceCubit, AttendanceState>(
-                builder: (context, attendanceState) {
-                  final bundle = attendanceState.when(
-                    initial: _attendanceDashboardPlaceholder,
-                    loading: _attendanceDashboardPlaceholder,
-                    loadingSuccess: (list) =>
-                        buildAttendanceDashboardSummaries(list, DateTime.now()),
-                    laodingFailure: (_) => _attendanceDashboardPlaceholder(),
-                  );
-                  return AttendanceHeroCard(
-                    todayAttendance: bundle.today,
-                    monthlyStats: bundle.month,
-                    onStats: () =>
-                        _open(Routes.userAttendance.name, 'Attendance'),
+              BlocBuilder<DashboardCubit, StaffDashboard?>(
+                bloc: _dashboard,
+                builder: (context, dashboard) {
+                  return BlocBuilder<AttendanceCubit, AttendanceState>(
+                    builder: (context, attendanceState) {
+                      final server = dashboard?.attendance;
+                      final bundle = server != null
+                          ? summariesFromDashboard(server, DateTime.now())
+                          : attendanceState.when(
+                              initial: _attendanceDashboardPlaceholder,
+                              loading: _attendanceDashboardPlaceholder,
+                              loadingSuccess: (list) =>
+                                  buildAttendanceDashboardSummaries(
+                                    list,
+                                    DateTime.now(),
+                                  ),
+                              laodingFailure: (_) =>
+                                  _attendanceDashboardPlaceholder(),
+                            );
+                      return AttendanceHeroCard(
+                        todayAttendance: bundle.today,
+                        monthlyStats: bundle.month,
+                        onStats: () =>
+                            _open(Routes.userAttendance.name, 'Attendance'),
+                      );
+                    },
                   );
                 },
               ),
