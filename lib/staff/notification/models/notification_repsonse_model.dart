@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:admin_app/staff/notification/models/notification_model.dart';
+import 'package:admin_app/staff/shared/read_json.dart';
 
 class NotificationResponseModel {
   final bool status;
@@ -22,12 +23,14 @@ class NotificationResponseModel {
 
   factory NotificationResponseModel.fromMap(Map<String, dynamic> json) =>
       NotificationResponseModel(
-        status: json["status"],
-        message: json["message"],
+        status: json["status"] == true,
+        message: readString(json["message"]),
         data: List<NotificationModel>.from(
-          json["data"].map((x) => NotificationModel.fromMap(x)),
+          json["data"].map(
+            (x) => NotificationModel.fromMap(Map<String, dynamic>.from(x)),
+          ),
         ),
-        count: json["count"],
+        count: readInt(json["count"]),
       );
 
   Map<String, dynamic> toMap() => {

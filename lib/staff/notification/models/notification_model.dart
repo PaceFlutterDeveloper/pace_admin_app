@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:admin_app/staff/shared/read_json.dart';
+
 class NotificationModel {
   final int id;
   final String notification;
@@ -35,18 +37,18 @@ class NotificationModel {
 
   factory NotificationModel.fromMap(Map<String, dynamic> json) =>
       NotificationModel(
-        id: json["id"],
-        notification: json["notification"],
-        pageId: json["page_id"],
-        link: json["link"],
-        readStat: json["read_stat"],
-        dateTimeAdded: json["date_time_added"],
-        dateAdded: json["date_added"],
-        logTime: json["log_time"],
-        days: json["days"],
-        timeAgo: json["time_ago"],
-        appPage: json['app_page'] ?? "",
-        head: json['head'] ?? "",
+        id: readInt(json["id"]),
+        notification: readString(json["notification"]),
+        pageId: _pageId(json["page_id"]),
+        link: readString(json["link"]),
+        readStat: readInt(json["read_stat"]),
+        dateTimeAdded: readString(json["date_time_added"]),
+        dateAdded: readString(json["date_added"]),
+        logTime: readString(json["log_time"]),
+        days: readInt(json["days"]),
+        timeAgo: readString(json["time_ago"]),
+        appPage: readString(json['app_page']),
+        head: readString(json['head']),
       );
 
   Map<String, dynamic> toMap() => {
@@ -90,4 +92,15 @@ class NotificationModel {
       timeAgo: timeAgo ?? this.timeAgo,
     );
   }
+}
+
+/// `page_id` is null or "" when a notification has no screen, and the API
+/// sometimes sends the id as a string.
+int? _pageId(dynamic value) {
+  if (value == null) return null;
+  final text = readString(value);
+  if (text.isEmpty) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(text);
 }
