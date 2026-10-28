@@ -2,11 +2,9 @@ import 'dart:async';
 
 import 'package:admin_app/careers/notification/careers_fcm_service.dart';
 import 'package:admin_app/dependancy_injection.dart';
-import 'package:admin_app/staff/attendance_calendar/cubit/attendance_cubit.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
 import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/auth/repository/auth_repository.dart';
-import 'package:admin_app/staff/home/cubit/home_cubit.dart';
 import 'package:admin_app/staff/notification/services/staff_fcm.dart';
 import 'package:admin_app/staff/session/staff_memory.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
@@ -107,14 +105,6 @@ class AuthCubit extends Cubit<AuthState> {
       'schoolCode',
       schoolCode,
     ); // Retrieve the selected school code
-    final now = DateTime.now();
-    await Future.wait([
-      locator<HomeCubit>().getMenu(),
-      locator<AttendanceCubit>().getAttendance(
-        month: now.month,
-        year: now.year,
-      ),
-    ]);
     Hive.box('settingsBox').put('signedInSurface', 'staff');
     emit(const AuthState.userSwitch());
     unawaited(StaffFcm.clearTopics());

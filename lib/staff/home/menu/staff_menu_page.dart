@@ -1,4 +1,6 @@
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/dashboard/domain/staff_dashboard.dart';
+import 'package:admin_app/staff/dashboard/presentation/dashboard_cubit.dart';
 import 'package:admin_app/staff/home/cubit/home_cubit.dart';
 import 'package:admin_app/staff/home/menu/staff_menu_catalog.dart';
 import 'package:admin_app/staff/home/menu/staff_menu_tile.dart';
@@ -162,78 +164,90 @@ class _MenuBody extends StatelessWidget {
     final p = context.staff;
     final sections = buildStaffMenu(menus, query: query);
 
-    return BlocBuilder<TicketsCubit, TicketsState>(
-      bloc: locator<TicketsCubit>(),
-      buildWhen: (_, next) =>
-          next is TicketsLoadingSuccess || next is TicketsLoadingError,
-      builder: (context, ticketState) {
-        final openTickets = ticketState is TicketsLoadingSuccess
-            ? openTicketCount(ticketState)
-            : 0;
+    return BlocBuilder<DashboardCubit, StaffDashboard?>(
+      bloc: locator<DashboardCubit>(),
+      builder: (context, dashboard) {
+        return BlocBuilder<TicketsCubit, TicketsState>(
+          bloc: locator<TicketsCubit>(),
+          buildWhen: (_, next) =>
+              next is TicketsLoadingSuccess || next is TicketsLoadingError,
+          builder: (context, ticketState) {
+            final openTickets = ticketState is TicketsLoadingSuccess
+                ? openTicketCount(ticketState)
+                : 0;
 
-        return RefreshIndicator(
-          color: p.amberText,
-          backgroundColor: p.surface,
-          onRefresh: onRefresh,
-          child: CustomScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            slivers: [
-              if (sections.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: StaffStateMessage(
-                    glyph: StaffGlyphs.search,
-                    title: 'No modules found',
-                    message: 'Nothing matches "$query". Try a different word.',
-                  ),
+            return RefreshIndicator(
+              color: p.amberText,
+              backgroundColor: p.surface,
+              onRefresh: onRefresh,
+              child: CustomScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
                 ),
-              for (var index = 0; index < sections.length; index++) ...[
-                if (sections[index].title.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: SectionLabel(sections[index].title.toUpperCase()),
-                  )
-                else if (index > 0)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 18, 22, 6),
-                      child: Divider(height: 1, color: p.border),
+                slivers: [
+                  if (sections.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: StaffStateMessage(
+                        glyph: StaffGlyphs.search,
+                        title: 'No modules found',
+                        message:
+                            'Nothing matches "$query". Try a different word.',
+                      ),
                     ),
-                  )
-                else
-                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  sliver: SliverGrid(
-                    gridDelegate: staffMenuGridDelegate(context),
-                    delegate: SliverChildBuilderDelegate(
-                      childCount: sections[index].items.length,
-                      (context, i) {
-                        final entry = sections[index].items[i];
-                        final apiBadge = entry.menu?.badge ?? 0;
-                        final badge =
-                            entry.page == 'tickets' &&
-                                ticketState is TicketsLoadingSuccess
-                            ? openTickets
-                            : apiBadge;
-                        return StaffMenuTile(
-                          label: entry.label,
-                          glyph: entry.style.glyph,
-                          accent: entry.style.accent,
-                          soon: entry.isSoon,
-                          badge: badge,
-                          onTap: () => onOpen(entry),
-                        );
-                      },
+                  for (var index = 0; index < sections.length; index++) ...[
+                    if (sections[index].title.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: SectionLabel(
+                          sections[index].title.toUpperCase(),
+                        ),
+                      )
+                    else if (index > 0)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(22, 18, 22, 6),
+                          child: Divider(height: 1, color: p.border),
+                        ),
+                      )
+                    else
+                      const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      sliver: SliverGrid(
+                        gridDelegate: staffMenuGridDelegate(context),
+                        delegate: SliverChildBuilderDelegate(
+                          childCount: sections[index].items.length,
+                          (context, i) {
+                            final entry = sections[index].items[i];
+                            final apiBadge = entry.menu?.badge ?? 0;
+                            final pending = dashboard?.tasksPending;
+                            final badge =
+                                entry.page == 'tickets' &&
+                                    ticketState is TicketsLoadingSuccess
+                                ? openTickets
+                                : entry.page == 'tasks' && pending != null
+                                ? pending
+                                : apiBadge;
+                            return StaffMenuTile(
+                              label: entry.label,
+                              glyph: entry.style.glyph,
+                              accent: entry.style.accent,
+                              soon: entry.isSoon,
+                              badge: badge,
+                              onTap: () => onOpen(entry),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
-          ),
+                  ],
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
+              ),
+            );
+          },
         );
       },
     );

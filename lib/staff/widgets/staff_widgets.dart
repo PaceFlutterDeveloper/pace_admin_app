@@ -216,25 +216,23 @@ class SectionHeader extends StatelessWidget {
 
 /// Number plus caption block used on hero cards (ink in dark, white in light).
 class HeroStat extends StatelessWidget {
-  const HeroStat({super.key, required this.value, required this.label});
+  const HeroStat({
+    super.key,
+    required this.value,
+    required this.label,
+    this.onTap,
+  });
 
   final String value;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = context.staff;
-    return Container(
+    final radius = BorderRadius.circular(14);
+    final content = Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-      decoration: BoxDecoration(
-        color: p.isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : p.surface.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: p.isDark ? Colors.white.withValues(alpha: 0.08) : p.border,
-        ),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -253,6 +251,29 @@ class HeroStat extends StatelessWidget {
             style: sora(10.5, weight: FontWeight.w500, color: p.heroSubtle),
           ),
         ],
+      ),
+    );
+    final decoration = BoxDecoration(
+      color: p.isDark
+          ? Colors.white.withValues(alpha: 0.06)
+          : p.surface.withValues(alpha: 0.75),
+      borderRadius: radius,
+      border: Border.all(
+        color: p.isDark ? Colors.white.withValues(alpha: 0.08) : p.border,
+      ),
+    );
+    if (onTap == null) {
+      return Container(decoration: decoration, child: content);
+    }
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap!();
+        },
+        child: Ink(decoration: decoration, child: content),
       ),
     );
   }

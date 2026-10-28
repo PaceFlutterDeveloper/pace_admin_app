@@ -85,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   /// Home stays alive under other routes. When the signed-in account changes,
-  /// reload instead of keeping the previous person's attendance on screen.
+  /// reload instead of keeping the previous person's home on screen.
   void _onSession() {
     if (!mounted) return;
     final next = activeStaffKey();
@@ -112,31 +112,19 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     super.dispose();
   }
 
+  /// The hero reads the summary, so coming back refreshes that.
   @override
   void didPopNext() {
     if (!mounted) return;
-    _loadAttendance();
+    unawaited(_dashboard.load());
   }
 
-  Future<void> _loadAttendance() {
-    final now = DateTime.now();
-    return context.read<AttendanceCubit>().getAttendance(
-      month: now.month,
-      year: now.year,
-      quiet: true,
-    );
-  }
-
-  /// Refreshes what Home shows without blanking it. Switching back to this tab
-  /// reuses data that is still fresh instead of refetching on every visit.
+  /// Summary, menu, tasks, and today's events. The attendance month loads
+  /// on that screen. Data that is still fresh stays on screen.
   Future<void> _loadAll({bool force = false}) async {
     final home = context.read<HomeCubit>();
-    final attendance = context.read<AttendanceCubit>();
-    final now = DateTime.now();
     if (force) _takenFromBalance = null;
     await Future.wait([
-      if (force || !attendance.isFresh(month: now.month, year: now.year))
-        _loadAttendance(),
       if (force || !_events.isFresh) _events.load(quiet: true),
       if (force || !_tasks.isFresh) _tasks.load(quiet: true),
       if (force || !home.isFresh) home.getMenu(quiet: true),

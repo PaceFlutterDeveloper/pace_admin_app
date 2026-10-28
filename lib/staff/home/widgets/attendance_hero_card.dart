@@ -66,7 +66,11 @@ class AttendanceHeroCard extends StatelessWidget {
           const SizedBox(height: 10),
           _PunchLine(label: 'In', time: punchIn),
           const SizedBox(height: 2),
-          _PunchLine(label: 'Out', time: punchOut),
+          _PunchLine(
+            label: 'Out',
+            time: punchOut,
+            note: _earlyOutNote(todayAttendance.earlyMinutes),
+          ),
           const SizedBox(height: 8),
           Text(
             DateFormat('EEEE, d MMMM yyyy').format(clock),
@@ -166,6 +170,12 @@ class _MonthStat extends StatelessWidget {
   }
 }
 
+/// "25 min early" when today has an early out. Zero stays off the card.
+String? _earlyOutNote(int? minutes) {
+  if (minutes == null || minutes <= 0) return null;
+  return minutes == 1 ? '1 min early' : '$minutes min early';
+}
+
 /// "08:02 AM", the API text when it could not be parsed, or an em dash.
 String _punchLabel(DateTime? at, String? raw) {
   if (at != null) return DateFormat('hh:mm a').format(at);
@@ -175,10 +185,13 @@ String _punchLabel(DateTime? at, String? raw) {
 }
 
 class _PunchLine extends StatelessWidget {
-  const _PunchLine({required this.label, required this.time});
+  const _PunchLine({required this.label, required this.time, this.note});
 
   final String label;
   final String time;
+
+  /// Extra fact after the clock, such as an early out.
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -206,6 +219,17 @@ class _PunchLine extends StatelessWidget {
             ),
           ),
         ),
+        if (note != null) ...[
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              note!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sora(12.5, weight: FontWeight.w700, color: p.amberText),
+            ),
+          ),
+        ],
       ],
     );
   }

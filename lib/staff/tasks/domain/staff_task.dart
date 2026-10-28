@@ -129,6 +129,7 @@ class StaffTask {
     this.attachments = const [],
     this.pending = 0,
     this.critical = 0,
+    this.tracksPending = false,
     this.table,
   });
 
@@ -149,6 +150,10 @@ class StaffTask {
   /// Items still waiting, and how many of them are critical.
   final int pending;
   final int critical;
+
+  /// True when the payload included `pending` or `critical`.
+  /// A plain assigned task omits both, so zero is not "all clear".
+  final bool tracksPending;
   final TaskTable? table;
 
   bool get isDone {
@@ -159,7 +164,6 @@ class StaffTask {
   String get statusLabel {
     final value = status.toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
     return switch (value) {
-      'in_progress' || 'inprogress' => 'In progress',
       'done' || 'completed' || 'closed' => 'Done',
       'open' || '' => 'Open',
       _ => status,
@@ -228,6 +232,8 @@ class StaffTask {
       attachments: readAttachments(json['attachments']),
       pending: readInt(json['pending']),
       critical: readInt(json['critical']),
+      tracksPending:
+          json.containsKey('pending') || json.containsKey('critical'),
       table: TaskTable.tryFrom(json['detail']),
     );
   }

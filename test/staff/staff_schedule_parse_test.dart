@@ -67,12 +67,32 @@ void main() {
       },
     });
 
-    expect(list.tasks.single.statusLabel, 'In progress');
     expect(list.tasks.single.priorityLabel, 'High');
     expect(list.tasks.single.assignees, ['Niyas']);
     expect(list.tasks.single.createdBy, 'Principal');
+    expect(list.tasks.single.tracksPending, isFalse);
     expect(list.counts.dueToday, 1);
     expect(list.counts.overdue, 2);
+
+    final leave = StaffTask.tryFromMap({
+      'task_id': 'studportal_leave_approvals',
+      'title': 'Student Portal leave — pending',
+      'status': 'open',
+      'pending': 41,
+      'critical': 13,
+      'is_overdue': true,
+    });
+    expect(leave!.pending, 41);
+    expect(leave.critical, 13);
+    expect(leave.tracksPending, isTrue);
+
+    final clear = StaffTask.tryFromMap({
+      'title': 'Student Portal leave — pending',
+      'pending': 0,
+      'critical': 0,
+    });
+    expect(clear!.tracksPending, isTrue);
+    expect(clear.pending, 0);
 
     final detail = StaffTask.tryFromMap({
       'title': 'Prepare the hall',

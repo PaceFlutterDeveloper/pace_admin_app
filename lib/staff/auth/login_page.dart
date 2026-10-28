@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:admin_app/staff/auth/cubit/auth_cubit.dart';
 import 'package:admin_app/staff/auth/forgot_password_form.dart';
 import 'package:admin_app/staff/auth/models/startup_school.dart';
-import 'package:admin_app/staff/home/cubit/home_cubit.dart';
 import 'package:admin_app/careers/shared/components/careers_auth_scaffold.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
@@ -113,7 +112,6 @@ class _LoginPageState extends State<LoginPage> {
           loginFailure: (msg) => AppToast.error(context, msg),
           loginSuccess: () {
             secretAdminLoginOpen.value = false;
-            context.read<HomeCubit>().getMenu();
             // This page is not under GoRouter, so navigation goes through
             // the router instance rather than the overlay context.
             AppRoute.router.go(Routes.home.path);

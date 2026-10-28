@@ -81,6 +81,16 @@ String attendanceRecordStatusLabel(AttendanceModel attendance) {
   }
 }
 
+/// Work days that have a punch, or should have one, get the in/out pair.
+///
+/// The pair always keeps both spots, so a missed punch-out is a hole where
+/// the red dot would be.
+bool attendanceShowsPunchDots(AttendanceModel? row, AttendanceDayKind kind) {
+  if (row == null) return false;
+  if (row.hasPunchIn || row.hasPunchOut) return true;
+  return kind == AttendanceDayKind.present || kind == AttendanceDayKind.late;
+}
+
 /// Weekends and days the server has not marked yet get no calendar dot.
 bool attendanceDayMarksCalendar(AttendanceModel attendance) {
   switch (attendanceDayKind(attendance)) {

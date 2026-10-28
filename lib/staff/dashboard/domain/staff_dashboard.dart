@@ -16,6 +16,7 @@ class DashboardAttendance {
     this.checkIn,
     this.checkOut,
     this.todayStatus = '',
+    this.earlyMinutes,
     this.percentage = 0,
     this.absentDays = 0,
     this.presentDays = 0,
@@ -26,6 +27,10 @@ class DashboardAttendance {
   final String? checkIn;
   final String? checkOut;
   final String todayStatus;
+
+  /// Minutes before the shift ended today. Null when the server sends nothing
+  /// or zero.
+  final int? earlyMinutes;
   final double percentage;
   final int absentDays;
   final int presentDays;
@@ -45,6 +50,11 @@ class DashboardAttendance {
       checkIn: checkIn.isEmpty ? null : checkIn,
       checkOut: checkOut.isEmpty ? null : checkOut,
       todayStatus: readString(todayMap['status']),
+      earlyMinutes: _positiveMinutes(
+        todayMap['early_minutes'] ??
+            todayMap['early_min'] ??
+            todayMap['early_by'],
+      ),
       percentage: readNum(monthMap['percentage']),
       absentDays: readInt(monthMap['absent_days']),
       presentDays: readInt(monthMap['present_days']),
@@ -63,6 +73,7 @@ class DashboardAttendance {
 class StaffDashboard {
   const StaffDashboard({
     this.openTickets,
+    this.tasksPending,
     this.tasksDueToday,
     this.tasksOverdue,
     this.leave,
@@ -74,6 +85,9 @@ class StaffDashboard {
   });
 
   final int? openTickets;
+
+  /// `tasks.pending` from `page=dashboard`. Null when the summary omits it.
+  final int? tasksPending;
   final int? tasksDueToday;
   final int? tasksOverdue;
   final List<DashboardLeave>? leave;
@@ -126,6 +140,7 @@ class StaffDashboard {
     final attendance = data['attendance'];
     return StaffDashboard(
       openTickets: tickets is Map ? _count(tickets['open']) : null,
+      tasksPending: _tasksPending(data, tasks),
       tasksDueToday: tasks is Map ? _count(tasks['due_today']) : null,
       tasksOverdue: tasks is Map ? _count(tasks['overdue']) : null,
       leave: _leaveRows(leave),
@@ -138,6 +153,18 @@ class StaffDashboard {
           : null,
     );
   }
+}
+
+/// Pending work from the dashboard summary. The tasks object uses `pending`;
+/// a top-level `tasks_pending` matches `approvals_pending`.
+int? _tasksPending(Map<String, dynamic> data, dynamic tasks) {
+  if (tasks is Map && tasks.containsKey('pending')) {
+    return StaffDashboard._count(tasks['pending']);
+  }
+  for (final key in const ['tasks_pending', 'tasks-pending']) {
+    if (data.containsKey(key)) return StaffDashboard._count(data[key]);
+  }
+  return null;
 }
 
 /// `taken_days` is the total. `taken` is a list of `{type, days}`, not a number.
@@ -177,6 +204,18 @@ List<DashboardLeave>? _leaveRows(dynamic leave) {
     ];
   }
   return null;
+}
+
+/// Minutes the person left early. Zero and blanks stay null so the card
+/// does not append "0 min early".
+int? _positiveMinutes(dynamic value) {
+  if (value == null) return null;
+  if (value is String && value.trim().isEmpty) return null;
+  final parsed = value is num
+      ? value.toInt()
+      : int.tryParse(value.toString().trim());
+  if (parsed == null || parsed <= 0) return null;
+  return parsed;
 }
 
 /// First numeric field that is actually present. Missing keys stay null so a

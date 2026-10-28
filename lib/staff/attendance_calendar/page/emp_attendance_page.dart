@@ -730,6 +730,19 @@ class _CalendarCard extends StatelessWidget {
                 ),
             ],
           ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            runSpacing: 6,
+            children: [
+              _PunchKey(label: 'Punch in', color: _punchIn, text: colors.muted),
+              _PunchKey(
+                label: 'Punch out',
+                color: _punchOut,
+                text: colors.muted,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -747,16 +760,21 @@ class _CalendarCard extends StatelessWidget {
     final isSelected = DateUtils.isSameDay(date, selected);
     final faded = _faded(kind);
     final status = _dayLabel(row, kind);
+    final punches = attendanceShowsPunchDots(row, kind);
     final ring = isToday
         ? colors.amber
         : isSelected
         ? colors.text
         : null;
+    final punchLabel = !punches || row == null
+        ? ''
+        : ', ${row.hasPunchIn ? 'punched in' : 'missed punch in'}'
+              ', ${row.hasPunchOut ? 'punched out' : 'missed punch out'}';
     return Semantics(
       button: true,
       selected: isSelected,
       label:
-          '${DateFormat('MMMM d').format(date)}, $status${isToday ? ', today' : ''}',
+          '${DateFormat('MMMM d').format(date)}, $status${isToday ? ', today' : ''}$punchLabel',
       child: SizedBox(
         height: 38,
         child: Stack(
@@ -776,7 +794,10 @@ class _CalendarCard extends StatelessWidget {
                     },
                     child: Stack(
                       children: [
-                        Center(
+                        Align(
+                          alignment: punches
+                              ? const Alignment(0, -0.45)
+                              : Alignment.center,
                           child: Text(
                             '${date.day}',
                             style: sora(
@@ -788,13 +809,23 @@ class _CalendarCard extends StatelessWidget {
                         ),
                         if (tone.badge != null)
                           Positioned(
-                            top: 4,
-                            right: 4,
+                            top: 3,
+                            right: 3,
                             child: StaffIcon(
                               tone.badge!,
-                              size: 10,
+                              size: 9,
                               color: tone.foreground,
                               strokeWidth: 1.6,
+                            ),
+                          ),
+                        if (punches && row != null)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 3,
+                            child: _PunchPair(
+                              punchedIn: row.hasPunchIn,
+                              punchedOut: row.hasPunchOut,
                             ),
                           ),
                       ],
@@ -1151,6 +1182,81 @@ class _CountChip extends StatelessWidget {
         },
         child: body,
       ),
+    );
+  }
+}
+
+const _punchIn = Color(0xFF3DDC84);
+const _punchOut = Color(0xFFFF5C5C);
+
+/// Green spot for punch-in, red spot for punch-out. A missed punch stays
+/// an empty ring in that spot.
+class _PunchPair extends StatelessWidget {
+  const _PunchPair({required this.punchedIn, required this.punchedOut});
+
+  final bool punchedIn;
+  final bool punchedOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _PunchDot(filled: punchedIn, color: _punchIn),
+        const SizedBox(width: 6),
+        _PunchDot(filled: punchedOut, color: _punchOut),
+      ],
+    );
+  }
+}
+
+class _PunchDot extends StatelessWidget {
+  const _PunchDot({required this.filled, required this.color});
+
+  final bool filled;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 5,
+      height: 5,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: filled ? color : Colors.transparent,
+        border: Border.all(
+          color: filled ? color : color.withValues(alpha: 0.45),
+          width: 1,
+        ),
+      ),
+    );
+  }
+}
+
+class _PunchKey extends StatelessWidget {
+  const _PunchKey({
+    required this.label,
+    required this.color,
+    required this.text,
+  });
+
+  final String label;
+  final Color color;
+  final Color text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: sora(11, weight: FontWeight.w400, color: text)),
+      ],
     );
   }
 }

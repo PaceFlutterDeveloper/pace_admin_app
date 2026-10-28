@@ -55,13 +55,6 @@ class ComingSoonArgs {
     blurb: 'Choose which alerts reach you and when.',
   );
 
-  static const language = ComingSoonArgs(
-    title: 'Language',
-    glyph: StaffGlyphs.globe,
-    accent: StaffAccent.green,
-    blurb: 'More languages are on the way. English is used for now.',
-  );
-
   static const personalInfo = ComingSoonArgs(
     title: 'Personal information',
     glyph: StaffGlyphs.user,

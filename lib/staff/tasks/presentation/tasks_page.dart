@@ -12,7 +12,7 @@ import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum _TaskFilter { all, open, progress, done }
+enum _TaskFilter { open, done, all }
 
 /// Tasks tab: work assigned to the signed-in staff member.
 class TasksPage extends StatefulWidget {
@@ -24,7 +24,7 @@ class TasksPage extends StatefulWidget {
 
 class _TasksPageState extends State<TasksPage> {
   late final TasksCubit _cubit = locator<TasksCubit>();
-  _TaskFilter _filter = _TaskFilter.all;
+  _TaskFilter _filter = _TaskFilter.open;
 
   @override
   void initState() {
@@ -63,15 +63,27 @@ class _TasksPageState extends State<TasksPage> {
                         const SizedBox(height: 2),
                         BlocBuilder<TasksCubit, TasksState>(
                           builder: (context, state) {
-                            final text = state is TasksLoaded
-                                ? _summary(state.counts)
-                                : 'Assigned to you';
+                            if (state is! TasksLoaded) {
+                              return Text(
+                                'Assigned to you',
+                                style: sora(
+                                  12.5,
+                                  weight: FontWeight.w400,
+                                  color: p.muted,
+                                ),
+                              );
+                            }
+                            final line = _summaryLine(state.tasks, state.counts);
                             return Text(
-                              text,
+                              line.text,
                               style: sora(
                                 12.5,
-                                weight: FontWeight.w400,
-                                color: p.muted,
+                                weight: FontWeight.w600,
+                                color: line.clear
+                                    ? p.tint(StaffAccent.green).foreground
+                                    : line.urgent
+                                    ? p.dangerText
+                                    : p.muted,
                               ),
                             );
                           },
@@ -130,7 +142,8 @@ class _TasksPageState extends State<TasksPage> {
                       ),
                       TasksLoaded(:final tasks) => _TaskList(
                         tasks: _visible(tasks),
-                        filteredEmpty: tasks.isNotEmpty,
+                        filter: _filter,
+                        listEmpty: tasks.isEmpty,
                       ),
                     },
                   );
@@ -147,12 +160,33 @@ class _TasksPageState extends State<TasksPage> {
     return '${counts.open} open · ${counts.dueToday} due today · ${counts.overdue} overdue';
   }
 
+  _SummaryLine _summaryLine(List<StaffTask> tasks, TaskCounts counts) {
+    final open = tasks.where((task) => !task.isDone).toList();
+    final counters = open.where((task) => task.tracksPending).toList();
+    if (counters.isEmpty && open.isNotEmpty) {
+      return _SummaryLine(_summary(counts));
+    }
+    final pending = counters.fold<int>(0, (sum, task) => sum + task.pending);
+    final critical = counters.fold<int>(0, (sum, task) => sum + task.critical);
+    if (pending == 0 && critical == 0) {
+      if (open.length == counters.length) {
+        return const _SummaryLine('Nothing is waiting on you.', clear: true);
+      }
+      return _SummaryLine(_summary(counts));
+    }
+    final parts = <String>[
+      '$pending pending',
+      if (critical > 0) '$critical critical',
+      if (counts.overdue > 0) '${counts.overdue} overdue',
+    ];
+    return _SummaryLine(parts.join(' · '), urgent: critical > 0);
+  }
+
   String _chipLabel(_TaskFilter filter, List<StaffTask>? tasks) {
     final name = switch (filter) {
-      _TaskFilter.all => 'All',
       _TaskFilter.open => 'Open',
-      _TaskFilter.progress => 'In progress',
       _TaskFilter.done => 'Done',
+      _TaskFilter.all => 'All',
     };
     if (tasks == null) return name;
     final count = tasks.where((task) => _matches(task, filter)).length;
@@ -169,35 +203,58 @@ class _TasksPageState extends State<TasksPage> {
   bool _matches(StaffTask task, _TaskFilter filter) {
     final status = task.status.toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
     return switch (filter) {
-      _TaskFilter.all => true,
       _TaskFilter.open => status == 'open' || status.isEmpty,
-      _TaskFilter.progress => status == 'in_progress' || status == 'inprogress',
       _TaskFilter.done => task.isDone,
+      _TaskFilter.all => true,
     };
   }
 }
 
+class _SummaryLine {
+  const _SummaryLine(this.text, {this.clear = false, this.urgent = false});
+
+  final String text;
+  final bool clear;
+  final bool urgent;
+}
+
 class _TaskList extends StatelessWidget {
-  const _TaskList({required this.tasks, required this.filteredEmpty});
+  const _TaskList({
+    required this.tasks,
+    required this.filter,
+    required this.listEmpty,
+  });
 
   final List<StaffTask> tasks;
-  final bool filteredEmpty;
+  final _TaskFilter filter;
+  final bool listEmpty;
 
   @override
   Widget build(BuildContext context) {
     if (tasks.isEmpty) {
+      final caughtUp = filter == _TaskFilter.open;
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(
             height: 420,
             child: StaffStateMessage(
-              glyph: StaffGlyphs.tasks,
-              title: filteredEmpty ? 'Nothing in this filter' : 'No tasks',
-              message: filteredEmpty
-                  ? 'Try another status.'
-                  : 'Work assigned to you will show up here.',
-              accent: StaffAccent.blue,
+              glyph: caughtUp ? StaffGlyphs.check : StaffGlyphs.tasks,
+              title: caughtUp
+                  ? "You're all clear"
+                  : filter == _TaskFilter.done
+                  ? 'Nothing finished yet'
+                  : listEmpty
+                  ? 'No tasks'
+                  : 'Nothing in this filter',
+              message: caughtUp
+                  ? 'Nothing is waiting on you. Enjoy the quiet.'
+                  : filter == _TaskFilter.done
+                  ? 'Finish one and it will show up here.'
+                  : listEmpty
+                  ? 'Work assigned to you will show up here.'
+                  : 'Try another status.',
+              accent: caughtUp ? StaffAccent.green : StaffAccent.blue,
             ),
           ),
         ],
@@ -295,6 +352,10 @@ class StaffTaskCard extends StatelessWidget {
               PriorityBadge(task.priorityLabel),
             ],
           ),
+          if (task.tracksPending) ...[
+            const SizedBox(height: 10),
+            _PendingLine(task: task),
+          ],
           if (task.description.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
@@ -328,6 +389,67 @@ class StaffTaskCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PendingLine extends StatelessWidget {
+  const _PendingLine({required this.task});
+
+  final StaffTask task;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.staff;
+    if (task.pending == 0 && task.critical == 0) {
+      final green = p.tint(StaffAccent.green).foreground;
+      return Row(
+        children: [
+          StaffIcon(StaffGlyphs.check, size: 14, color: green),
+          const SizedBox(width: 6),
+          Text(
+            'Nothing pending',
+            style: sora(12.5, weight: FontWeight.w700, color: green),
+          ),
+        ],
+      );
+    }
+    return Wrap(
+      spacing: 14,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (task.pending > 0)
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '${task.pending}',
+                  style: sora(18, weight: FontWeight.w800, color: p.text),
+                ),
+                TextSpan(
+                  text: ' pending',
+                  style: sora(12.5, weight: FontWeight.w600, color: p.muted),
+                ),
+              ],
+            ),
+          ),
+        if (task.critical > 0)
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '${task.critical}',
+                  style: sora(18, weight: FontWeight.w800, color: p.dangerText),
+                ),
+                TextSpan(
+                  text: ' critical',
+                  style: sora(12.5, weight: FontWeight.w600, color: p.dangerText),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

@@ -114,6 +114,7 @@ TodayAttendanceSummary _todaySummary({
   required String label,
   required String? checkIn,
   required String? checkOut,
+  int? earlyMinutes,
 }) {
   final punchIn = _punch(day, checkIn);
   final punchOut = _punch(day, checkOut);
@@ -122,6 +123,9 @@ TodayAttendanceSummary _todaySummary({
     timeDisplayRaw: punchIn.raw,
     checkedOutAt: punchOut.at,
     checkOutRaw: punchOut.raw,
+    earlyMinutes: earlyMinutes != null && earlyMinutes > 0
+        ? earlyMinutes
+        : null,
     pillLabel: label,
     pillDotColor: heroAttendancePillDotColor(label),
   );
@@ -145,6 +149,7 @@ summariesFromDashboard(DashboardAttendance attendance, DateTime now) {
       label: _dashboardStatusLabel(attendance.todayStatus),
       checkIn: attendance.checkIn,
       checkOut: attendance.checkOut,
+      earlyMinutes: attendance.earlyMinutes,
     ),
     month: month,
   );
@@ -201,6 +206,7 @@ buildAttendanceDashboardSummaries(List<AttendanceModel> rows, DateTime now) {
       label: label,
       checkIn: todayRow.checkInTime,
       checkOut: todayRow.checkOutTime,
+      earlyMinutes: todayRow.earlyMinutes,
     ),
     month: month,
   );

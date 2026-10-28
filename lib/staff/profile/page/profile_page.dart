@@ -5,9 +5,11 @@ import 'package:admin_app/staff/dashboard/domain/staff_dashboard.dart';
 import 'package:admin_app/staff/dashboard/presentation/dashboard_cubit.dart';
 import 'package:admin_app/staff/auth/cubit/auth_cubit.dart';
 import 'package:admin_app/staff/auth/models/auth_model.dart';
-import 'package:admin_app/staff/home/pages/staff_coming_soon_page.dart';
+import 'package:admin_app/staff/home/cubit/home_cubit.dart';
+import 'package:admin_app/staff/home/models/menu_model.dart';
 import 'package:admin_app/staff/home/utils/active_staff_user.dart';
 import 'package:admin_app/staff/home/utils/home_attendance_summary.dart';
+import 'package:admin_app/staff/home/utils/menu_route_helper.dart';
 import 'package:admin_app/staff/profile/components/appearance_toggle.dart';
 import 'package:admin_app/staff/profile/components/profile_sheets.dart';
 import 'package:admin_app/staff/profile/cubit/profile_cubit.dart';
@@ -136,7 +138,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ),
-                _ProfileHero(data: data),
+                _ProfileHero(
+                  data: data,
+                  onDocuments: data == null
+                      ? () => _needsProfile(failed)
+                      : () => showDocumentsSheet(context, data),
+                ),
                 SectionLabel(
                   'ACCOUNT',
                   padding: const EdgeInsets.fromLTRB(22, 16, 22, 8),
@@ -189,14 +196,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 _Group(
                   children: [
-                    _SettingsRow(
-                      glyph: StaffGlyphs.globe,
-                      accent: StaffAccent.green,
-                      label: 'Language',
-                      value: 'English',
-                      onTap: () =>
-                          openComingSoon(context, ComingSoonArgs.language),
-                    ),
                     const _SettingsRow(
                       glyph: StaffGlyphs.moon,
                       accent: StaffAccent.pink,
@@ -228,9 +227,18 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 class _ProfileHero extends StatelessWidget {
-  const _ProfileHero({required this.data});
+  const _ProfileHero({required this.data, required this.onDocuments});
 
   final ProfileDataModel? data;
+  final VoidCallback onDocuments;
+
+  void _openAttendance(BuildContext context) {
+    final menus = locator<HomeCubit>().state.maybeWhen(
+      success: (menus) => menus,
+      orElse: () => const <MenuModel>[],
+    );
+    pushMenuPage(context, menus, Routes.userAttendance.name, 'Attendance');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -309,6 +317,7 @@ class _ProfileHero extends StatelessWidget {
                           return HeroStat(
                             value: '${server.percentage.round()}%',
                             label: 'Attendance',
+                            onTap: () => _openAttendance(context),
                           );
                         }
                         return BlocBuilder<AttendanceCubit, AttendanceState>(
@@ -318,7 +327,11 @@ class _ProfileHero extends StatelessWidget {
                                   '${buildAttendanceDashboardSummaries(list, DateTime.now()).month.percentage.round()}%',
                               orElse: () => '-',
                             );
-                            return HeroStat(value: pct, label: 'Attendance');
+                            return HeroStat(
+                              value: pct,
+                              label: 'Attendance',
+                              onTap: () => _openAttendance(context),
+                            );
                           },
                         );
                       },
@@ -333,6 +346,7 @@ class _ProfileHero extends StatelessWidget {
                             ? '-'
                             : '${dashboard!.openTickets}',
                         label: 'Open tickets',
+                        onTap: () => context.pushNamed(Routes.tickets.name),
                       ),
                     ),
                   ),
@@ -341,6 +355,7 @@ class _ProfileHero extends StatelessWidget {
                     child: HeroStat(
                       value: data == null ? '-' : '${data!.doc.length}',
                       label: 'Documents',
+                      onTap: onDocuments,
                     ),
                   ),
                 ],

@@ -233,4 +233,38 @@ void main() {
       ['Emergency Leave (CL):1', 'Leave:1'],
     );
   });
+
+  test('a missed punch leaves that dot empty and keeps the other', () {
+    final both = _day(
+      '2026-10-07',
+      'late',
+      checkInTime: '07:50 AM',
+      checkOutTime: '04:34 PM',
+    );
+    final missedOut = _day('2026-10-08', 'present', checkInTime: '08:02 AM');
+    final missedIn = AttendanceModel(
+      userId: '772',
+      attDate: DateTime.parse('2026-10-09'),
+      checkIn: 0,
+      checkOut: 1,
+      checkInTime: '',
+      checkOutTime: '04:00 PM',
+      status: 'present',
+    );
+    final leave = _day('2026-10-06', 'leave');
+
+    expect(both.hasPunchIn, isTrue);
+    expect(both.hasPunchOut, isTrue);
+    expect(missedOut.hasPunchIn, isTrue);
+    expect(missedOut.hasPunchOut, isFalse);
+    expect(missedIn.hasPunchIn, isFalse);
+    expect(missedIn.hasPunchOut, isTrue);
+    expect(attendanceShowsPunchDots(both, AttendanceDayKind.late), isTrue);
+    expect(
+      attendanceShowsPunchDots(missedOut, AttendanceDayKind.present),
+      isTrue,
+    );
+    expect(attendanceShowsPunchDots(leave, AttendanceDayKind.leave), isFalse);
+    expect(attendanceShowsPunchDots(null, AttendanceDayKind.weekend), isFalse);
+  });
 }

@@ -14,6 +14,9 @@ class TodayAttendanceSummary {
   /// Raw check-out string when parsing failed but the API provided text.
   final String? checkOutRaw;
 
+  /// Minutes before the shift ended. Null when today was not an early out.
+  final int? earlyMinutes;
+
   final String pillLabel;
 
   /// Dot color for the status pill (designed for the dark hero surface).
@@ -24,6 +27,7 @@ class TodayAttendanceSummary {
     this.timeDisplayRaw,
     this.checkedOutAt,
     this.checkOutRaw,
+    this.earlyMinutes,
     this.pillLabel = 'Not marked',
     this.pillDotColor = const Color(0xFFFF9500),
   });

@@ -10,17 +10,25 @@ import 'package:admin_app/careers/notification/careers_fcm_service.dart';
 class StaffFcm {
   StaffFcm._();
 
-  /// Subscribes when [body] includes a `topics` array on the root or under
-  /// `data`. Payloads that never mention topics are left alone.
+  /// Subscribes when [body] includes `data.topics`, which is where the
+  /// dashboard summary puts the list. A root `topics` array is accepted
+  /// when `data` does not carry one. Payloads that never mention topics
+  /// are left alone.
   static Future<void> subscribeIfPresent(dynamic body) async {
-    final map = _asMap(body);
-    if (map == null) return;
-    final topics = _topicsIn(map);
+    final topics = topicsFrom(body);
     if (topics == null) return;
     await CareersFcmService.subscribeToTopics(
       topics,
       cacheKey: CareersFcmService.staffTopicsKey,
     );
+  }
+
+  /// The topic list from a staff payload, or null when the payload does
+  /// not mention topics.
+  static List<String>? topicsFrom(dynamic body) {
+    final map = _asMap(body);
+    if (map == null) return null;
+    return _topicsIn(map);
   }
 
   static Future<void> clearTopics() {
@@ -42,15 +50,18 @@ class StaffFcm {
   }
 
   /// Null when this payload does not talk about topics at all.
+  /// `data.topics` wins. The dashboard summary keeps the list there.
   static List<String>? _topicsIn(Map<String, dynamic> body) {
     final data = body['data'];
     final dataMap = data is Map ? Map<String, dynamic>.from(data) : null;
-    final mentioned =
-        body.containsKey('topics') || (dataMap?.containsKey('topics') ?? false);
-    if (!mentioned) return null;
-    final raw = body.containsKey('topics')
-        ? body['topics']
-        : dataMap?['topics'];
+    if (dataMap != null && dataMap.containsKey('topics')) {
+      return _names(dataMap['topics']);
+    }
+    if (body.containsKey('topics')) return _names(body['topics']);
+    return null;
+  }
+
+  static List<String> _names(dynamic raw) {
     if (raw is! List) return const [];
     return [
       for (final value in raw)

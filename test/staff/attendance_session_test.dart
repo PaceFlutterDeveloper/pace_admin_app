@@ -112,6 +112,56 @@ void main() {
     expect(summary.month.presentDays, 17);
     expect(summary.month.lateArrivals, 2);
     expect(summary.month.earlyDepartures, 1);
+    expect(summary.today.earlyMinutes, isNull);
+  });
+
+  test('today early minutes are appended only when the person left early', () {
+    final early = StaffDashboard.fromData({
+      'attendance': {
+        'today': {
+          'check_in': '07:11',
+          'check_out': '13:40',
+          'status': 'present',
+          'early_minutes': 25,
+        },
+        'month': {'early_days': 1},
+      },
+    });
+    final summary = summariesFromDashboard(
+      early.attendance!,
+      DateTime(2026, 10, 27, 14),
+    );
+    expect(early.attendance!.earlyMinutes, 25);
+    expect(summary.today.earlyMinutes, 25);
+    expect(summary.month.earlyDepartures, 1);
+
+    final onTime = StaffDashboard.fromData({
+      'attendance': {
+        'today': {'status': 'present', 'early_minutes': 0},
+        'month': {'early_days': 0},
+      },
+    });
+    expect(onTime.attendance!.earlyMinutes, isNull);
+  });
+
+  test('the tasks badge reads pending from the dashboard summary', () {
+    final nested = StaffDashboard.fromData({
+      'tasks': {'pending': 41, 'due_today': 3, 'overdue': 1},
+    });
+    expect(nested.tasksPending, 41);
+    expect(nested.tasksDueToday, 3);
+    expect(nested.tasksOverdue, 1);
+
+    final topLevel = StaffDashboard.fromData({'tasks_pending': 7});
+    expect(topLevel.tasksPending, 7);
+
+    final hyphen = StaffDashboard.fromData({'tasks-pending': 2});
+    expect(hyphen.tasksPending, 2);
+
+    final missing = StaffDashboard.fromData({
+      'tasks': {'due_today': 1},
+    });
+    expect(missing.tasksPending, isNull);
   });
 
   test('leave taken reads taken_days from the dashboard summary', () {

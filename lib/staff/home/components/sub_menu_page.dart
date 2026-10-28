@@ -1,3 +1,6 @@
+import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/dashboard/domain/staff_dashboard.dart';
+import 'package:admin_app/staff/dashboard/presentation/dashboard_cubit.dart';
 import 'package:admin_app/staff/home/menu/staff_menu_catalog.dart';
 import 'package:admin_app/staff/home/menu/staff_menu_tile.dart';
 import 'package:admin_app/staff/home/models/menu_model.dart';
@@ -6,6 +9,7 @@ import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 /// Children of a grouped menu item, shown with the same glass tiles as Menu.
@@ -57,20 +61,28 @@ class SubMenuPage extends StatelessWidget {
                     message:
                         'No modules are available in this group for your role.',
                   )
-                : GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
-                    gridDelegate: staffMenuGridDelegate(context),
-                    itemCount: items.length,
-                    itemBuilder: (context, i) {
-                      final item = items[i];
-                      final style = staffMenuStyleFor(item);
-                      return StaffMenuTile(
-                        label: item.menuName,
-                        glyph: style.glyph,
-                        accent: style.accent,
-                        soon: menuOpensSoon(item),
-                        badge: item.badge,
-                        onTap: () => openStaffMenu(context, item),
+                : BlocBuilder<DashboardCubit, StaffDashboard?>(
+                    bloc: locator<DashboardCubit>(),
+                    builder: (context, dashboard) {
+                      final pending = dashboard?.tasksPending;
+                      return GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
+                        gridDelegate: staffMenuGridDelegate(context),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) {
+                          final item = items[i];
+                          final style = staffMenuStyleFor(item);
+                          return StaffMenuTile(
+                            label: item.menuName,
+                            glyph: style.glyph,
+                            accent: style.accent,
+                            soon: menuOpensSoon(item),
+                            badge: item.page == 'tasks' && pending != null
+                                ? pending
+                                : item.badge,
+                            onTap: () => openStaffMenu(context, item),
+                          );
+                        },
                       );
                     },
                   ),

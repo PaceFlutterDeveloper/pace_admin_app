@@ -19,6 +19,12 @@ class AttendanceModel {
   /// Minutes before the shift end, when the server sends them.
   final int? earlyMinutes;
 
+  /// A real punch-in: the flag is set, or a clock time was sent.
+  bool get hasPunchIn => _hasPunch(checkIn, checkInTime);
+
+  /// A real punch-out: the flag is set, or a clock time was sent.
+  bool get hasPunchOut => _hasPunch(checkOut, checkOutTime);
+
   AttendanceModel({
     required this.userId,
     required this.attDate,
@@ -82,6 +88,13 @@ int? _optionalMinutes(dynamic value) {
       : int.tryParse(value.toString().trim());
   if (parsed == null || parsed <= 0) return null;
   return parsed;
+}
+
+bool _hasPunch(int flag, String time) {
+  if (flag == 1) return true;
+  final text = time.trim();
+  if (text.isEmpty || text == '-' || text == '—') return false;
+  return text.toUpperCase() != 'N/A';
 }
 
 int _asFlag(dynamic value) {
