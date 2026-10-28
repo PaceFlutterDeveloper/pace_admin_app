@@ -939,6 +939,44 @@ class _MonthButton extends StatelessWidget {
   }
 }
 
+class _TimingPill extends StatelessWidget {
+  const _TimingPill({
+    required this.label,
+    required this.background,
+    required this.foreground,
+    this.badge,
+  });
+
+  final String label;
+  final Color background;
+  final Color foreground;
+  final String? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (badge != null) ...[
+            StaffIcon(badge!, size: 12, color: foreground),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: sora(12, weight: FontWeight.w500, color: foreground),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DayCard extends StatelessWidget {
   const _DayCard({
     required this.colors,
@@ -960,11 +998,15 @@ class _DayCard extends StatelessWidget {
     final tone = _tone(kind, colors);
     final checkIn = row == null ? '' : row!.checkInTime;
     final checkOut = row == null ? '' : row!.checkOutTime;
-    final variance = row == null ? null : attendanceVarianceLabel(row!);
+    final lateNote = row == null ? null : attendanceLateLabel(row!);
+    final earlyNote = row == null ? null : attendanceEarlyLabel(row!);
+    final both = lateNote != null && earlyNote != null;
     final today = DateUtils.dateOnly(DateTime.now());
     final dayOnly = DateUtils.dateOnly(day);
     final isFuture = dayOnly.isAfter(today);
     final canApply = kind == AttendanceDayKind.absent && !isFuture;
+    final lateTone = _tone(AttendanceDayKind.late, colors);
+    final earlyColor = colors.isDark ? colors.amber : const Color(0xFFB86E00);
     final pillColor = tone.background == null ? colors.muted : tone.foreground;
     return _Panel(
       colors: colors,
@@ -978,6 +1020,8 @@ class _DayCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     DateFormat('EEE, d MMM').format(day),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: sora(
                       15,
                       weight: FontWeight.w500,
@@ -986,33 +1030,25 @@ class _DayCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 3,
+                if (both) ...[
+                  _TimingPill(
+                    label: 'Late',
+                    background: lateTone.background ?? colors.chip,
+                    foreground: lateTone.foreground,
                   ),
-                  decoration: BoxDecoration(
-                    color: tone.background ?? colors.chip,
-                    borderRadius: BorderRadius.circular(20),
+                  const SizedBox(width: 6),
+                  _TimingPill(
+                    label: 'Early out',
+                    background: earlyColor.withValues(alpha: 0.18),
+                    foreground: earlyColor,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (tone.badge != null) ...[
-                        StaffIcon(tone.badge!, size: 12, color: pillColor),
-                        const SizedBox(width: 4),
-                      ],
-                      Text(
-                        label,
-                        style: sora(
-                          12,
-                          weight: FontWeight.w500,
-                          color: pillColor,
-                        ),
-                      ),
-                    ],
+                ] else
+                  _TimingPill(
+                    label: label,
+                    background: tone.background ?? colors.chip,
+                    foreground: pillColor,
+                    badge: tone.badge,
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -1049,18 +1085,34 @@ class _DayCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (variance != null) ...[
+            if (!both && (lateNote != null || earlyNote != null)) ...[
               const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  variance,
-                  style: sora(
-                    12,
-                    weight: FontWeight.w500,
-                    color: _tone(AttendanceDayKind.late, colors).foreground,
-                  ),
-                ),
+              Row(
+                children: [
+                  if (lateNote != null)
+                    Expanded(
+                      child: Text(
+                        lateNote,
+                        style: sora(
+                          12,
+                          weight: FontWeight.w500,
+                          color: lateTone.foreground,
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  if (earlyNote != null)
+                    Text(
+                      earlyNote,
+                      textAlign: TextAlign.right,
+                      style: sora(
+                        12,
+                        weight: FontWeight.w500,
+                        color: earlyColor,
+                      ),
+                    ),
+                ],
               ),
             ],
             if (canApply) ...[
@@ -1255,7 +1307,10 @@ class _PunchKey extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(label, style: sora(11, weight: FontWeight.w400, color: text)),
+        Text(
+          label,
+          style: sora(11, weight: FontWeight.w400, color: text),
+        ),
       ],
     );
   }

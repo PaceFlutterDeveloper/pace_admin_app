@@ -1,13 +1,23 @@
 import 'package:admin_app/staff/attendance_calendar/models/attendance_model.dart';
 import 'package:admin_app/staff/attendance_calendar/utils/attendance_record_status.dart';
 
-/// "Late by 35 min" or "Left 25 min early" when the row carries minutes.
-String? attendanceVarianceLabel(AttendanceModel row) {
+/// "Late by 35 min" when the row has late minutes.
+String? attendanceLateLabel(AttendanceModel row) {
   final late = row.lateMinutes;
-  if (late != null && late > 0) return 'Late by $late min';
+  if (late == null || late <= 0) return null;
+  return 'Late by $late min';
+}
+
+/// "Early out by 12 min" when the row has early minutes.
+String? attendanceEarlyLabel(AttendanceModel row) {
   final early = row.earlyMinutes;
-  if (early != null && early > 0) return 'Left $early min early';
-  return null;
+  if (early == null || early <= 0) return null;
+  return 'Early out by $early min';
+}
+
+/// Late note, or the early note when the day is not late.
+String? attendanceVarianceLabel(AttendanceModel row) {
+  return attendanceLateLabel(row) ?? attendanceEarlyLabel(row);
 }
 
 /// Counts for the attendance summary card.

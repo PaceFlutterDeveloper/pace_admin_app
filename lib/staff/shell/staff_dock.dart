@@ -74,11 +74,19 @@ class StaffDock extends StatelessWidget {
     super.key,
     required this.current,
     required this.onSelect,
+    this.onProfileDoubleTap,
+    this.onProfileLongPress,
     this.badges = const {},
   });
 
   final StaffTab current;
   final ValueChanged<StaffTab> onSelect;
+
+  /// Profile tab only. A double tap switches to the last profile.
+  final VoidCallback? onProfileDoubleTap;
+
+  /// Profile tab only. A long press opens the account list.
+  final VoidCallback? onProfileLongPress;
 
   /// Counts drawn on a tab icon. Zero and missing keys stay hidden.
   final Map<StaffTab, int> badges;
@@ -120,6 +128,12 @@ class StaffDock extends StatelessWidget {
                       selected: tab == current,
                       badge: badges[tab] ?? 0,
                       onTap: () => onSelect(tab),
+                      onDoubleTap: tab == StaffTab.profile
+                          ? onProfileDoubleTap
+                          : null,
+                      onLongPress: tab == StaffTab.profile
+                          ? onProfileLongPress
+                          : null,
                     ),
                 ],
               ),
@@ -148,12 +162,16 @@ class _DockItem extends StatelessWidget {
     required this.selected,
     required this.badge,
     required this.onTap,
+    this.onDoubleTap,
+    this.onLongPress,
   });
 
   final StaffTab tab;
   final bool selected;
   final int badge;
   final VoidCallback onTap;
+  final VoidCallback? onDoubleTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -166,9 +184,14 @@ class _DockItem extends StatelessWidget {
       button: true,
       selected: selected,
       label: badge > 0 ? '${tab.label}, $count' : tab.label,
+      hint: onDoubleTap == null
+          ? null
+          : 'Double tap switches profile. Hold to choose.',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
+        onDoubleTap: onDoubleTap,
+        onLongPress: onLongPress,
         child: SizedBox(
           width: 64,
           height: kStaffDockBarHeight - 9,

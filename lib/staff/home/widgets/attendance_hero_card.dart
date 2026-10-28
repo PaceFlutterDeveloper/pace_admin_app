@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// Hero card (ink in dark, white in light): today's in and out times, status
-/// and this month's attendance counts. Tapping the counts opens history.
+/// and this month's attendance counts. Tapping the card opens history.
 class AttendanceHeroCard extends StatelessWidget {
   const AttendanceHeroCard({
     super.key,
@@ -38,49 +38,49 @@ class AttendanceHeroCard extends StatelessWidget {
       todayAttendance.checkOutRaw,
     );
 
-    return HeroSurface(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  "TODAY'S ATTENDANCE",
-                  style: sora(
-                    11,
-                    weight: FontWeight.w700,
-                    color: p.heroSubtle,
-                    letterSpacing: 1.3,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onStats,
+      child: HeroSurface(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "TODAY'S ATTENDANCE",
+                    style: sora(
+                      11,
+                      weight: FontWeight.w700,
+                      color: p.heroSubtle,
+                      letterSpacing: 1.3,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _StatusPill(
-                label: todayAttendance.pillLabel,
-                dot: todayAttendance.pillDotColor,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _PunchLine(label: 'In', time: punchIn),
-          const SizedBox(height: 2),
-          _PunchLine(
-            label: 'Out',
-            time: punchOut,
-            note: _earlyOutNote(todayAttendance.earlyMinutes),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            DateFormat('EEEE, d MMMM yyyy').format(clock),
-            style: sora(12.5, weight: FontWeight.w400, color: p.heroSubtle),
-          ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onStats,
-            child: Row(
+                const SizedBox(width: 8),
+                _StatusPill(
+                  label: todayAttendance.pillLabel,
+                  dot: todayAttendance.pillDotColor,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _PunchLine(label: 'In', time: punchIn),
+            const SizedBox(height: 2),
+            _PunchLine(
+              label: 'Out',
+              time: punchOut,
+              note: _earlyOutNote(todayAttendance.earlyMinutes),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              DateFormat('EEEE, d MMMM yyyy').format(clock),
+              style: sora(12.5, weight: FontWeight.w400, color: p.heroSubtle),
+            ),
+            const SizedBox(height: 16),
+            Row(
               children: [
                 Expanded(
                   child: _MonthStat(
@@ -111,8 +111,8 @@ class AttendanceHeroCard extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

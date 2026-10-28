@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:admin_app/careers/notification/careers_fcm_service.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
+import 'package:admin_app/staff/auth/last_staff_profile.dart';
 import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/auth/repository/auth_repository.dart';
 import 'package:admin_app/staff/notification/services/staff_fcm.dart';
@@ -66,6 +67,11 @@ class AuthCubit extends Cubit<AuthState> {
         // The login payload mixes strings, ints, and nulls. Hive stores
         // every account field as text, so coerce here.
         final data = res.right['data'];
+        await _rememberProfileBeingLeft(
+          userId: _loginText(data['id']),
+          schoolCode: schoolCode,
+          userName: userName,
+        );
         clearStaffSessionMemory();
         await AuthData.addNewUser(
           schoolCode: schoolCode,
@@ -96,6 +102,11 @@ class AuthCubit extends Cubit<AuthState> {
     required String userId,
   }) async {
     emit(const AuthState.loading());
+    await _rememberProfileBeingLeft(
+      userId: userId,
+      schoolCode: schoolCode,
+      userName: userName,
+    );
     // Drop the previous account before Hive points at the next one, so a
     // screen that is still mounted cannot paint that account's rows.
     clearStaffSessionMemory();
@@ -138,7 +149,26 @@ class AuthCubit extends Cubit<AuthState> {
       unawaited(StaffFcm.clearTopics());
     }
     await AuthData.deactivateAllUsers();
+    clearLastStaffProfile();
     _finishLocalSignOut(othersRemain: false);
+  }
+
+  /// Keeps the profile a double tap should return to. Called before the
+  /// active flag moves, so the person being left is still the active one.
+  Future<void> _rememberProfileBeingLeft({
+    required String userId,
+    required String schoolCode,
+    required String userName,
+  }) async {
+    final previous = await AuthData.getActiveUser();
+    storeLastStaffProfileToken(
+      tokenForProfileLeftBehind(
+        previous: previous,
+        userId: userId,
+        schoolCode: schoolCode,
+        userName: userName,
+      ),
+    );
   }
 
   void _finishLocalSignOut({required bool othersRemain}) {

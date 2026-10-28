@@ -177,8 +177,21 @@ void main() {
           earlyMinutes: 25,
         ),
       ),
-      'Left 25 min early',
+      'Early out by 25 min',
     );
+    final both = AttendanceModel(
+      userId: '772',
+      attDate: DateTime.parse('2026-10-11'),
+      checkIn: 1,
+      checkOut: 1,
+      checkInTime: '08:11 AM',
+      checkOutTime: '02:00 PM',
+      status: 'late',
+      lateMinutes: 11,
+      earlyMinutes: 40,
+    );
+    expect(attendanceLateLabel(both), 'Late by 11 min');
+    expect(attendanceEarlyLabel(both), 'Early out by 40 min');
   });
 
   test('late and leave use different colours and marks', () {
