@@ -25,7 +25,7 @@ class TodayEventsSection extends StatelessWidget {
         SectionHeader(
           title: "Today's events",
           action: 'See all',
-          onAction: () => context.go(Routes.events.path),
+          onAction: () => context.push(Routes.events.path),
         ),
         BlocBuilder<TodayEventsCubit, TodayEventsState>(
           builder: (context, state) => switch (state) {
@@ -60,12 +60,15 @@ class _EventsList extends StatelessWidget {
     return StaffCard(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       radius: 24,
-      onTap: () => context.go(Routes.events.path),
+      onTap: () => context.push(Routes.events.path),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Column(
         children: [
           for (var i = 0; i < shown.length; i++) ...[
-            StaffEventRow(event: shown[i]),
+            StaffEventRow(
+              event: shown[i],
+              span: eventSpanOn(shown[i], DateTime.now()),
+            ),
             if (i != shown.length - 1) Divider(height: 1, color: p.border),
           ],
           if (more > 0)
@@ -94,7 +97,7 @@ class _EventsMessage extends StatelessWidget {
     return StaffCard(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       radius: 24,
-      onTap: () => context.go(Routes.events.path),
+      onTap: () => context.push(Routes.events.path),
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [

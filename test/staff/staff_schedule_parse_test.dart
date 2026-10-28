@@ -1,5 +1,6 @@
 import 'package:admin_app/staff/events/domain/staff_event.dart';
 import 'package:admin_app/staff/tasks/domain/staff_task.dart';
+import 'package:admin_app/staff/tasks/presentation/task_format.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -89,5 +90,66 @@ void main() {
     });
     expect(detail!.checklist.map((item) => item.done), [true, false]);
     expect(detail.comments.single.author, 'Niyas');
+  });
+
+  test('task number is the id, and a title used as a fallback is not one', () {
+    final numbered = StaffTask.tryFromMap({
+      'task_id': 4,
+      'title': 'Prepare the hall',
+    });
+    final fallback = StaffTask.tryFromMap({'title': 'Prepare the hall'});
+    expect(taskNumberLabel(numbered!), '#4');
+    expect(taskNumberLabel(fallback!), isNull);
+  });
+
+  test('a multi-day event is listed on every day it covers', () {
+    final event = StaffEvent(
+      id: '3',
+      title: 'Sports week',
+      startsAt: DateTime(2026, 10, 26, 9),
+      endsAt: DateTime(2026, 10, 28, 16),
+    );
+    final days = expandEventDays([event]);
+    expect(days.map((row) => row.day), [
+      DateTime(2026, 10, 26),
+      DateTime(2026, 10, 27),
+      DateTime(2026, 10, 28),
+    ]);
+    expect(days.map((row) => row.span), [
+      EventSpan.first,
+      EventSpan.middle,
+      EventSpan.last,
+    ]);
+  });
+
+  test('an all-day exclusive midnight does not add an empty last day', () {
+    final event = StaffEvent.tryFromMap({
+      'event_id': 9,
+      'title': 'Sports week',
+      'starts_at': '2026-10-26',
+      'ends_at': '2026-10-29T00:00:00+04:00',
+      'all_day': true,
+    });
+    expect(event!.exclusiveEnd, isTrue);
+    expect(eventEndDay(event), DateTime(2026, 10, 28));
+    final days = expandEventDays([event]);
+    expect(days.map((row) => row.span), [
+      EventSpan.first,
+      EventSpan.middle,
+      EventSpan.last,
+    ]);
+    expect(days.last.day, DateTime(2026, 10, 28));
+  });
+
+  test('an all-day date range keeps the written end date', () {
+    final event = StaffEvent.tryFromMap({
+      'title': 'National Day',
+      'starts_at': '2026-10-26',
+      'ends_at': '2026-10-28',
+      'all_day': 1,
+    });
+    expect(event!.exclusiveEnd, isFalse);
+    expect(eventEndDay(event), DateTime(2026, 10, 28));
+    expect(expandEventDays([event]).length, 3);
   });
 }

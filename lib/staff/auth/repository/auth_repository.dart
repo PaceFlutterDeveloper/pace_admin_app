@@ -23,7 +23,7 @@ class AuthRepository {
       'username': userName,
       'password': password,
       'action': "login",
-      'fcm_token': fcmToken,
+      if (fcmToken.isNotEmpty) 'fcm_token': fcmToken,
     });
 
     var response = await apiService.postAPI(

@@ -49,6 +49,10 @@ AttendanceDayKind attendanceDayKind(AttendanceModel attendance) {
 
 /// Label shown on the attendance calendar and the home hero.
 String attendanceRecordStatusLabel(AttendanceModel attendance) {
+  if (attendanceDayKind(attendance) == AttendanceDayKind.leave) {
+    final type = attendance.leaveType.trim();
+    if (type.isNotEmpty) return type;
+  }
   switch (attendance.status.trim().toUpperCase()) {
     case 'CL':
       return 'Casual Leave';

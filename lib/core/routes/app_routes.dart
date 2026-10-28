@@ -306,10 +306,7 @@ class AppRoute {
                 builder: (context, state) {
                   final data = state.extra as Map<String, dynamic>;
                   String _t = data['ticketId'] as String;
-                  return ManageTicketDetailPage(
-                    ticketId: int.parse(_t),
-                    isPushNotification: data['isPushNotification'] as bool,
-                  );
+                  return ManageTicketDetailPage(ticketId: int.parse(_t));
                 },
               ),
             ],
@@ -330,10 +327,7 @@ class AppRoute {
                 builder: (context, state) {
                   final data = state.extra as Map<String, dynamic>;
                   String _t = data['ticketId'] as String;
-                  return TicketDetailPage(
-                    ticketId: int.parse(_t),
-                    isPushNotification: data['isPushNotification'] as bool,
-                  );
+                  return TicketDetailPage(ticketId: int.parse(_t));
                 },
               ),
             ],

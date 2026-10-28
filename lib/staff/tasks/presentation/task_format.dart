@@ -1,6 +1,13 @@
 import 'package:admin_app/staff/tasks/domain/staff_task.dart';
 import 'package:intl/intl.dart';
 
+/// `#4` from `task_id`. Null when the record has no id of its own.
+String? taskNumberLabel(StaffTask task) {
+  final id = task.id.trim();
+  if (id.isEmpty || id == task.title.trim()) return null;
+  return '#$id';
+}
+
 String taskDueLabel(StaffTask task) {
   final due = task.dueAt;
   if (due == null) return 'No due date';

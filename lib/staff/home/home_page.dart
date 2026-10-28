@@ -13,6 +13,7 @@ import 'package:admin_app/staff/tasks/presentation/my_tasks_section.dart';
 import 'package:admin_app/staff/tasks/presentation/tasks_cubit.dart';
 import 'package:admin_app/staff/home/cubit/home_cubit.dart';
 import 'package:admin_app/staff/home/menu/staff_menu_catalog.dart';
+import 'package:admin_app/staff/leave/domain/leave_repository.dart';
 import 'package:admin_app/staff/leave/presentation/leave_format.dart';
 import 'package:admin_app/staff/home/menu/staff_menu_tile.dart';
 import 'package:admin_app/staff/home/models/menu_model.dart';
@@ -31,6 +32,17 @@ import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
+/// Days already taken. [fromBalance] fills in when the summary lists leave
+/// but does not say how many days were used. An em dash is that gap. Null
+/// means leave is not on this account, so the card can say it is not ready.
+String? _leaveTakenValue(StaffDashboard? dashboard, double? fromBalance) {
+  if (dashboard == null) return null;
+  final taken = dashboard.leaveTaken ?? fromBalance;
+  if (taken != null) return leaveNumber(taken);
+  if (dashboard.leave == null) return null;
+  return '—';
+}
 
 ({TodayAttendanceSummary today, MonthlyAttendanceSummary month})
 _attendanceDashboardPlaceholder() {
@@ -56,7 +68,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   final TodayEventsCubit _events = locator<TodayEventsCubit>();
   final TasksCubit _tasks = locator<TasksCubit>();
   final DashboardCubit _dashboard = locator<DashboardCubit>();
+  final LeaveRepository _leave = locator<LeaveRepository>();
   String _sessionUser = '';
+  double? _takenFromBalance;
 
   @override
   void initState() {
@@ -119,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     final home = context.read<HomeCubit>();
     final attendance = context.read<AttendanceCubit>();
     final now = DateTime.now();
+    if (force) _takenFromBalance = null;
     await Future.wait([
       if (force || !attendance.isFresh(month: now.month, year: now.year))
         _loadAttendance(),
@@ -127,6 +142,23 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       if (force || !home.isFresh) home.getMenu(quiet: true),
       if (force || !_dashboard.isFresh) _dashboard.load(),
     ]);
+    await _loadTakenFromBalance();
+  }
+
+  /// The summary sometimes only sends days remaining. Taken days come from
+  /// the leave balance in that case, and remaining is never shown here.
+  Future<void> _loadTakenFromBalance() async {
+    final dashboard = _dashboard.state;
+    if (dashboard == null || dashboard.leaveTaken != null) return;
+    if (dashboard.leave == null) return;
+    if (_takenFromBalance != null) return;
+    try {
+      final rows = await _leave.balances();
+      if (!mounted) return;
+      setState(() {
+        _takenFromBalance = rows.fold<double>(0, (sum, row) => sum + row.taken);
+      });
+    } catch (_) {}
   }
 
   List<MenuModel> _menus() {
@@ -204,17 +236,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                               accent: StaffAccent.blue,
                               label: 'Tasks due',
                               value: dashboard?.tasksDueToday?.toString(),
-                              onTap: () => context.go(Routes.tasks.path),
+                              onTap: () => context.push(Routes.tasks.path),
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: QuickStatCard(
-                              glyph: StaffGlyphs.ticket,
+                              glyph: StaffGlyphs.clock,
                               accent: StaffAccent.pink,
-                              label: 'Open tickets',
-                              value: dashboard?.openTickets?.toString(),
-                              onTap: () => context.go(Routes.tickets.path),
+                              label: 'Overdue',
+                              value: dashboard?.tasksOverdue?.toString(),
+                              onTap: () => context.push(Routes.tasks.path),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -222,10 +254,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                             child: QuickStatCard(
                               glyph: StaffGlyphs.leave,
                               accent: StaffAccent.green,
-                              label: 'Leave left',
-                              value: dashboard?.leaveLeft == null
-                                  ? null
-                                  : leaveNumber(dashboard!.leaveLeft!),
+                              label: 'Leave taken',
+                              value: _leaveTakenValue(
+                                dashboard,
+                                _takenFromBalance,
+                              ),
                               onTap: () => context.pushNamed(Routes.leave.name),
                             ),
                           ),
@@ -250,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               SectionHeader(
                 title: 'Quick access',
                 action: 'See all',
-                onAction: () => context.go(Routes.menu.path),
+                onAction: () => context.push(Routes.menu.path),
               ),
               BlocBuilder<HomeCubit, HomeState>(
                 builder: (context, state) => state.maybeWhen(

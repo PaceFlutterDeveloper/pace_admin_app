@@ -10,21 +10,25 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// Returns true when the request was sent.
+///
+/// [day] prefills the from and to dates, used from a selected attendance day.
 Future<bool?> showLeaveApplySheet(
   BuildContext context,
-  LeaveRepository repository,
-) {
+  LeaveRepository repository, {
+  DateTime? day,
+}) {
   return showStaffSheet<bool>(
     context,
     title: 'Apply for leave',
-    builder: (_) => _ApplyForm(repository: repository),
+    builder: (_) => _ApplyForm(repository: repository, day: day),
   );
 }
 
 class _ApplyForm extends StatefulWidget {
-  const _ApplyForm({required this.repository});
+  const _ApplyForm({required this.repository, this.day});
 
   final LeaveRepository repository;
+  final DateTime? day;
 
   @override
   State<_ApplyForm> createState() => _ApplyFormState();
@@ -48,6 +52,12 @@ class _ApplyFormState extends State<_ApplyForm> {
   @override
   void initState() {
     super.initState();
+    final day = widget.day;
+    if (day != null) {
+      final date = DateTime(day.year, day.month, day.day);
+      _from = date;
+      _to = date;
+    }
     _loadTypes();
   }
 

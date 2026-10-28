@@ -67,7 +67,9 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      'Task',
+                      taskNumberLabel(task) == null
+                          ? 'Task'
+                          : 'Task ${taskNumberLabel(task)}',
                       style: sora(
                         22,
                         weight: FontWeight.w700,

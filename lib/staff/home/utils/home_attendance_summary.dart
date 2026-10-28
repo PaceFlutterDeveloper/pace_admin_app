@@ -25,6 +25,8 @@ Color heroAttendancePillDotColor(String statusLabel) {
       return const Color(0xFF64B5F6);
     case 'Late':
       return const Color(0xFFFFB74D);
+    case 'Early exit':
+      return const Color(0xFFFF8A65);
     case 'Leave':
     case 'Casual Leave':
     case 'Sick Leave':
@@ -64,6 +66,7 @@ DateTime? _mergeDateWithParsedTime(DateTime calendarDate, String timeStr) {
 }
 
 String _dashboardStatusLabel(String status) {
+  if (_isEarlyStatus(status)) return 'Early exit';
   switch (status.trim().toLowerCase()) {
     case 'p':
     case 'present':
@@ -84,6 +87,46 @@ String _dashboardStatusLabel(String status) {
   }
 }
 
+bool _isEarlyStatus(String status) {
+  switch (status.trim().toLowerCase()) {
+    case 'early':
+    case 'eg':
+    case 'early going':
+    case 'early exit':
+    case 'early departure':
+    case 'early_going':
+    case 'left early':
+      return true;
+    default:
+      return false;
+  }
+}
+
+({DateTime? at, String? raw}) _punch(DateTime day, String? time) {
+  final text = time?.trim() ?? '';
+  if (!_hasMeaningfulCheckIn(text)) return (at: null, raw: null);
+  final merged = _mergeDateWithParsedTime(day, text);
+  return (at: merged, raw: merged == null ? text : null);
+}
+
+TodayAttendanceSummary _todaySummary({
+  required DateTime day,
+  required String label,
+  required String? checkIn,
+  required String? checkOut,
+}) {
+  final punchIn = _punch(day, checkIn);
+  final punchOut = _punch(day, checkOut);
+  return TodayAttendanceSummary(
+    markedAt: punchIn.at,
+    timeDisplayRaw: punchIn.raw,
+    checkedOutAt: punchOut.at,
+    checkOutRaw: punchOut.raw,
+    pillLabel: label,
+    pillDotColor: heroAttendancePillDotColor(label),
+  );
+}
+
 /// Home hero numbers from `page=dashboard`, which already belongs to the
 /// signed-in person. `userAttendance` rows use a different employee id.
 ({TodayAttendanceSummary today, MonthlyAttendanceSummary month})
@@ -92,26 +135,16 @@ summariesFromDashboard(DashboardAttendance attendance, DateTime now) {
     percentage: attendance.percentage,
     absences: attendance.absentDays,
     presentDays: attendance.presentDays,
+    lateArrivals: attendance.lateDays,
+    earlyDepartures: attendance.earlyDays,
   );
-  final label = _dashboardStatusLabel(attendance.todayStatus);
-  final checkIn = attendance.checkIn?.trim() ?? '';
-  if (label == 'Present' && checkIn.isNotEmpty) {
-    final day = DateTime(now.year, now.month, now.day);
-    final merged = _mergeDateWithParsedTime(day, checkIn);
-    return (
-      today: TodayAttendanceSummary(
-        markedAt: merged,
-        timeDisplayRaw: merged == null ? checkIn : null,
-        pillLabel: 'Present',
-        pillDotColor: heroAttendancePillDotColor('Present'),
-      ),
-      month: month,
-    );
-  }
+  final day = DateTime(now.year, now.month, now.day);
   return (
-    today: TodayAttendanceSummary(
-      pillLabel: label,
-      pillDotColor: heroAttendancePillDotColor(label),
+    today: _todaySummary(
+      day: day,
+      label: _dashboardStatusLabel(attendance.todayStatus),
+      checkIn: attendance.checkIn,
+      checkOut: attendance.checkOut,
     ),
     month: month,
   );
@@ -125,10 +158,14 @@ buildAttendanceDashboardSummaries(List<AttendanceModel> rows, DateTime now) {
 
   var presentDays = 0;
   var absences = 0;
+  var lateArrivals = 0;
+  var earlyDepartures = 0;
   for (final r in inMonth) {
     final label = attendanceRecordStatusLabel(r);
     if (label == 'Present') presentDays++;
     if (label == 'Absent') absences++;
+    if (label == 'Late') lateArrivals++;
+    if (_isEarlyStatus(r.status)) earlyDepartures++;
   }
 
   final month = MonthlyAttendanceSummary(
@@ -138,6 +175,8 @@ buildAttendanceDashboardSummaries(List<AttendanceModel> rows, DateTime now) {
     ),
     absences: absences,
     presentDays: presentDays,
+    lateArrivals: lateArrivals,
+    earlyDepartures: earlyDepartures,
   );
 
   AttendanceModel? todayRow;
@@ -152,28 +191,17 @@ buildAttendanceDashboardSummaries(List<AttendanceModel> rows, DateTime now) {
     return (today: const TodayAttendanceSummary(), month: month);
   }
 
-  final label = attendanceRecordStatusLabel(todayRow);
-  final dot = heroAttendancePillDotColor(label);
+  final recordLabel = attendanceRecordStatusLabel(todayRow);
+  final label = _isEarlyStatus(todayRow.status) ? 'Early exit' : recordLabel;
   final dayDate = DateUtils.dateOnly(todayRow.attDate);
 
-  if (label == 'Present') {
-    final merged = _mergeDateWithParsedTime(dayDate, todayRow.checkInTime);
-    final raw = _hasMeaningfulCheckIn(todayRow.checkInTime)
-        ? todayRow.checkInTime.trim()
-        : null;
-    return (
-      today: TodayAttendanceSummary(
-        markedAt: merged,
-        timeDisplayRaw: merged == null ? raw : null,
-        pillLabel: 'Present',
-        pillDotColor: dot,
-      ),
-      month: month,
-    );
-  }
-
   return (
-    today: TodayAttendanceSummary(pillLabel: label, pillDotColor: dot),
+    today: _todaySummary(
+      day: dayDate,
+      label: label,
+      checkIn: todayRow.checkInTime,
+      checkOut: todayRow.checkOutTime,
+    ),
     month: month,
   );
 }

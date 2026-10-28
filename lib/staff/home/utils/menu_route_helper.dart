@@ -1,5 +1,6 @@
 import 'package:admin_app/staff/home/models/menu_model.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
+import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -38,6 +39,20 @@ MenuModel fallbackMenu({required String page, required String menuName}) {
     iconUrl: '',
     parentId: '',
     subMenu: const [],
+  );
+}
+
+/// Back control for a page opened from somewhere else.
+/// Hidden on a dock tab, because that switch has nothing to pop.
+Widget? staffOriginBack(BuildContext context) {
+  if (!context.canPop()) return null;
+  return Padding(
+    padding: const EdgeInsets.only(right: 8),
+    child: StaffIconButton(
+      glyph: StaffGlyphs.chevronLeft,
+      semanticLabel: 'Back',
+      onTap: () => context.pop(),
+    ),
   );
 }
 

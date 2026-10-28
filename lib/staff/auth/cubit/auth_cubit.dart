@@ -1,14 +1,15 @@
-import 'dart:io';
+import 'dart:async';
 
+import 'package:admin_app/careers/notification/careers_fcm_service.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/attendance_calendar/cubit/attendance_cubit.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
 import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/auth/repository/auth_repository.dart';
 import 'package:admin_app/staff/home/cubit/home_cubit.dart';
+import 'package:admin_app/staff/notification/services/staff_fcm.dart';
 import 'package:admin_app/staff/session/staff_memory.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hive/hive.dart';
@@ -54,17 +55,11 @@ class AuthCubit extends Cubit<AuthState> {
     box.put('schoolCode', schoolCode); // Save the selected school
     emit(const AuthState.loading());
 
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    if (Platform.isIOS) {
-      String? apnsToken = await messaging.getAPNSToken();
-      print('APNS Token: $apnsToken');
-      await Future.delayed(const Duration(seconds: 2));
-    }
-    String? fcmToken = await messaging.getToken();
+    final fcmToken = await CareersFcmService.getFcmToken();
     var res = await authRepository.login(
       userName: userName,
       password: password,
-      fcmToken: fcmToken ?? "NO TOKEN",
+      fcmToken: fcmToken ?? '',
     );
     if (res.isLeft) {
       emit(AuthState.loginFailure(res.left.message ?? "Something went wrong"));
@@ -89,6 +84,8 @@ class AuthCubit extends Cubit<AuthState> {
 
         Hive.box('settingsBox').put('signedInSurface', 'staff');
         emit(const AuthState.loginSuccess());
+        unawaited(session?.registerDevice(force: true));
+        unawaited(StaffFcm.subscribeIfPresent(res.right));
       } else {
         emit(AuthState.loginFailure(res.right['message']));
       }
@@ -120,6 +117,8 @@ class AuthCubit extends Cubit<AuthState> {
     ]);
     Hive.box('settingsBox').put('signedInSurface', 'staff');
     emit(const AuthState.userSwitch());
+    unawaited(StaffFcm.clearTopics());
+    unawaited(session?.registerDevice(force: true));
   }
 
   /// Signs the active profile out. Other profiles saved on this phone stay,
@@ -130,7 +129,11 @@ class AuthCubit extends Cubit<AuthState> {
   /// unless the token is already dead ([notifyServer] false). When this was
   /// the last profile, the staff login screen opens.
   Future<bool> logout({bool notifyServer = true}) async {
-    if (notifyServer) await session?.signOutOnServer();
+    if (notifyServer) {
+      await session?.signOutOnServer();
+    } else {
+      unawaited(StaffFcm.clearTopics());
+    }
     await AuthData.logoutCurrentUser();
     final othersRemain = locator<Box<AuthModel>>().isNotEmpty;
     _finishLocalSignOut(othersRemain: othersRemain);
@@ -139,7 +142,11 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// Signs every saved profile out and opens the staff login screen.
   Future<void> logoutAll({bool notifyServer = true}) async {
-    if (notifyServer) await session?.signOutAllOnServer();
+    if (notifyServer) {
+      await session?.signOutAllOnServer();
+    } else {
+      unawaited(StaffFcm.clearTopics());
+    }
     await AuthData.deactivateAllUsers();
     _finishLocalSignOut(othersRemain: false);
   }

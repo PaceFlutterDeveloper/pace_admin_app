@@ -96,7 +96,7 @@ class TicketListPage extends StatelessWidget {
                   if (context.canPop()) {
                     context.pop();
                   } else {
-                    context.go(Routes.menu.path);
+                    context.go(Routes.home.path);
                   }
                 },
                 trailing: StaffIconButton(

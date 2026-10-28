@@ -15,12 +15,8 @@ import 'package:go_router/go_router.dart';
 
 class ManageTicketDetailPage extends StatefulWidget {
   final int ticketId;
-  final bool isPushNotification;
-  const ManageTicketDetailPage({
-    Key? key,
-    required this.ticketId,
-    this.isPushNotification = false,
-  }) : super(key: key);
+  const ManageTicketDetailPage({Key? key, required this.ticketId})
+    : super(key: key);
 
   @override
   State<ManageTicketDetailPage> createState() => _ManageTicketDetailPageState();
@@ -40,10 +36,10 @@ class _ManageTicketDetailPageState extends State<ManageTicketDetailPage> {
   }
 
   void _back() {
-    if (widget.isPushNotification || !context.canPop()) {
-      context.go(Routes.home.path);
-    } else {
+    if (context.canPop()) {
       context.pop();
+    } else {
+      context.go(Routes.home.path);
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_icons.dart';
+import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -69,10 +70,18 @@ double staffDockBodyInset(BuildContext context) {
 
 /// Floating dock with a raised Menu button (Hub structure, Executive colours).
 class StaffDock extends StatelessWidget {
-  const StaffDock({super.key, required this.current, required this.onSelect});
+  const StaffDock({
+    super.key,
+    required this.current,
+    required this.onSelect,
+    this.badges = const {},
+  });
 
   final StaffTab current;
   final ValueChanged<StaffTab> onSelect;
+
+  /// Counts drawn on a tab icon. Zero and missing keys stay hidden.
+  final Map<StaffTab, int> badges;
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +118,7 @@ class StaffDock extends StatelessWidget {
                     _DockItem(
                       tab: tab,
                       selected: tab == current,
+                      badge: badges[tab] ?? 0,
                       onTap: () => onSelect(tab),
                     ),
                 ],
@@ -136,11 +146,13 @@ class _DockItem extends StatelessWidget {
   const _DockItem({
     required this.tab,
     required this.selected,
+    required this.badge,
     required this.onTap,
   });
 
   final StaffTab tab;
   final bool selected;
+  final int badge;
   final VoidCallback onTap;
 
   @override
@@ -149,10 +161,11 @@ class _DockItem extends StatelessWidget {
     final isMenu = tab == StaffTab.menu;
     final color = selected ? p.amberText : p.muted;
 
+    final count = badge > 99 ? '99+' : '$badge';
     return Semantics(
       button: true,
       selected: selected,
-      label: tab.label,
+      label: badge > 0 ? '${tab.label}, $count' : tab.label,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -180,6 +193,12 @@ class _DockItem extends StatelessWidget {
                       alignment: Alignment.center,
                       child: StaffIcon(tab.glyph, size: 22, color: color),
                     ),
+                    if (badge > 0)
+                      Positioned(
+                        top: -7,
+                        right: -6,
+                        child: StaffCountBadge(badge),
+                      ),
                   ],
                 ),
               const SizedBox(height: 4),

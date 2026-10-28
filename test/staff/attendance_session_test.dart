@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:admin_app/core/error/error_exception.dart';
 import 'package:admin_app/staff/attendance_calendar/cubit/attendance_cubit.dart';
+import 'package:admin_app/staff/attendance_calendar/repository/attendance_repository.dart';
 import 'package:admin_app/staff/attendance_calendar/models/attendance_model.dart';
 import 'package:admin_app/staff/attendance_calendar/models/attendance_response_model.dart';
 import 'package:admin_app/staff/attendance_calendar/utils/attendance_record_status.dart';
@@ -12,14 +13,21 @@ import 'package:either_dart/either.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-AttendanceModel _day(String date, String stat, {String userId = '772'}) {
+AttendanceModel _day(
+  String date,
+  String stat, {
+  String userId = '772',
+  String? checkInTime,
+  String checkOutTime = '',
+}) {
+  final marked = stat == 'present' || stat == 'late' || stat == 'early';
   return AttendanceModel(
     userId: userId,
     attDate: DateTime.parse(date),
-    checkIn: stat == 'present' ? 1 : 0,
-    checkOut: 0,
-    checkInTime: stat == 'present' ? '06:56 AM' : '',
-    checkOutTime: '',
+    checkIn: marked ? 1 : 0,
+    checkOut: checkOutTime.isEmpty ? 0 : 1,
+    checkInTime: checkInTime ?? (stat == 'present' ? '06:56 AM' : ''),
+    checkOutTime: checkOutTime,
     status: stat,
   );
 }
@@ -34,6 +42,26 @@ void main() {
   });
 
   tearDown(() => LoadMarker.sessionKey = originalKey);
+
+  test('an html error page becomes a readable attendance error', () {
+    const notice =
+        'A system error occurred. We apologize for the inconvenience. '
+        'Please contact PACE Group IT Department.';
+    final html =
+        '<div style="color: red !important; font-weight: bold !important; '
+        'background-color: #ffe6e6 !important;">$notice</div>'
+        '<div style="color: red !important;">$notice</div>';
+
+    expect(attendanceFailureMessage(html), notice);
+    expect(
+      attendanceFailureMessage(
+        '<p>require_once(./modules/profile/pages/userAttendance.php): '
+        'Failed to open stream: No such file or directory in '
+        '/var/www/html/schools/ERP/erp-api/index.php</p>',
+      ),
+      'Could not load attendance',
+    );
+  });
 
   test('present, leave and weekend are not treated as absent', () {
     expect(
@@ -57,12 +85,17 @@ void main() {
   test('the home card uses the dashboard attendance for this login', () {
     final dashboard = StaffDashboard.fromData({
       'attendance': {
-        'today': {'check_in': '07:11', 'check_out': null, 'status': 'present'},
+        'today': {
+          'check_in': '07:11',
+          'check_out': '14:05',
+          'status': 'present',
+        },
         'month': {
           'percentage': 63,
           'absent_days': 10,
           'present_days': 17,
-          'late_days': 0,
+          'late_days': 2,
+          'early_days': 1,
         },
       },
     });
@@ -73,9 +106,52 @@ void main() {
 
     expect(summary.today.pillLabel, 'Present');
     expect(summary.today.markedAt, DateTime(2026, 10, 27, 7, 11));
+    expect(summary.today.checkedOutAt, DateTime(2026, 10, 27, 14, 5));
     expect(summary.month.percentage, 63);
     expect(summary.month.absences, 10);
     expect(summary.month.presentDays, 17);
+    expect(summary.month.lateArrivals, 2);
+    expect(summary.month.earlyDepartures, 1);
+  });
+
+  test('leave taken reads taken_days from the dashboard summary', () {
+    final dashboard = StaffDashboard.fromData({
+      'leave': {
+        'taken_days': 2,
+        'taken': [
+          {'type': 'Emergency Leave (CL)', 'days': 1},
+          {'type': 'Medical Leave - Full pay', 'days': 1},
+        ],
+      },
+    });
+    expect(dashboard.leaveTaken, 2);
+    expect(dashboard.leave?.map((row) => row.type), [
+      'Emergency Leave (CL)',
+      'Medical Leave - Full pay',
+    ]);
+  });
+
+  test('leave taken sums balance rows and ignores a missing taken field', () {
+    final withTaken = StaffDashboard.fromData({
+      'leave': {
+        'balance': [
+          {'type': 'Annual', 'remaining': 10, 'taken': 2},
+          {'type': 'Sick', 'remaining': 5, 'taken': 1.5},
+        ],
+      },
+    });
+    expect(withTaken.leaveTaken, 3.5);
+    expect(withTaken.leaveLeft, 15);
+
+    final remainingOnly = StaffDashboard.fromData({
+      'leave': {
+        'balance': [
+          {'type': 'Annual', 'remaining': 10},
+        ],
+      },
+    });
+    expect(remainingOnly.leaveTaken, isNull);
+    expect(remainingOnly.leave, isNotNull);
   });
 
   test('a present month is not counted as a month of absences', () {
@@ -89,8 +165,31 @@ void main() {
 
     expect(summary.month.presentDays, 2);
     expect(summary.month.absences, 0);
+    expect(summary.month.lateArrivals, 0);
+    expect(summary.month.earlyDepartures, 0);
     expect(summary.month.percentage, 100);
     expect(summary.today.pillLabel, 'Present');
+    expect(summary.today.checkedOutAt, isNull);
+  });
+
+  test('late arrivals and early departures are counted from the month', () {
+    final summary = buildAttendanceDashboardSummaries([
+      _day('2026-10-27', 'late', checkOutTime: '03:10 PM'),
+      _day(
+        '2026-10-26',
+        'early',
+        checkInTime: '08:00 AM',
+        checkOutTime: '12:00 PM',
+      ),
+      _day('2026-10-25', 'absent'),
+    ], DateTime(2026, 10, 27, 16));
+
+    expect(summary.month.presentDays, 0);
+    expect(summary.month.absences, 1);
+    expect(summary.month.lateArrivals, 1);
+    expect(summary.month.earlyDepartures, 1);
+    expect(summary.today.pillLabel, 'Late');
+    expect(summary.today.checkedOutAt, DateTime(2026, 10, 27, 15, 10));
   });
 
   test('employee id on a row can differ from the login id', () async {

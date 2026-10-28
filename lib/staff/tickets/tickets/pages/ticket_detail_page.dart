@@ -11,16 +11,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class TicketDetailPage extends StatefulWidget {
-  final bool isPushNotification;
-
   /// A minimal ticket; we'll fetch the full detail by ID.
   final int ticketId;
 
-  const TicketDetailPage({
-    Key? key,
-    required this.ticketId,
-    this.isPushNotification = false,
-  }) : super(key: key);
+  const TicketDetailPage({Key? key, required this.ticketId}) : super(key: key);
 
   @override
   _TicketDetailPageState createState() => _TicketDetailPageState();
@@ -38,10 +32,10 @@ class _TicketDetailPageState extends State<TicketDetailPage> {
   }
 
   void _back() {
-    if (widget.isPushNotification || !context.canPop()) {
-      context.go(Routes.home.path);
-    } else {
+    if (context.canPop()) {
       context.pop();
+    } else {
+      context.go(Routes.home.path);
     }
   }
 

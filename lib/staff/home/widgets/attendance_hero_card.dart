@@ -5,8 +5,8 @@ import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Hero card (ink in dark, white in light): today's attendance clock, status and month stats. Tapping
-/// the stats opens the attendance history.
+/// Hero card (ink in dark, white in light): today's in and out times, status
+/// and this month's attendance counts. Tapping the counts opens history.
 class AttendanceHeroCard extends StatelessWidget {
   const AttendanceHeroCard({
     super.key,
@@ -29,10 +29,14 @@ class AttendanceHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.staff;
     final clock = now ?? DateTime.now();
-    final shown = todayAttendance.markedAt ?? clock;
-    final raw = todayAttendance.timeDisplayRaw?.trim();
-    final useRaw =
-        todayAttendance.markedAt == null && raw != null && raw.isNotEmpty;
+    final punchIn = _punchLabel(
+      todayAttendance.markedAt,
+      todayAttendance.timeDisplayRaw,
+    );
+    final punchOut = _punchLabel(
+      todayAttendance.checkedOutAt,
+      todayAttendance.checkOutRaw,
+    );
 
     return HeroSurface(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -40,64 +44,16 @@ class AttendanceHeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "TODAY'S ATTENDANCE",
-                      style: sora(
-                        11,
-                        weight: FontWeight.w700,
-                        color: p.heroSubtle,
-                        letterSpacing: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    if (useRaw)
-                      Text(
-                        raw,
-                        style: sora(
-                          30,
-                          weight: FontWeight.w800,
-                          color: p.heroTitle,
-                          letterSpacing: -1,
-                        ),
-                      )
-                    else
-                      Text.rich(
-                        TextSpan(
-                          text: DateFormat('hh:mm').format(shown),
-                          children: [
-                            TextSpan(
-                              text: ' ${DateFormat('a').format(shown)}',
-                              style: sora(
-                                15,
-                                weight: FontWeight.w700,
-                                color: p.heroTitle,
-                              ),
-                            ),
-                          ],
-                        ),
-                        style: sora(
-                          34,
-                          weight: FontWeight.w800,
-                          color: p.heroTitle,
-                          letterSpacing: -1.2,
-                        ),
-                      ),
-                    const SizedBox(height: 2),
-                    Text(
-                      DateFormat('EEEE, d MMMM yyyy').format(clock),
-                      style: sora(
-                        12.5,
-                        weight: FontWeight.w400,
-                        color: p.heroSubtle,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  "TODAY'S ATTENDANCE",
+                  style: sora(
+                    11,
+                    weight: FontWeight.w700,
+                    color: p.heroSubtle,
+                    letterSpacing: 1.3,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -107,6 +63,15 @@ class AttendanceHeroCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          _PunchLine(label: 'In', time: punchIn),
+          const SizedBox(height: 2),
+          _PunchLine(label: 'Out', time: punchOut),
+          const SizedBox(height: 8),
+          Text(
+            DateFormat('EEEE, d MMMM yyyy').format(clock),
+            style: sora(12.5, weight: FontWeight.w400, color: p.heroSubtle),
+          ),
           const SizedBox(height: 16),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -114,23 +79,30 @@ class AttendanceHeroCard extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: HeroStat(
-                    value: '${monthlyStats.percentage.round()}%',
-                    label: 'This month',
+                  child: _MonthStat(
+                    value: '${monthlyStats.presentDays}',
+                    label: 'Days present',
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: HeroStat(
+                  child: _MonthStat(
                     value: '${monthlyStats.absences}',
                     label: 'Absences',
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: HeroStat(
-                    value: '${monthlyStats.presentDays}',
-                    label: 'Days present',
+                  child: _MonthStat(
+                    value: '${monthlyStats.lateArrivals}',
+                    label: 'Late In',
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _MonthStat(
+                    value: '${monthlyStats.earlyDepartures}',
+                    label: 'Early Out',
                   ),
                 ),
               ],
@@ -138,6 +110,103 @@ class AttendanceHeroCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One month count in the single row under today's punches.
+class _MonthStat extends StatelessWidget {
+  const _MonthStat({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.staff;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(2, 9, 2, 8),
+      decoration: BoxDecoration(
+        color: p.isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : p.surface.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: p.isDark ? Colors.white.withValues(alpha: 0.08) : p.border,
+        ),
+      ),
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: sora(18, weight: FontWeight.w800, color: p.heroTitle),
+            ),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: TextAlign.center,
+              style: sora(
+                12,
+                weight: FontWeight.w700,
+                color: p.heroTitle,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "08:02 AM", the API text when it could not be parsed, or an em dash.
+String _punchLabel(DateTime? at, String? raw) {
+  if (at != null) return DateFormat('hh:mm a').format(at);
+  final text = raw?.trim() ?? '';
+  if (text.isEmpty) return '—';
+  return text;
+}
+
+class _PunchLine extends StatelessWidget {
+  const _PunchLine({required this.label, required this.time});
+
+  final String label;
+  final String time;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.staff;
+    final missing = time == '—';
+    return Row(
+      children: [
+        SizedBox(
+          width: 32,
+          child: Text(
+            label,
+            style: sora(13, weight: FontWeight.w700, color: p.heroSubtle),
+          ),
+        ),
+        Flexible(
+          child: Text(
+            time,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sora(
+              26,
+              weight: FontWeight.w800,
+              color: missing ? p.heroSubtle : p.heroTitle,
+              letterSpacing: -0.8,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

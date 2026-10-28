@@ -8,8 +8,9 @@ import 'package:admin_app/core/utils/constants/api_constant.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
 import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/shared/read_json.dart';
+import 'package:admin_app/careers/notification/careers_fcm_service.dart';
+import 'package:admin_app/staff/notification/services/staff_fcm.dart';
 import 'package:admin_app/staff/shared/staff_post.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -68,6 +69,7 @@ class StaffSessionService {
       await signOutAccount(auth);
     } finally {
       _lastRegistered = null;
+      unawaited(StaffFcm.clearTopics());
     }
   }
 
@@ -83,6 +85,7 @@ class StaffSessionService {
       debugPrint('logout call skipped: $e');
     } finally {
       _lastRegistered = null;
+      unawaited(StaffFcm.clearTopics());
     }
   }
 
@@ -194,11 +197,7 @@ class StaffSessionService {
     return id;
   }
 
-  static Future<String?> _firebaseToken() async {
-    final messaging = FirebaseMessaging.instance;
-    if (Platform.isIOS && await messaging.getAPNSToken() == null) return null;
-    return messaging.getToken();
-  }
+  static Future<String?> _firebaseToken() => CareersFcmService.getFcmToken();
 
   static Future<String> _packageVersion() async {
     return (await PackageInfo.fromPlatform()).version;

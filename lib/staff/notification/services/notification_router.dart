@@ -29,7 +29,7 @@ class NotificationRouter {
   static Future<void> handleData(Map<String, dynamic> data) async {
     log('NotificationRouter: $data');
 
-    if (_isCareersPayload(data)) {
+    if (isCareersPayload(data)) {
       _openCareers(data);
       return;
     }
@@ -61,7 +61,7 @@ class NotificationRouter {
     AppRoute.router.pushNamed(Routes.getNotifications.name);
   }
 
-  static bool _isCareersPayload(Map<String, dynamic> data) {
+  static bool isCareersPayload(Map<String, dynamic> data) {
     final type = (_string(data, 'type') ?? '').toLowerCase();
     if (type.startsWith('careers')) return true;
 

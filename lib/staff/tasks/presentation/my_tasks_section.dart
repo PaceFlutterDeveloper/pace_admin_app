@@ -23,7 +23,7 @@ class MyTasksSection extends StatelessWidget {
         SectionHeader(
           title: 'My tasks',
           action: 'See all',
-          onAction: () => context.go(Routes.tasks.path),
+          onAction: () => context.push(Routes.tasks.path),
         ),
         BlocBuilder<TasksCubit, TasksState>(
           builder: (context, state) => switch (state) {
@@ -93,7 +93,9 @@ class _List extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            tasks[i].title,
+                            taskNumberLabel(tasks[i]) == null
+                                ? tasks[i].title
+                                : '${taskNumberLabel(tasks[i])} ${tasks[i].title}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: sora(
@@ -139,7 +141,7 @@ class _Message extends StatelessWidget {
     return StaffCard(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       radius: 24,
-      onTap: () => context.go(Routes.tasks.path),
+      onTap: () => context.push(Routes.tasks.path),
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [

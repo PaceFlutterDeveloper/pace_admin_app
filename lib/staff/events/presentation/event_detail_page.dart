@@ -48,9 +48,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
   Widget build(BuildContext context) {
     final p = context.staff;
     final event = _event;
-    final when = event.allDay
-        ? 'All day · ${eventDateLabel(event.startsAt)}'
-        : _range(event);
+    final when = _when(event);
 
     return ColoredBox(
       color: p.background,
@@ -185,6 +183,17 @@ class _EventDetailPageState extends State<EventDetailPage> {
         ),
       ),
     );
+  }
+
+  String _when(StaffEvent event) {
+    final start = eventStartDay(event);
+    final end = eventEndDay(event);
+    if (event.allDay) {
+      final startLabel = eventDateLabel(event.startsAt);
+      if (!end.isAfter(start)) return 'All day · $startLabel';
+      return 'All day · $startLabel – ${eventDateLabel(end)}';
+    }
+    return _range(event);
   }
 
   String _range(StaffEvent event) {

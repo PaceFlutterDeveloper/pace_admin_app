@@ -22,6 +22,15 @@ class ApiLeaveRepository implements LeaveRepository {
   }
 
   @override
+  Future<List<LeaveBalance>> balances() async {
+    final body = await _post({'action': 'balance'});
+    return [
+      for (final row in listPayload(body, const ['balance']))
+        LeaveBalance.fromMap(row),
+    ];
+  }
+
+  @override
   Future<LeaveOverview> overview() async {
     final results = await Future.wait([
       _post({'action': 'balance'}),

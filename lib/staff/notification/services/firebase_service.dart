@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
+import 'package:admin_app/staff/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/staff/notification/services/notification_router.dart';
 import 'package:admin_app/staff/notification/services/notification_service.dart';
 import 'package:admin_app/careers/notification/careers_fcm_service.dart';
@@ -33,6 +34,7 @@ class FirebaseService {
     CareersFcmService.logMessage(
       'App launched from terminated state by notification',
     );
+    await _onStaffPush(message);
     await NotificationRouter.handleMessage(message);
   }
 
@@ -93,7 +95,7 @@ class FirebaseService {
   static Future<void> _setupMessageHandlers() async {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       CareersFcmService.logMessage('Foreground notification: ${message.data}');
-      _handleNotificationCount(message);
+      unawaited(_onStaffPush(message));
       NotificationService.showNotification(message);
     });
 
@@ -101,20 +103,28 @@ class FirebaseService {
       CareersFcmService.logMessage(
         'App opened from background by notification',
       );
+      unawaited(_onStaffPush(message));
       NotificationRouter.handleMessage(message);
     });
   }
 
-  static void _handleNotificationCount(RemoteMessage message) {
-    if (message.notification != null &&
-        message.data['school_code'] != null &&
-        message.data['admin_id'] != null) {
-      AuthData.updateNotificationCount(
-        appCode: message.data['school_code'],
-        userId: message.data['admin_id'],
-        notificationCount: 1,
-        mode: NotificationUpdateMode.add,
-      );
-    }
+  /// Brings the signed-in staff inbox up to date. Careers payloads stay on
+  /// the careers path and do not change this bell.
+  static Future<void> _onStaffPush(RemoteMessage message) async {
+    if (NotificationRouter.isCareersPayload(message.data)) return;
+    final auth = await AuthData.getActiveUser();
+    if (auth == null) return;
+    final school = message.data['school_code']?.toString().trim() ?? '';
+    final admin = message.data['admin_id']?.toString().trim() ?? '';
+    if (school.isNotEmpty && school != auth.schoolCode) return;
+    if (admin.isNotEmpty && admin != auth.userId) return;
+    await AuthData.updateNotificationCount(
+      appCode: auth.schoolCode,
+      userId: auth.userId.toString(),
+      notificationCount: 1,
+      mode: NotificationUpdateMode.add,
+    );
+    if (!locator.isRegistered<NotificationCubit>()) return;
+    unawaited(locator<NotificationCubit>().fetchNotifications(quiet: true));
   }
 }

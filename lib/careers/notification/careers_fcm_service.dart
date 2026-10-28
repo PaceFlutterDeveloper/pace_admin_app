@@ -14,6 +14,7 @@ class CareersFcmService {
   CareersFcmService._();
 
   static const _topicsKey = 'careers_fcm_topics';
+  static const staffTopicsKey = 'staff_fcm_topics';
   static const _legacyCandidateIdKey = 'careers_fcm_candidate_id';
   static const _legacyApplicationIdsKey = 'careers_fcm_application_ids';
   static final _topicName = RegExp(r'^[a-zA-Z0-9\-_.~%]+$');
@@ -28,7 +29,7 @@ class CareersFcmService {
 
   static Future<String?> getFcmToken() async {
     if (Platform.isIOS) {
-      final apnsToken = await _messaging.getAPNSToken();
+      final apnsToken = await _waitForApnsToken();
       if (apnsToken == null || apnsToken.isEmpty) {
         _log('APNS token unavailable, skipping FCM token.');
         return null;
@@ -94,7 +95,13 @@ class CareersFcmService {
 
   /// Subscribe to [topics] from get-profile. Drops any previously stored
   /// topics that are no longer in the list.
-  static Future<void> subscribeToTopics(List<String> topics) async {
+  ///
+  /// [cacheKey] keeps a second list, such as staff, from replacing the
+  /// careers list. A topic still stored under the other key stays subscribed.
+  static Future<void> subscribeToTopics(
+    List<String> topics, {
+    String cacheKey = _topicsKey,
+  }) async {
     try {
       if (Platform.isIOS) {
         final apnsToken = await _waitForApnsToken();
@@ -104,17 +111,17 @@ class CareersFcmService {
         }
       }
 
-      await _unsubscribeLegacyTopics();
+      if (cacheKey == _topicsKey) await _unsubscribeLegacyTopics();
 
       final next = _sanitizeTopics(topics);
-      final previous = _loadTopics().toSet();
+      final previous = _loadTopics(cacheKey).toSet();
       final nextSet = next.toSet();
 
       for (final topic in nextSet.difference(previous)) {
         await _subscribe(topic);
       }
       for (final topic in previous.difference(nextSet)) {
-        await _unsubscribe(topic);
+        await _unsubscribeIfFree(topic, releasing: cacheKey);
       }
 
       if (nextSet.isEmpty) {
@@ -124,9 +131,24 @@ class CareersFcmService {
         _log('already subscribed to ${nextSet.join(', ')}');
       }
 
-      await _saveTopics(nextSet.toList());
+      await _saveTopics(nextSet.toList(), cacheKey);
     } catch (e) {
       _log('subscribeToTopics failed: $e');
+    }
+  }
+
+  /// Drops every topic stored under [cacheKey], except ones another session
+  /// on this phone still needs.
+  static Future<void> unsubscribeCachedTopics(String cacheKey) async {
+    final topics = _loadTopics(cacheKey);
+    try {
+      await Future.wait(
+        topics.map((topic) => _unsubscribeIfFree(topic, releasing: cacheKey)),
+      ).timeout(const Duration(seconds: 2));
+    } catch (e) {
+      _log('unsubscribe failed: $e');
+    } finally {
+      await _box().delete(cacheKey);
     }
   }
 
@@ -140,13 +162,34 @@ class CareersFcmService {
     try {
       await Future.wait([
         _unsubscribeLegacyTopics(),
-        ...topics.map(_unsubscribe),
+        ...topics.map(
+          (topic) => _unsubscribeIfFree(topic, releasing: _topicsKey),
+        ),
       ]).timeout(const Duration(seconds: 2));
     } catch (e) {
       _log('unsubscribe failed: $e');
     } finally {
       await _box().delete(_topicsKey);
     }
+  }
+
+  static Future<void> _unsubscribeIfFree(
+    String topic, {
+    required String releasing,
+  }) async {
+    if (_heldElsewhere(topic, releasing)) {
+      _log('keeping $topic for another session');
+      return;
+    }
+    await _unsubscribe(topic);
+  }
+
+  static bool _heldElsewhere(String topic, String releasing) {
+    for (final key in const [_topicsKey, staffTopicsKey]) {
+      if (key == releasing) continue;
+      if (_loadTopics(key).contains(topic)) return true;
+    }
+    return false;
   }
 
   static Future<String?> _waitForApnsToken() async {
@@ -225,8 +268,8 @@ class CareersFcmService {
 
   static Box _box() => Hive.box('settingsBox');
 
-  static List<String> _loadTopics() {
-    final raw = _box().get(_topicsKey);
+  static List<String> _loadTopics([String key = _topicsKey]) {
+    final raw = _box().get(key);
     if (raw is! List) return [];
     return raw
         .map((value) => value.toString().trim())
@@ -234,8 +277,11 @@ class CareersFcmService {
         .toList();
   }
 
-  static Future<void> _saveTopics(List<String> topics) async {
-    await _box().put(_topicsKey, topics);
+  static Future<void> _saveTopics(
+    List<String> topics, [
+    String key = _topicsKey,
+  ]) async {
+    await _box().put(key, topics);
   }
 
   static void logMessage(String message) => _log(message);

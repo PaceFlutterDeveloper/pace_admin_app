@@ -1,4 +1,5 @@
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/home/utils/menu_route_helper.dart';
 import 'package:admin_app/staff/tasks/domain/staff_task.dart';
 import 'package:admin_app/staff/tasks/presentation/task_detail_page.dart';
 import 'package:admin_app/staff/tasks/presentation/task_format.dart';
@@ -42,58 +43,65 @@ class _TasksPageState extends State<TasksPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(16, 14, 20, 4),
+              child: Row(
                 children: [
-                  Text(
-                    'Tasks',
-                    style: sora(
-                      28,
-                      weight: FontWeight.w700,
-                      color: p.text,
-                      letterSpacing: -0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  BlocBuilder<TasksCubit, TasksState>(
-                    builder: (context, state) {
-                      final text = state is TasksLoaded
-                          ? _summary(state.counts)
-                          : 'Assigned to you';
-                      return Text(
-                        text,
-                        style: sora(
-                          12.5,
-                          weight: FontWeight.w400,
-                          color: p.muted,
+                  ?staffOriginBack(context),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tasks',
+                          style: sora(
+                            28,
+                            weight: FontWeight.w700,
+                            color: p.text,
+                            letterSpacing: -0.8,
+                          ),
                         ),
-                      );
-                    },
+                        const SizedBox(height: 2),
+                        BlocBuilder<TasksCubit, TasksState>(
+                          builder: (context, state) {
+                            final text = state is TasksLoaded
+                                ? _summary(state.counts)
+                                : 'Assigned to you';
+                            return Text(
+                              text,
+                              style: sora(
+                                12.5,
+                                weight: FontWeight.w400,
+                                color: p.muted,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Row(
-                children: [
-                  for (final filter in _TaskFilter.values) ...[
-                    _FilterChip(
-                      label: switch (filter) {
-                        _TaskFilter.all => 'All',
-                        _TaskFilter.open => 'Open',
-                        _TaskFilter.progress => 'In progress',
-                        _TaskFilter.done => 'Done',
-                      },
-                      selected: _filter == filter,
-                      onTap: () => setState(() => _filter = filter),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ],
-              ),
+            BlocBuilder<TasksCubit, TasksState>(
+              builder: (context, state) {
+                final tasks = state is TasksLoaded ? state.tasks : null;
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Row(
+                    children: [
+                      for (final filter in _TaskFilter.values) ...[
+                        _FilterChip(
+                          label: _chipLabel(filter, tasks),
+                          selected: _filter == filter,
+                          onTap: () => setState(() => _filter = filter),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                    ],
+                  ),
+                );
+              },
             ),
             Expanded(
               child: BlocBuilder<TasksCubit, TasksState>(
@@ -139,16 +147,28 @@ class _TasksPageState extends State<TasksPage> {
     return '${counts.open} open · ${counts.dueToday} due today · ${counts.overdue} overdue';
   }
 
+  String _chipLabel(_TaskFilter filter, List<StaffTask>? tasks) {
+    final name = switch (filter) {
+      _TaskFilter.all => 'All',
+      _TaskFilter.open => 'Open',
+      _TaskFilter.progress => 'In progress',
+      _TaskFilter.done => 'Done',
+    };
+    if (tasks == null) return name;
+    final count = tasks.where((task) => _matches(task, filter)).length;
+    return '$name $count';
+  }
+
   List<StaffTask> _visible(List<StaffTask> tasks) {
     return [
       for (final task in tasks)
-        if (_matches(task)) task,
+        if (_matches(task, _filter)) task,
     ];
   }
 
-  bool _matches(StaffTask task) {
+  bool _matches(StaffTask task, _TaskFilter filter) {
     final status = task.status.toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
-    return switch (_filter) {
+    return switch (filter) {
       _TaskFilter.all => true,
       _TaskFilter.open => status == 'open' || status.isEmpty,
       _TaskFilter.progress => status == 'in_progress' || status == 'inprogress',
@@ -240,6 +260,15 @@ class StaffTaskCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (taskNumberLabel(task) case final number?)
+                      Text(
+                        number,
+                        style: sora(
+                          11,
+                          weight: FontWeight.w800,
+                          color: p.amberText,
+                        ),
+                      ),
                     Text(
                       task.title,
                       maxLines: 2,

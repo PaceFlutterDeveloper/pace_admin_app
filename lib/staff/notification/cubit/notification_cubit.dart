@@ -38,19 +38,27 @@ class NotificationCubit extends Cubit<NotificationState> {
     if (!isClosed) emit(const NotificationState.initial());
   }
 
-  /// Fetch (or load more) notifications
-  Future<void> fetchNotifications({bool loadMore = false}) async {
+  /// Fetch (or load more) notifications.
+  ///
+  /// [quiet] replaces the list when the response arrives and leaves the
+  /// current rows on screen while that request runs. A push uses this so the
+  /// inbox does not flash empty.
+  Future<void> fetchNotifications({
+    bool loadMore = false,
+    bool quiet = false,
+  }) async {
     if (_isFetching) return;
     if (loadMore && !_hasMore) return;
 
     final stamp = _scope.begin();
     _isFetching = true;
     if (!loadMore) {
-      // reset state
-      _all.clear();
       _page = 0;
       _hasMore = true;
-      emit(const NotificationState.loading());
+      if (!quiet) {
+        _all.clear();
+        emit(const NotificationState.loading());
+      }
     }
 
     final res = await _repo.fetchNotifications(limit2: _perPage, pageNo: _page);
@@ -62,11 +70,11 @@ class NotificationCubit extends Cubit<NotificationState> {
     res.fold(
       (err) {
         _isFetching = false;
-        // If we're loading more and have existing data, preserve it
-        if (loadMore && _all.isNotEmpty) {
+        // If we're loading more and have existing data, preserve it.
+        // A quiet refresh keeps the list the person is already looking at.
+        if ((loadMore || quiet) && _all.isNotEmpty) {
           emit(NotificationState.success(List.unmodifiable(_all)));
         } else {
-          // Only show failure state if we don't have any data
           emit(NotificationState.failure(err.message));
         }
       },
@@ -75,8 +83,15 @@ class NotificationCubit extends Cubit<NotificationState> {
         if (fetched.length < _perPage) {
           _hasMore = false;
         }
-        _all.addAll(fetched);
-        _page++;
+        if (loadMore) {
+          _all.addAll(fetched);
+          _page++;
+        } else {
+          _all
+            ..clear()
+            ..addAll(fetched);
+          _page = 1;
+        }
         _isFetching = false;
 
         emit(NotificationState.success(List.unmodifiable(_all)));

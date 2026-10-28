@@ -5,6 +5,7 @@ import 'package:admin_app/staff/home/menu/staff_menu_tile.dart';
 import 'package:admin_app/staff/home/models/menu_model.dart';
 import 'package:admin_app/staff/home/pages/staff_coming_soon_page.dart';
 import 'package:admin_app/staff/home/utils/active_staff_user.dart';
+import 'package:admin_app/staff/home/utils/menu_route_helper.dart';
 import 'package:admin_app/staff/shell/staff_shell.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
@@ -64,27 +65,38 @@ class _StaffMenuPageState extends State<StaffMenuPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.fromLTRB(16, 14, 20, 4),
+            child: Row(
               children: [
-                Text(
-                  'Menu',
-                  style: sora(
-                    28,
-                    weight: FontWeight.w700,
-                    color: p.text,
-                    letterSpacing: -0.8,
+                ?staffOriginBack(context),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Menu',
+                        style: sora(
+                          28,
+                          weight: FontWeight.w700,
+                          color: p.text,
+                          letterSpacing: -0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        role.isEmpty
+                            ? 'Modules available to your role'
+                            : 'Modules available to your role: $role',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sora(
+                          12.5,
+                          weight: FontWeight.w400,
+                          color: p.muted,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  role.isEmpty
-                      ? 'Modules available to your role'
-                      : 'Modules available to your role: $role',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: sora(12.5, weight: FontWeight.w400, color: p.muted),
                 ),
               ],
             ),

@@ -1,5 +1,6 @@
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/events/domain/staff_event.dart';
+import 'package:admin_app/staff/home/utils/menu_route_helper.dart';
 import 'package:admin_app/staff/events/presentation/event_detail_page.dart';
 import 'package:admin_app/staff/events/presentation/event_row.dart';
 import 'package:admin_app/staff/events/presentation/events_agenda_cubit.dart';
@@ -38,23 +39,34 @@ class _EventsPageState extends State<EventsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(16, 14, 20, 4),
+              child: Row(
                 children: [
-                  Text(
-                    'Events',
-                    style: sora(
-                      28,
-                      weight: FontWeight.w700,
-                      color: p.text,
-                      letterSpacing: -0.8,
+                  ?staffOriginBack(context),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Events',
+                          style: sora(
+                            28,
+                            weight: FontWeight.w700,
+                            color: p.text,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'The next $kEventsAgendaDays days',
+                          style: sora(
+                            12.5,
+                            weight: FontWeight.w400,
+                            color: p.muted,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'The next $kEventsAgendaDays days',
-                    style: sora(12.5, weight: FontWeight.w400, color: p.muted),
                   ),
                 ],
               ),
@@ -123,13 +135,17 @@ class _AgendaList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.staff;
-    final grouped = <DateTime, List<StaffEvent>>{};
-    for (final event in events) {
-      final local = event.startsAt.toLocal();
-      final day = DateTime(local.year, local.month, local.day);
-      grouped.putIfAbsent(day, () => []).add(event);
+    final now = DateTime.now();
+    final from = DateTime(now.year, now.month, now.day);
+    final to = from.add(const Duration(days: kEventsAgendaDays));
+    final grouped = <DateTime, List<EventOnDay>>{};
+    for (final row in expandEventDays(events, from: from, to: to)) {
+      grouped.putIfAbsent(row.day, () => []).add(row);
     }
     final days = grouped.keys.toList()..sort();
+    for (final day in days) {
+      grouped[day]!.sort((a, b) => compareStaffEvents(a.event, b.event));
+    }
 
     return ListView(
       physics: const BouncingScrollPhysics(
@@ -147,12 +163,13 @@ class _AgendaList extends StatelessWidget {
               children: [
                 for (var i = 0; i < grouped[day]!.length; i++) ...[
                   StaffEventRow(
-                    event: grouped[day]![i],
+                    event: grouped[day]![i].event,
+                    span: grouped[day]![i].span,
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) =>
-                              EventDetailPage(event: grouped[day]![i]),
+                              EventDetailPage(event: grouped[day]![i].event),
                         ),
                       );
                     },

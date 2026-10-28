@@ -9,6 +9,16 @@ class AttendanceModel {
   final String checkOutTime;
   final String status;
 
+  /// From `leave_type`, for example "Emergency Leave (CL)". Empty when the
+  /// day is not leave.
+  final String leaveType;
+
+  /// From `late_minutes`. Null when the server sends nothing or zero.
+  final int? lateMinutes;
+
+  /// Minutes before the shift end, when the server sends them.
+  final int? earlyMinutes;
+
   AttendanceModel({
     required this.userId,
     required this.attDate,
@@ -17,6 +27,9 @@ class AttendanceModel {
     required this.checkInTime,
     required this.checkOutTime,
     required this.status,
+    this.leaveType = '',
+    this.lateMinutes,
+    this.earlyMinutes,
   });
 
   factory AttendanceModel.fromJson(String str) =>
@@ -37,6 +50,13 @@ class AttendanceModel {
       checkInTime: json['check_in_time']?.toString() ?? '',
       checkOutTime: json['check_out_time']?.toString() ?? '',
       status: json['stat']?.toString() ?? '',
+      leaveType: json['leave_type']?.toString().trim() ?? '',
+      lateMinutes: _optionalMinutes(
+        json['late_min'] ?? json['late_minutes'] ?? json['late_by'],
+      ),
+      earlyMinutes: _optionalMinutes(
+        json['early_min'] ?? json['early_minutes'] ?? json['early_by'],
+      ),
     );
   }
 
@@ -49,7 +69,19 @@ class AttendanceModel {
     "check_in_time": checkInTime,
     "check_out_time": checkOutTime,
     "stat": status,
+    if (leaveType.isNotEmpty) "leave_type": leaveType,
+    if (lateMinutes != null) "late_minutes": lateMinutes,
+    if (earlyMinutes != null) "early_minutes": earlyMinutes,
   };
+}
+
+int? _optionalMinutes(dynamic value) {
+  if (value == null) return null;
+  final parsed = value is num
+      ? value.toInt()
+      : int.tryParse(value.toString().trim());
+  if (parsed == null || parsed <= 0) return null;
+  return parsed;
 }
 
 int _asFlag(dynamic value) {

@@ -30,9 +30,15 @@ Color? eventColor(String hex) {
 
 /// One event in a day card: time, colour bar, title and place.
 class StaffEventRow extends StatelessWidget {
-  const StaffEventRow({super.key, required this.event, this.onTap});
+  const StaffEventRow({
+    super.key,
+    required this.event,
+    this.span = EventSpan.single,
+    this.onTap,
+  });
 
   final StaffEvent event;
+  final EventSpan span;
   final VoidCallback? onTap;
 
   @override
@@ -40,9 +46,13 @@ class StaffEventRow extends StatelessWidget {
     final p = context.staff;
     final place = event.location?.trim() ?? '';
     final category = event.category.trim();
+    final until = span == EventSpan.first
+        ? 'Until ${DateFormat('d MMM').format(eventEndDay(event))}'
+        : '';
     final detail = [
       if (place.isNotEmpty) place,
       if (category.isNotEmpty) category,
+      if (until.isNotEmpty) until,
     ].join(' · ');
     final bar = eventColor(event.color) ?? p.amber;
 
@@ -52,40 +62,7 @@ class StaffEventRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            SizedBox(
-              width: 72,
-              child: event.allDay
-                  ? Text(
-                      'All day',
-                      style: sora(
-                        12,
-                        weight: FontWeight.w700,
-                        color: p.amberText,
-                      ),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          eventClock(event.startsAt),
-                          style: sora(
-                            12,
-                            weight: FontWeight.w700,
-                            color: p.amberText,
-                          ),
-                        ),
-                        if (event.endsAt != null)
-                          Text(
-                            eventClock(event.endsAt!),
-                            style: sora(
-                              11,
-                              weight: FontWeight.w500,
-                              color: p.muted,
-                            ),
-                          ),
-                      ],
-                    ),
-            ),
+            SizedBox(width: 78, child: _when(p)),
             Container(
               width: 3,
               height: 34,
@@ -123,5 +100,34 @@ class StaffEventRow extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _when(StaffPalette p) {
+    final emphasis = sora(12, weight: FontWeight.w700, color: p.amberText);
+    final quiet = sora(11, weight: FontWeight.w500, color: p.muted);
+    switch (span) {
+      case EventSpan.middle:
+        return Text('Continues', style: emphasis);
+      case EventSpan.last:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Ends', style: emphasis),
+            if (!event.allDay && event.endsAt != null)
+              Text(eventClock(event.endsAt!), style: quiet),
+          ],
+        );
+      case EventSpan.single:
+      case EventSpan.first:
+        if (event.allDay) return Text('All day', style: emphasis);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(eventClock(event.startsAt), style: emphasis),
+            if (span == EventSpan.single && event.endsAt != null)
+              Text(eventClock(event.endsAt!), style: quiet),
+          ],
+        );
+    }
   }
 }
