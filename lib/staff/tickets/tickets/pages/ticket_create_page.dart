@@ -6,11 +6,14 @@ import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/tickets/tickets/cubit/tickets_cubit.dart';
 import 'package:admin_app/staff/tickets/tickets/cubit/tickets_state.dart';
 import 'package:admin_app/staff/tickets/tickets/models/form_config_model.dart';
+import 'package:admin_app/staff/widgets/staff_form.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class TicketCreatePage extends StatefulWidget {
   final VoidCallback? onTicketCreated;
@@ -140,18 +143,26 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                       validator: (v) =>
                           v == null ? 'Please select a type' : null,
                     ),
-                    DropdownButtonFormField<int>(
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Category'),
-                      items: _filteredCategories.map((c) {
-                        return DropdownMenuItem(
-                          value: int.parse(c.categoryId),
-                          child: Text(c.name),
-                        );
-                      }).toList(),
-                      value: _selectedCategoryId,
-                      onChanged: (val) =>
-                          setState(() => _selectedCategoryId = val),
+                    StaffSearchableDropdownFormField<Category>(
+                      key: ValueKey('category-$_selectedTypeId'),
+                      label: 'Category',
+                      searchHint: 'Search categories',
+                      items: _filteredCategories,
+                      labelOf: (c) => c.name,
+                      value: _selectedCategoryId == null
+                          ? null
+                          : _filteredCategories
+                              .where(
+                                (c) =>
+                                    int.parse(c.categoryId) ==
+                                    _selectedCategoryId,
+                              )
+                              .firstOrNull,
+                      onChanged: (val) => setState(
+                        () => _selectedCategoryId = val == null
+                            ? null
+                            : int.parse(val.categoryId),
+                      ),
                       validator: (v) =>
                           v == null ? 'Please select a category' : null,
                     ),
@@ -185,18 +196,26 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
                       validator: (v) =>
                           v == null ? 'Please select a block' : null,
                     ),
-                    DropdownButtonFormField<int>(
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Location'),
-                      items: _filteredLocations.map((l) {
-                        return DropdownMenuItem(
-                          value: int.parse(l.locationId),
-                          child: Text(l.locationName),
-                        );
-                      }).toList(),
-                      value: _selectedLocationId,
-                      onChanged: (val) =>
-                          setState(() => _selectedLocationId = val),
+                    StaffSearchableDropdownFormField<Location>(
+                      key: ValueKey('location-$_selectedBlockId'),
+                      label: 'Location',
+                      searchHint: 'Search locations',
+                      items: _filteredLocations,
+                      labelOf: (l) => l.locationName,
+                      value: _selectedLocationId == null
+                          ? null
+                          : _filteredLocations
+                              .where(
+                                (l) =>
+                                    int.parse(l.locationId) ==
+                                    _selectedLocationId,
+                              )
+                              .firstOrNull,
+                      onChanged: (val) => setState(
+                        () => _selectedLocationId = val == null
+                            ? null
+                            : int.parse(val.locationId),
+                      ),
                       validator: (v) =>
                           v == null ? 'Please select a location' : null,
                     ),
@@ -275,11 +294,106 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
   }
 
   Future<void> _pickAttachment() async {
+    final source = await showStaffSheet<_AttachmentSource>(
+      context,
+      title: 'Add attachment',
+      builder: (context) {
+        final p = context.staff;
+        Widget option({
+          required IconData icon,
+          required String title,
+          required String subtitle,
+          required _AttachmentSource value,
+        }) {
+          return ListTile(
+            leading: Icon(icon, color: p.amberText),
+            title: Text(
+              title,
+              style: sora(14, weight: FontWeight.w600, color: p.text),
+            ),
+            subtitle: Text(
+              subtitle,
+              style: sora(11.5, weight: FontWeight.w400, color: p.muted),
+            ),
+            onTap: () => Navigator.pop(context, value),
+          );
+        }
+
+        return ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
+          children: [
+            option(
+              icon: Icons.photo_camera_outlined,
+              title: 'Camera',
+              subtitle: 'Take a new photo',
+              value: _AttachmentSource.camera,
+            ),
+            option(
+              icon: Icons.photo_library_outlined,
+              title: 'Photos',
+              subtitle: 'Choose from your library',
+              value: _AttachmentSource.photos,
+            ),
+            option(
+              icon: Icons.folder_outlined,
+              title: 'Files',
+              subtitle: 'Pick a document or image',
+              value: _AttachmentSource.files,
+            ),
+          ],
+        );
+      },
+    );
+    if (source == null || !mounted) return;
+
+    final file = switch (source) {
+      _AttachmentSource.camera => await _pickImage(ImageSource.camera),
+      _AttachmentSource.photos => await _pickImage(ImageSource.gallery),
+      _AttachmentSource.files => await _pickFile(),
+    };
+    if (file == null || !mounted) return;
+    setState(() => _attachment = file);
+  }
+
+  Future<File?> _pickImage(ImageSource source) async {
+    try {
+      final image = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+      if (image == null) return null;
+      return _stableAttachmentCopy(File(image.path), preferredName: image.name);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<File?> _pickFile() async {
     final result = await FilePicker.pickFiles();
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _attachment = File(result.files.single.path!);
-      });
+    final path = result?.files.single.path;
+    if (path == null) return null;
+    return File(path);
+  }
+
+  /// Keeps camera/gallery temp files alive after the picker dismisses on iOS.
+  Future<File?> _stableAttachmentCopy(
+    File source, {
+    String? preferredName,
+  }) async {
+    try {
+      if (!await source.exists()) return null;
+      final dir = await getTemporaryDirectory();
+      final rawName = (preferredName == null || preferredName.trim().isEmpty)
+          ? source.uri.pathSegments.last
+          : preferredName.trim();
+      final safeName = rawName.replaceAll(RegExp(r'[^\w.\-]+'), '_');
+      final dest = File(
+        '${dir.path}/ticket_att_${DateTime.now().millisecondsSinceEpoch}_$safeName',
+      );
+      return await source.copy(dest.path);
+    } catch (_) {
+      return source;
     }
   }
 
@@ -302,6 +416,8 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
     super.dispose();
   }
 }
+
+enum _AttachmentSource { camera, photos, files }
 
 /// Card that spaces its form fields evenly.
 class _FormCard extends StatelessWidget {

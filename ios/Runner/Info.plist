@@ -44,7 +44,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Smart PACE uses the camera when you take a photo for your profile.</string>
+	<string>Smart PACE uses the camera to take photos for your profile and ticket attachments.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We need access to Face ID for account security.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
