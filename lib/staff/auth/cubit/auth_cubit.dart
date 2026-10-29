@@ -23,6 +23,11 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository authRepository;
   final StaffSessionService? session;
 
+  /// True from the start of a profile switch until the new profile and its
+  /// school are both saved. Session expiry must not sign anyone out in here.
+  bool _switching = false;
+  bool get switching => _switching;
+
   /// Opens the staff login screen. Set from app startup; the cubit cannot
   /// import the router.
   final void Function()? openLogin;
@@ -101,25 +106,31 @@ class AuthCubit extends Cubit<AuthState> {
     required String schoolCode,
     required String userId,
   }) async {
-    emit(const AuthState.loading());
-    await _rememberProfileBeingLeft(
-      userId: userId,
-      schoolCode: schoolCode,
-      userName: userName,
-    );
-    // Drop the previous account before Hive points at the next one, so a
-    // screen that is still mounted cannot paint that account's rows.
-    clearStaffSessionMemory();
-    await AuthData.deactivateAllUsersExcept(userName, schoolCode, userId);
-    var box = await Hive.openBox('settingsBox');
-    await box.put(
-      'schoolCode',
-      schoolCode,
-    ); // Retrieve the selected school code
-    Hive.box('settingsBox').put('signedInSurface', 'staff');
-    emit(const AuthState.userSwitch());
-    unawaited(StaffFcm.clearTopics());
-    unawaited(session?.registerDevice(force: true));
+    if (_switching) return;
+    _switching = true;
+    try {
+      emit(const AuthState.loading());
+      await _rememberProfileBeingLeft(
+        userId: userId,
+        schoolCode: schoolCode,
+        userName: userName,
+      );
+      // The school host has to move first. Home reloads the moment the
+      // active flag flips, and a call that still names the previous school
+      // is rejected and was signing the active profile out.
+      final settings = Hive.box('settingsBox');
+      settings.put('schoolCode', schoolCode);
+      settings.put('signedInSurface', 'staff');
+      // Drop the previous account before Hive points at the next one, so a
+      // screen that is still mounted cannot paint that account's rows.
+      clearStaffSessionMemory();
+      await AuthData.deactivateAllUsersExcept(userName, schoolCode, userId);
+      emit(const AuthState.userSwitch());
+      unawaited(StaffFcm.clearTopics());
+      unawaited(session?.registerDevice(force: true));
+    } finally {
+      _switching = false;
+    }
   }
 
   /// Signs the active profile out. Other profiles saved on this phone stay,

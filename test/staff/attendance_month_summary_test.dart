@@ -194,6 +194,35 @@ void main() {
     expect(attendanceEarlyLabel(both), 'Early out by 40 min');
   });
 
+  test(
+    'late arrivals count as present, and the ring band follows the rate',
+    () {
+      final summary = summarizeAttendanceMonth(
+        rows: [
+          _day('2026-10-01', 'present'),
+          _day('2026-10-02', 'weekend'),
+          _day('2026-10-03', 'weekend'),
+          _day('2026-10-04', 'late'),
+          _day('2026-10-05', 'absent'),
+        ],
+        month: DateTime(2026, 10),
+        today: DateTime(2026, 10, 5),
+      );
+
+      expect(summary.present, 2);
+      expect(summary.late, 1);
+      expect(summary.workingDays, 3);
+      expect(summary.percentage, 67);
+      expect(summary.attendedLine, '2 of 3 working days');
+      expect(attendanceRateBand(67), AttendanceRateBand.high);
+      expect(attendanceRateBand(51), AttendanceRateBand.high);
+      expect(attendanceRateBand(50), AttendanceRateBand.middle);
+      expect(attendanceRateBand(25), AttendanceRateBand.middle);
+      expect(attendanceRateBand(24), AttendanceRateBand.low);
+      expect(attendanceRateBand(0), AttendanceRateBand.low);
+    },
+  );
+
   test('late and leave use different colours and marks', () {
     final late = AttendanceMarkStyle.of(AttendanceDayKind.late, isDark: true);
     final leave = AttendanceMarkStyle.of(AttendanceDayKind.leave, isDark: true);

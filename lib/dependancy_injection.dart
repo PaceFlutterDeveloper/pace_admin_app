@@ -160,6 +160,13 @@ Future<void> serviceLocators() async {
       openLogin: () => secretAdminLoginOpen.value = true,
     ),
   );
+  StaffSessionExpiredHandler.switching = () => locator<AuthCubit>().switching;
+  StaffSessionExpiredHandler.activeToken = () {
+    for (final user in locator<Box<AuthModel>>().values) {
+      if (user.isActive) return user.token;
+    }
+    return null;
+  };
 
   // Register AuthRepository and AuthCubit
   locator.registerLazySingleton<NotificationRepository>(

@@ -22,14 +22,29 @@ class ApiService {
     required String url,
     required Map<String, dynamic> headers,
     Map<String, dynamic>? queryParameters,
+    String? staffToken,
   }) {
     final tag = _buildApiTag(method, url, queryParameters);
     return Options(
       method: method,
       headers: headers,
       responseType: ResponseType.plain,
-      extra: {'api_tag': tag},
+      extra: {
+        'api_tag': tag,
+        if (staffToken != null && staffToken.isNotEmpty)
+          'staffToken': staffToken,
+      },
     );
+  }
+
+  /// Token field on a staff form body, kept so a rejected call can be matched
+  /// to the profile that sent it after the form has been finalized.
+  String? _staffToken(dynamic body) {
+    if (body is! FormData) return null;
+    for (final field in body.fields) {
+      if (field.key == 'token' && field.value.isNotEmpty) return field.value;
+    }
+    return null;
   }
 
   String _buildApiTag(
@@ -57,10 +72,10 @@ class ApiService {
     final start = objectStart == -1
         ? arrayStart
         : arrayStart == -1
-            ? objectStart
-            : objectStart < arrayStart
-                ? objectStart
-                : arrayStart;
+        ? objectStart
+        : objectStart < arrayStart
+        ? objectStart
+        : arrayStart;
     if (start == -1) return trimmed;
 
     final isObject = trimmed[start] == '{';
@@ -135,6 +150,7 @@ class ApiService {
           method: 'POST',
           url: url,
           headers: headers,
+          staffToken: _staffToken(body),
         ),
       );
 
@@ -144,10 +160,7 @@ class ApiService {
       return Left(_handleError(e));
     } catch (e) {
       log('postAPI non-Dio error: $e (${e.runtimeType})');
-      return Left(MyError(
-        key: AppError.unknown,
-        message: e.toString(),
-      ));
+      return Left(MyError(key: AppError.unknown, message: e.toString()));
     }
   }
 
@@ -164,10 +177,7 @@ class ApiService {
         options: _requestOptions(
           method: 'PUT',
           url: endpoint,
-          headers: {
-            ..._jsonHeaders,
-            'token': token,
-          },
+          headers: {..._jsonHeaders, 'token': token},
         ),
       );
       return Right(_normalizeResponseBody(response.data));
@@ -240,7 +250,7 @@ class ApiService {
         }
       }
       // If it's a long technical message, provide a user-friendly one
-      if (rawMessage.length > 100 || 
+      if (rawMessage.length > 100 ||
           rawMessage.contains('Exception') ||
           rawMessage.contains('status code')) {
         // Use a friendly message based on error type
@@ -289,7 +299,7 @@ class ApiService {
   }) {
     if (!useSessionToken) {
       if (StaffSessionExpiredHandler.isExpiredSessionError(error)) {
-        StaffSessionExpiredHandler.handleExpired();
+        StaffSessionExpiredHandler.handleExpired(error);
       }
       return;
     }
@@ -307,7 +317,8 @@ class ApiService {
     if (responseData != null) {
       try {
         if (responseData is Map<String, dynamic>) {
-          rawErrorMessage = responseData['message'] ??
+          rawErrorMessage =
+              responseData['message'] ??
               responseData['error'] ??
               responseData['detail'] ??
               responseData.toString();
@@ -321,7 +332,8 @@ class ApiService {
             try {
               final decoded = jsonDecode(jsonPayload);
               if (decoded is Map<String, dynamic>) {
-                rawErrorMessage = decoded['message'] ??
+                rawErrorMessage =
+                    decoded['message'] ??
                     decoded['error'] ??
                     decoded['detail'] ??
                     decoded.toString();
@@ -352,7 +364,8 @@ class ApiService {
       case DioExceptionType.receiveTimeout:
         return const MyError(
           key: AppError.unknown,
-          message: 'Connection timeout. Please check your internet connection and try again.',
+          message:
+              'Connection timeout. Please check your internet connection and try again.',
         );
 
       case DioExceptionType.badResponse:
@@ -379,11 +392,11 @@ class ApiService {
           default:
             errorKey = AppError.unknown;
         }
-        final userFriendlyMessage = _getUserFriendlyMessage(errorKey, rawErrorMessage);
-        return MyError(
-          key: errorKey,
-          message: userFriendlyMessage,
+        final userFriendlyMessage = _getUserFriendlyMessage(
+          errorKey,
+          rawErrorMessage,
         );
+        return MyError(key: errorKey, message: userFriendlyMessage);
 
       case DioExceptionType.cancel:
         return const MyError(
@@ -394,8 +407,10 @@ class ApiService {
       case DioExceptionType.unknown:
         // Sometimes Dio throws unknown for socket or parsing issues
         if (rawErrorMessage.toLowerCase().contains('formatexception')) {
-          final userFriendlyMessage =
-              _getUserFriendlyMessage(AppError.internalServerError, rawErrorMessage);
+          final userFriendlyMessage = _getUserFriendlyMessage(
+            AppError.internalServerError,
+            rawErrorMessage,
+          );
           return MyError(
             key: AppError.internalServerError,
             message: userFriendlyMessage,
@@ -406,21 +421,22 @@ class ApiService {
             rawErrorMessage.toLowerCase().contains('connection')) {
           return const MyError(
             key: AppError.unknown,
-            message: 'No internet connection. Please check your network and try again.',
+            message:
+                'No internet connection. Please check your network and try again.',
           );
         }
-        final userFriendlyMessage = _getUserFriendlyMessage(AppError.unknown, rawErrorMessage);
-        return MyError(
-          key: AppError.unknown,
-          message: userFriendlyMessage,
+        final userFriendlyMessage = _getUserFriendlyMessage(
+          AppError.unknown,
+          rawErrorMessage,
         );
+        return MyError(key: AppError.unknown, message: userFriendlyMessage);
 
       default:
-        final userFriendlyMessage = _getUserFriendlyMessage(AppError.unknown, rawErrorMessage);
-        return MyError(
-          key: AppError.unknown,
-          message: userFriendlyMessage,
+        final userFriendlyMessage = _getUserFriendlyMessage(
+          AppError.unknown,
+          rawErrorMessage,
         );
+        return MyError(key: AppError.unknown, message: userFriendlyMessage);
     }
   }
 }

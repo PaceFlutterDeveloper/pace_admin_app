@@ -20,9 +20,21 @@ String? attendanceVarianceLabel(AttendanceModel row) {
   return attendanceLateLabel(row) ?? attendanceEarlyLabel(row);
 }
 
+/// Green above 50, red below 25, orange from 25 through 50.
+enum AttendanceRateBand { high, middle, low }
+
+AttendanceRateBand attendanceRateBand(int percentage) {
+  if (percentage > 50) return AttendanceRateBand.high;
+  if (percentage < 25) return AttendanceRateBand.low;
+  return AttendanceRateBand.middle;
+}
+
 /// Counts for the attendance summary card.
 ///
-/// [present] is the number in "13 of 19 working days" and on the ring.
+/// [present] includes late arrivals, because a late day is still a day the
+/// person was present. [late] is that same late count on its own. The ring
+/// uses [present] over [workingDays].
+///
 /// A working day is a day in [month] on or before [today] that is not a
 /// weekend and not a holiday. Days later in the month stay on the calendar
 /// and stay out of the count.
@@ -152,11 +164,12 @@ AttendanceMonthSummary summarizeAttendanceMonth({
     break;
   }
 
+  final attended = present + late;
   final percentage = workingDays == 0
       ? 0
-      : ((100 * present) / workingDays).round();
+      : ((100 * attended) / workingDays).round();
   return AttendanceMonthSummary(
-    present: present,
+    present: attended,
     absent: absent,
     late: late,
     leave: leave,

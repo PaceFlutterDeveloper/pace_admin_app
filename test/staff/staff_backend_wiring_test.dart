@@ -59,6 +59,53 @@ void main() {
       expect(StaffSessionExpiredHandler.codeOf('not json'), '');
       expect(StaffSessionExpiredHandler.codeOf('<b>x</b>{"code":"A"}'), 'A');
     });
+
+    test('a switch does not sign out on the previous profile\'s rejection', () {
+      expect(
+        expiredTokenShouldSignOut(
+          switching: true,
+          requestToken: 'old',
+          activeToken: 'old',
+        ),
+        isFalse,
+      );
+      expect(
+        expiredTokenShouldSignOut(
+          switching: false,
+          requestToken: 'old',
+          activeToken: 'new',
+        ),
+        isFalse,
+      );
+      expect(
+        expiredTokenShouldSignOut(
+          switching: false,
+          requestToken: 'new',
+          activeToken: 'new',
+        ),
+        isTrue,
+      );
+    });
+
+    test('tokenOn reads the token the call sent', () {
+      final options = RequestOptions(path: url);
+      options.extra['staffToken'] = 'from-extra';
+      expect(
+        StaffSessionExpiredHandler.tokenOn(
+          DioException(requestOptions: options),
+        ),
+        'from-extra',
+      );
+
+      final form = RequestOptions(
+        path: url,
+        data: FormData.fromMap({'token': 'from-form', 'admin_id': '1'}),
+      );
+      expect(
+        StaffSessionExpiredHandler.tokenOn(DioException(requestOptions: form)),
+        'from-form',
+      );
+    });
   });
 
   group('passwordProblem', () {

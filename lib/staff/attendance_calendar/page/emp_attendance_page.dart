@@ -560,7 +560,7 @@ class _Ring extends StatelessWidget {
               painter: _RingPainter(
                 progress: progress,
                 track: colors.ringTrack,
-                value: colors.amber,
+                value: _ringColor(percentage, colors),
               ),
             ),
             SizedBox(
@@ -1444,6 +1444,18 @@ class _Tone {
 _Tone _tone(AttendanceDayKind kind, _AttendanceColors colors) {
   final mark = AttendanceMarkStyle.of(kind, isDark: colors.isDark);
   return _Tone(mark.background, mark.foreground, mark.badge);
+}
+
+/// Green above 50, red below 25, orange from 25 through 50.
+Color _ringColor(int percentage, _AttendanceColors colors) {
+  switch (attendanceRateBand(percentage)) {
+    case AttendanceRateBand.high:
+      return _tone(AttendanceDayKind.present, colors).foreground;
+    case AttendanceRateBand.low:
+      return _tone(AttendanceDayKind.absent, colors).foreground;
+    case AttendanceRateBand.middle:
+      return colors.amber;
+  }
 }
 
 Widget _lensMark(AttendanceDayKind? kind, _AttendanceColors colors) {

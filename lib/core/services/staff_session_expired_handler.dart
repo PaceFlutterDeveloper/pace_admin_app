@@ -11,6 +11,13 @@ import 'package:dio/dio.dart';
 class StaffSessionExpiredHandler {
   static Future<void> Function()? onExpired;
 
+  /// True while a profile switch is moving the active account. Rejections
+  /// in that window belong to the call that was already in flight.
+  static bool Function()? switching;
+
+  /// Token of the profile that is active right now, if there is one.
+  static String? Function()? activeToken;
+
   static bool _isHandling = false;
 
   static const _expiredCodes = {'TOKEN_INVALID', 'TOKEN_EXPIRED'};
@@ -37,8 +44,30 @@ class StaffSessionExpiredHandler {
     return '';
   }
 
-  static Future<void> handleExpired() async {
+  /// Token this call sent, from the request extra, form body, or header.
+  static String? tokenOn(DioException error) {
+    final extra = error.requestOptions.extra['staffToken'];
+    if (extra is String && extra.isNotEmpty) return extra;
+    final data = error.requestOptions.data;
+    if (data is FormData) {
+      for (final field in data.fields) {
+        if (field.key == 'token' && field.value.isNotEmpty) return field.value;
+      }
+    }
+    final header = error.requestOptions.headers['token'];
+    if (header is String && header.isNotEmpty) return header;
+    return null;
+  }
+
+  static Future<void> handleExpired(DioException error) async {
     if (_isHandling || onExpired == null) return;
+    if (!expiredTokenShouldSignOut(
+      switching: switching?.call() ?? false,
+      requestToken: tokenOn(error),
+      activeToken: activeToken?.call(),
+    )) {
+      return;
+    }
     _isHandling = true;
     try {
       log('StaffSessionExpiredHandler: token rejected, signing out');
@@ -52,4 +81,18 @@ class StaffSessionExpiredHandler {
       });
     }
   }
+}
+
+/// A rejected token signs the phone out only when it belongs to the profile
+/// that is active now. Calls still running for the previous profile, and any
+/// rejection while a switch is in progress, must not delete that profile.
+bool expiredTokenShouldSignOut({
+  required bool switching,
+  required String? requestToken,
+  required String? activeToken,
+}) {
+  if (switching) return false;
+  if (requestToken == null || requestToken.isEmpty) return true;
+  if (activeToken == null || activeToken.isEmpty) return true;
+  return requestToken == activeToken;
 }
