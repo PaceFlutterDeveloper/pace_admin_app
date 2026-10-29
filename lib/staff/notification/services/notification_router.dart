@@ -3,6 +3,12 @@ import 'dart:developer';
 
 import 'package:admin_app/careers/user/services/careers_user_service.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
+import 'package:admin_app/core/widgets/app_toast.dart';
+import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/home/models/menu_model.dart';
+import 'package:admin_app/staff/home/repository/home_repository.dart';
+import 'package:admin_app/staff/internal_web/internal_web_url.dart';
+import 'package:admin_app/staff/notification/models/notification_model.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get_it/get_it.dart';
 
@@ -11,7 +17,10 @@ class NotificationRouter {
   NotificationRouter._();
 
   static Future<void> handleMessage(RemoteMessage message) async {
-    await handleData(message.data);
+    await handleData(
+      message.data,
+      notificationTitle: message.notification?.title,
+    );
   }
 
   static Future<void> handlePayload(String? payload) async {
@@ -26,7 +35,10 @@ class NotificationRouter {
     }
   }
 
-  static Future<void> handleData(Map<String, dynamic> data) async {
+  static Future<void> handleData(
+    Map<String, dynamic> data, {
+    String? notificationTitle,
+  }) async {
     log('NotificationRouter: $data');
 
     if (isCareersPayload(data)) {
@@ -36,6 +48,16 @@ class NotificationRouter {
 
     final page = _string(data, 'data_page') ?? _string(data, 'page');
     final ticketId = int.tryParse(_string(data, 'ticket_id') ?? '');
+
+    if (_isInternalWebPush(data)) {
+      final url = _string(data, 'url') ?? _string(data, 'web_url');
+      if (url == null) {
+        log('NotificationRouter: internalWeb requires url in data');
+        return;
+      }
+      await _openInternalWebFromPush(url, data, notificationTitle);
+      return;
+    }
 
     if (page == Routes.manageTicketDetailPage.path && ticketId != null) {
       AppRoute.router.pushNamed(
@@ -59,6 +81,108 @@ class NotificationRouter {
     }
 
     AppRoute.router.pushNamed(Routes.getNotifications.name);
+  }
+
+  /// Inbox tap that is not a native screen. Reloads the role menu and opens
+  /// the matching internal-web page, or tells the user it could not.
+  static Future<void> openInternalWebFromInbox(NotificationModel n) async {
+    final menus = await _loadMenus();
+    final link = n.link.trim();
+    final appPage = n.appPage.trim();
+    final url = isHttpUrl(link)
+        ? link
+        : (isHttpUrl(appPage) ? appPage : null);
+
+    if (url != null) {
+      final matched = findInternalWebByUrl(menus, url);
+      if (matched != null) {
+        final label = internalWebLabel(matched);
+        _pushInternalWeb(
+          internalWebLaunchMenu(
+            matched: matched,
+            url: url,
+            title: label.isNotEmpty ? label : n.head,
+          ),
+        );
+        return;
+      }
+    }
+
+    final matched = findInternalWebByLabel(menus, [
+      n.action,
+      n.actionName,
+      appPage,
+      n.head,
+    ]);
+    if (matched == null) {
+      _unableToOpen();
+      return;
+    }
+    _pushInternalWeb(matched);
+  }
+
+  static bool isKnownStaffPage(String appPage) {
+    final path = appPage.trim();
+    if (path.isEmpty) return false;
+    for (final route in Routes.values) {
+      if (route == Routes.internalWeb) continue;
+      final routePath = route.path;
+      if (routePath.length < 2) continue;
+      if (path == routePath || path.startsWith('$routePath/')) return true;
+    }
+    return false;
+  }
+
+  static bool _isInternalWebPush(Map<String, dynamic> data) {
+    final action =
+        (_string(data, 'click_action') ?? _string(data, 'clickAction') ?? '')
+            .toUpperCase();
+    if (action != 'MENU') return false;
+    return isInternalWebKey(_string(data, 'menu_key') ?? '');
+  }
+
+  static Future<void> _openInternalWebFromPush(
+    String url,
+    Map<String, dynamic> data,
+    String? notificationTitle,
+  ) async {
+    final menus = await _loadMenus();
+    final matched = findInternalWebByUrl(menus, url);
+    final label = matched == null ? '' : internalWebLabel(matched);
+    final title = label.isNotEmpty
+        ? label
+        : (_string(data, 'menu_val') ??
+              _string(data, 'menu_title') ??
+              notificationTitle ??
+              _string(data, 'title') ??
+              '');
+    _pushInternalWeb(
+      internalWebLaunchMenu(matched: matched, url: url, title: title),
+    );
+  }
+
+  static void _pushInternalWeb(MenuModel menu) {
+    AppRoute.router.pushNamed(Routes.internalWeb.name, extra: menu);
+  }
+
+  static Future<List<MenuModel>> _loadMenus() async {
+    try {
+      final result = await locator<HomeRepository>().getMenu();
+      if (result.isLeft) return const <MenuModel>[];
+      return result.right.data;
+    } catch (e) {
+      log('NotificationRouter: internalWeb menu load failed: $e');
+      return const [];
+    }
+  }
+
+  static void _unableToOpen() {
+    final context = AppRoute.router.routerDelegate.navigatorKey.currentContext;
+    if (context == null) {
+      log('NotificationRouter: Unable to open this menu');
+      return;
+    }
+    AppToast.info(context, 'Unable to open this menu');
   }
 
   static bool isCareersPayload(Map<String, dynamic> data) {

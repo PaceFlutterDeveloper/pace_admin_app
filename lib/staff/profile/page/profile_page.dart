@@ -196,6 +196,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 _Group(
                   children: [
+                    _SettingsRow(
+                      glyph: StaffGlyphs.phone,
+                      accent: StaffAccent.blue,
+                      label: 'Where have you logged in',
+                      onTap: () => context.pushNamed(Routes.loginSessions.name),
+                    ),
                     const _SettingsRow(
                       glyph: StaffGlyphs.moon,
                       accent: StaffAccent.pink,

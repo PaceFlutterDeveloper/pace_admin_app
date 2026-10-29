@@ -858,6 +858,9 @@ class _CalendarCard extends StatelessWidget {
   bool _faded(AttendanceDayKind kind) {
     final lens = this.lens;
     if (lens == null || kind == lens) return false;
+    if (lens == AttendanceDayKind.present && kind == AttendanceDayKind.late) {
+      return false;
+    }
     return kind != AttendanceDayKind.weekend &&
         kind != AttendanceDayKind.holiday &&
         kind != AttendanceDayKind.unmarked;
@@ -944,13 +947,11 @@ class _TimingPill extends StatelessWidget {
     required this.label,
     required this.background,
     required this.foreground,
-    this.badge,
   });
 
   final String label;
   final Color background;
   final Color foreground;
-  final String? badge;
 
   @override
   Widget build(BuildContext context) {
@@ -960,18 +961,9 @@ class _TimingPill extends StatelessWidget {
         color: background,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (badge != null) ...[
-            StaffIcon(badge!, size: 12, color: foreground),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: sora(12, weight: FontWeight.w500, color: foreground),
-          ),
-        ],
+      child: Text(
+        label,
+        style: sora(12, weight: FontWeight.w500, color: foreground),
       ),
     );
   }
@@ -995,19 +987,27 @@ class _DayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = _dayLabel(row, kind);
-    final tone = _tone(kind, colors);
     final checkIn = row == null ? '' : row!.checkInTime;
     final checkOut = row == null ? '' : row!.checkOutTime;
     final lateNote = row == null ? null : attendanceLateLabel(row!);
     final earlyNote = row == null ? null : attendanceEarlyLabel(row!);
-    final both = lateNote != null && earlyNote != null;
+    final showLate = kind == AttendanceDayKind.late || lateNote != null;
+    final showEarly = earlyNote != null;
     final today = DateUtils.dateOnly(DateTime.now());
     final dayOnly = DateUtils.dateOnly(day);
     final isFuture = dayOnly.isAfter(today);
     final canApply = kind == AttendanceDayKind.absent && !isFuture;
     final lateTone = _tone(AttendanceDayKind.late, colors);
     final earlyColor = colors.isDark ? colors.amber : const Color(0xFFB86E00);
-    final pillColor = tone.background == null ? colors.muted : tone.foreground;
+    final statusKind = kind == AttendanceDayKind.late
+        ? AttendanceDayKind.present
+        : kind;
+    final statusTone = _tone(statusKind, colors);
+    final statusLabel = switch (kind) {
+      AttendanceDayKind.late => 'Present',
+      AttendanceDayKind.leave => 'Leave',
+      _ => label,
+    };
     return _Panel(
       colors: colors,
       child: AnimatedSwitcher(
@@ -1030,7 +1030,7 @@ class _DayCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (both) ...[
+                if (showLate && showEarly) ...[
                   _TimingPill(
                     label: 'Late',
                     background: lateTone.background ?? colors.chip,
@@ -1042,79 +1042,60 @@ class _DayCard extends StatelessWidget {
                     background: earlyColor.withValues(alpha: 0.18),
                     foreground: earlyColor,
                   ),
-                ] else
+                ] else if (showLate)
                   _TimingPill(
-                    label: label,
-                    background: tone.background ?? colors.chip,
-                    foreground: pillColor,
-                    badge: tone.badge,
+                    label: lateNote ?? 'Late',
+                    background: lateTone.background ?? colors.chip,
+                    foreground: lateTone.foreground,
+                  )
+                else if (showEarly)
+                  _TimingPill(
+                    label: earlyNote,
+                    background: earlyColor.withValues(alpha: 0.18),
+                    foreground: earlyColor,
                   ),
               ],
             ),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _CountChip(
-                    label: 'In',
-                    value: attendancePunchLabel(checkIn),
-                    valueColor: colors.text,
-                    colors: colors,
-                    labelFirst: true,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _CountChip(
-                    label: 'Out',
-                    value: attendancePunchLabel(checkOut),
-                    valueColor: colors.text,
-                    colors: colors,
-                    labelFirst: true,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _CountChip(
-                    label: 'Hours',
-                    value: attendanceHoursLabel(checkIn, checkOut),
-                    valueColor: colors.text,
-                    colors: colors,
-                    labelFirst: true,
-                  ),
-                ),
-              ],
-            ),
-            if (!both && (lateNote != null || earlyNote != null)) ...[
-              const SizedBox(height: 8),
-              Row(
+            SizedBox(
+              height: 58,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (lateNote != null)
-                    Expanded(
-                      child: Text(
-                        lateNote,
-                        style: sora(
-                          12,
-                          weight: FontWeight.w500,
-                          color: lateTone.foreground,
-                        ),
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  if (earlyNote != null)
-                    Text(
-                      earlyNote,
-                      textAlign: TextAlign.right,
-                      style: sora(
-                        12,
-                        weight: FontWeight.w500,
-                        color: earlyColor,
-                      ),
+                  Expanded(
+                    child: _CountChip(
+                      label: 'In',
+                      value: attendancePunchLabel(checkIn),
+                      valueColor: colors.text,
+                      colors: colors,
+                      labelFirst: true,
                     ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _CountChip(
+                      label: 'Out',
+                      value: attendancePunchLabel(checkOut),
+                      valueColor: colors.text,
+                      colors: colors,
+                      labelFirst: true,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _CountChip(
+                      label: 'Status',
+                      value: statusLabel,
+                      valueColor: statusTone.background == null
+                          ? colors.muted
+                          : statusTone.foreground,
+                      colors: colors,
+                      labelFirst: true,
+                    ),
+                  ),
                 ],
               ),
-            ],
+            ),
             if (canApply) ...[
               const SizedBox(height: 10),
               Material(
@@ -1181,59 +1162,78 @@ class _CountChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final figure = Text(
-      value,
-      textAlign: TextAlign.center,
-      style: sora(
-        labelFirst ? 14 : 16,
-        weight: FontWeight.w500,
-        color: valueColor,
-      ),
-    );
-    final caption = Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (badge != null) ...[
-          StaffIcon(badge!, size: 10, color: valueColor, strokeWidth: 1.6),
-          const SizedBox(width: 3),
-        ],
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: sora(11, weight: FontWeight.w400, color: colors.muted),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bounded =
+            constraints.hasBoundedHeight &&
+            constraints.maxHeight < double.infinity;
+        final figure = SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              softWrap: false,
+              style: sora(
+                labelFirst ? 14 : 16,
+                weight: FontWeight.w500,
+                color: valueColor,
+              ),
+            ),
           ),
-        ),
-      ],
-    );
-    final body = Container(
-      width: double.infinity,
-      constraints: BoxConstraints(minHeight: onTap == null ? 0 : 44),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.chip,
-        borderRadius: BorderRadius.circular(12),
-        border: selected ? Border.all(color: colors.amber, width: 1) : null,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: labelFirst ? [caption, figure] : [figure, caption],
-      ),
-    );
-    if (onTap == null) return body;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap!();
-        },
-        child: body,
-      ),
+        );
+        final caption = Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (badge != null) ...[
+              StaffIcon(badge!, size: 10, color: valueColor, strokeWidth: 1.6),
+              const SizedBox(width: 3),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: sora(11, weight: FontWeight.w400, color: colors.muted),
+              ),
+            ),
+          ],
+        );
+        final body = Container(
+          width: double.infinity,
+          height: bounded ? constraints.maxHeight : null,
+          alignment: Alignment.center,
+          constraints: bounded
+              ? null
+              : BoxConstraints(minHeight: onTap == null ? 0 : 44),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          decoration: BoxDecoration(
+            color: colors.chip,
+            borderRadius: BorderRadius.circular(12),
+            border: selected ? Border.all(color: colors.amber, width: 1) : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: labelFirst ? [caption, figure] : [figure, caption],
+          ),
+        );
+        if (onTap == null) return body;
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap!();
+            },
+            child: body,
+          ),
+        );
+      },
     );
   }
 }

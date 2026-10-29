@@ -50,6 +50,9 @@ class StaffMenuEntry {
 
   /// Route name used for the badge lookup (tickets count and similar).
   String? get page => menu?.page;
+
+  /// Network icon for an internal-web tile. Null for every other module.
+  String? get iconUrl => menu?.networkIconUrl;
 }
 
 /// One titled block on the Menu screen. [title] is the parent `menu_name`.
@@ -303,9 +306,19 @@ const StaffMenuStyle _fallbackStyle = StaffMenuStyle(
   accent: StaffAccent.violet,
 );
 
+/// Fallback only — the tile draws [MenuModel.networkIconUrl] from the API.
+const StaffMenuStyle _internalWebStyle = StaffMenuStyle(
+  section: StaffMenuSection.more,
+  glyph: StaffGlyphs.globe,
+  accent: StaffAccent.violet,
+);
+
 /// Resolves the Hub style for an API menu item. Unknown items land in MORE
 /// with a default tile so a new module from the API never disappears.
+///
+/// Internal-web modules keep a globe fallback; their real icon is `icon_url`.
 StaffMenuStyle staffMenuStyleFor(MenuModel item) {
+  if (item.isInternalWeb) return _internalWebStyle;
   final page = item.page;
   if (page != null && _pageStyles.containsKey(page)) return _pageStyles[page]!;
   final name = item.menuName.toLowerCase();
@@ -329,8 +342,9 @@ List<MenuModel> _visible(List<MenuModel> items) {
 }
 
 bool _hasPageOrChildren(MenuModel item) {
-  final page = item.page?.trim() ?? '';
-  return page.isNotEmpty || item.subMenu.isNotEmpty;
+  if (item.subMenu.isNotEmpty) return true;
+  if (item.isInternalWeb) return item.webUrl?.trim().isNotEmpty ?? false;
+  return item.page?.trim().isNotEmpty ?? false;
 }
 
 StaffMenuEntry _entry(MenuModel item) {
@@ -367,6 +381,12 @@ ComingSoonArgs _soonFor(MenuModel item) {
 
 /// Opens an API menu row. Pages this build cannot open yet show Coming soon.
 void openStaffMenu(BuildContext context, MenuModel item) {
+  if (item.isInternalWeb) {
+    final url = item.webUrl?.trim() ?? '';
+    if (url.isEmpty) return;
+    openInternalWeb(context, item);
+    return;
+  }
   if (menuOpensSoon(item)) {
     openComingSoon(context, _soonFor(item));
     return;
@@ -403,7 +423,7 @@ List<StaffMenuGroup> buildStaffMenu(
       );
     } else {
       final page = item.page?.trim() ?? '';
-      if (page.isNotEmpty) loose.add(_entry(item));
+      if (page.isNotEmpty || item.isInternalWeb) loose.add(_entry(item));
     }
   }
   flushLoose();

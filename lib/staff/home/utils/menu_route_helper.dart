@@ -25,6 +25,7 @@ bool staffRouteExists(String? page) {
 
 /// The API listed a page the installed app has no screen for yet.
 bool menuOpensSoon(MenuModel item) {
+  if (item.isInternalWeb) return false;
   final page = item.page?.trim() ?? '';
   return page.isNotEmpty && !staffRouteExists(page);
 }
@@ -72,6 +73,11 @@ void pushMenuPage(
     return;
   }
   context.pushNamed(routeName, extra: item);
+}
+
+/// Opens a backend-hosted page inside the app.
+void openInternalWeb(BuildContext context, MenuModel item) {
+  context.pushNamed(Routes.internalWeb.name, extra: item);
 }
 
 /// Opens an API menu item: its route when it has a page, else its sub menu.

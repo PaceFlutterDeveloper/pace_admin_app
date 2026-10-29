@@ -20,7 +20,11 @@ class SubMenuPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.staff;
-    final items = menuModel.subMenu;
+    final items = [
+      for (final item in menuModel.subMenu)
+        if (!item.isInternalWeb || (item.webUrl?.trim().isNotEmpty ?? false))
+          item,
+    ];
 
     return SafeArea(
       bottom: false,
@@ -73,9 +77,12 @@ class SubMenuPage extends StatelessWidget {
                           final item = items[i];
                           final style = staffMenuStyleFor(item);
                           return StaffMenuTile(
-                            label: item.menuName,
+                            label: item.menuName.trim().isNotEmpty
+                                ? item.menuName
+                                : item.menuVal,
                             glyph: style.glyph,
                             accent: style.accent,
+                            iconUrl: item.networkIconUrl,
                             soon: menuOpensSoon(item),
                             badge: item.page == 'tasks' && pending != null
                                 ? pending

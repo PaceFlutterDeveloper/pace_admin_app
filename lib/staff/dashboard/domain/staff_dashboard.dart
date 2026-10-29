@@ -78,6 +78,7 @@ class StaffDashboard {
     this.tasksOverdue,
     this.leave,
     this.unreadNotifications,
+    this.unreadNotices,
     this.eventsToday,
     this.approvalsPending,
     this.attendance,
@@ -92,6 +93,9 @@ class StaffDashboard {
   final int? tasksOverdue;
   final List<DashboardLeave>? leave;
   final int? unreadNotifications;
+
+  /// Unread school circulars. Null when the summary omits notices.
+  final int? unreadNotices;
   final int? eventsToday;
   final int? approvalsPending;
   final DashboardAttendance? attendance;
@@ -146,6 +150,7 @@ class StaffDashboard {
       leave: _leaveRows(leave),
       taken: leave is Map ? _leaveTotal(leave) : null,
       unreadNotifications: _count(data['unread_notifications']),
+      unreadNotices: _unreadNotices(data),
       eventsToday: _count(data['events_today']),
       approvalsPending: _count(data['approvals_pending']),
       attendance: attendance is Map
@@ -153,6 +158,27 @@ class StaffDashboard {
           : null,
     );
   }
+}
+
+/// Unread circulars from the summary. Accepts a top-level count or
+/// `notices.unread` / `notices.unread_count`.
+int? _unreadNotices(Map<String, dynamic> data) {
+  for (final key in const [
+    'unread_notices',
+    'notices_unread',
+    'notices_unread_count',
+  ]) {
+    if (data.containsKey(key)) return StaffDashboard._count(data[key]);
+  }
+  final notices = data['notices'];
+  if (notices is Map) {
+    for (final key in const ['unread', 'unread_count', 'unread_notices']) {
+      if (notices.containsKey(key)) {
+        return StaffDashboard._count(notices[key]);
+      }
+    }
+  }
+  return null;
 }
 
 /// Pending work from the dashboard summary. The tasks object uses `pending`;

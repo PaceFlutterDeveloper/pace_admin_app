@@ -14,6 +14,7 @@ class StaffMenuTile extends StatefulWidget {
     required this.onTap,
     this.badge = 0,
     this.soon = false,
+    this.iconUrl,
   });
 
   final String label;
@@ -22,6 +23,9 @@ class StaffMenuTile extends StatefulWidget {
   final VoidCallback onTap;
   final int badge;
   final bool soon;
+
+  /// Set for an internal-web tile whose menu sent an icon URL.
+  final String? iconUrl;
 
   @override
   State<StaffMenuTile> createState() => _StaffMenuTileState();
@@ -60,6 +64,7 @@ class _StaffMenuTileState extends State<StaffMenuTile> {
                   radius: 20,
                   iconSize: 25,
                   strokeWidth: 1.8,
+                  imageUrl: widget.iconUrl,
                   child: widget.badge > 0
                       ? Positioned(
                           top: -6,

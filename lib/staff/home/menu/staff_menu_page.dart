@@ -234,6 +234,7 @@ class _MenuBody extends StatelessWidget {
                               label: entry.label,
                               glyph: entry.style.glyph,
                               accent: entry.style.accent,
+                              iconUrl: entry.iconUrl,
                               soon: entry.isSoon,
                               badge: badge,
                               onTap: () => onOpen(entry),

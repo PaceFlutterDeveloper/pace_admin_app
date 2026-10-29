@@ -16,6 +16,7 @@ class GlassIconTile extends StatelessWidget {
     this.radius,
     this.iconSize,
     this.strokeWidth = 1.9,
+    this.imageUrl,
     this.child,
   });
 
@@ -25,6 +26,9 @@ class GlassIconTile extends StatelessWidget {
   final double? radius;
   final double? iconSize;
   final double strokeWidth;
+
+  /// Network image drawn over the glyph. A failed load leaves the glyph.
+  final String? imageUrl;
 
   /// Overlay (for example a count badge) positioned relative to the tile.
   final Widget? child;
@@ -63,17 +67,59 @@ class GlassIconTile extends StatelessWidget {
                   ],
                 ),
               ),
-              alignment: Alignment.center,
-              child: StaffIcon(
-                glyph,
-                size: iconSize ?? size * 0.44,
+              clipBehavior: Clip.antiAlias,
+              child: _GlassIcon(
+                glyph: glyph,
                 color: tint.foreground,
+                size: iconSize ?? size * 0.44,
                 strokeWidth: strokeWidth,
+                imageUrl: imageUrl,
               ),
             ),
           ),
           if (child != null) child!,
         ],
+      ),
+    );
+  }
+}
+
+class _GlassIcon extends StatelessWidget {
+  const _GlassIcon({
+    required this.glyph,
+    required this.color,
+    required this.size,
+    required this.strokeWidth,
+    this.imageUrl,
+  });
+
+  final String glyph;
+  final Color color;
+  final double size;
+  final double strokeWidth;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final glyphIcon = StaffIcon(
+      glyph,
+      size: size,
+      color: color,
+      strokeWidth: strokeWidth,
+    );
+    final url = imageUrl?.trim() ?? '';
+    if (url.isEmpty) return Center(child: glyphIcon);
+    // API `icon_url` (internal-web menus). Glyph is only the load/error fallback.
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Image.network(
+        url,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => Center(child: glyphIcon),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Center(child: glyphIcon);
+        },
       ),
     );
   }

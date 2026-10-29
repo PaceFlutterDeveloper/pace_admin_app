@@ -12,6 +12,10 @@ class MenuModel {
   final int badge;
   final List<MenuModel> subMenu;
 
+  /// Page opened inside the app when [isInternalWeb] is true.
+  /// Prefer `url`; `web_url` is used when `url` is absent.
+  final String? webUrl;
+
   MenuModel({
     required this.id,
     required this.menuKey,
@@ -23,7 +27,18 @@ class MenuModel {
     this.pos = 0,
     this.badge = 0,
     required this.subMenu,
+    this.webUrl,
   });
+
+  /// Backend key for a page hosted on the server and opened in the app.
+  bool get isInternalWeb => isInternalWebKey(menuKey);
+
+  /// Icon URL for an internal-web tile. Other modules keep their glyphs.
+  String? get networkIconUrl {
+    if (!isInternalWeb) return null;
+    final url = iconUrl.trim();
+    return url.isEmpty ? null : url;
+  }
 
   factory MenuModel.fromJson(String str) => MenuModel.fromMap(json.decode(str));
 
@@ -40,6 +55,7 @@ class MenuModel {
     pos: _menuInt(json["pos"]),
     badge: _menuInt(json["badge"]),
     subMenu: _menuChildren(json["sub_menu"]),
+    webUrl: _menuWebUrl(json),
   );
 
   Map<String, dynamic> toMap() => {
@@ -49,6 +65,7 @@ class MenuModel {
     "menu_name": menuName,
     "page": page,
     "icon_url": iconUrl,
+    "url": webUrl,
     "parent_id": parentId,
     "pos": pos,
     "badge": badge,
@@ -56,7 +73,20 @@ class MenuModel {
   };
 }
 
+/// `internalWeb`, `internal_web`, and `internal web` are the same key.
+bool isInternalWebKey(String key) {
+  final compact = key.trim().toLowerCase().replaceAll(RegExp(r'[\s_]+'), '');
+  return compact == 'internalweb';
+}
+
 String _menuString(dynamic value) => value == null ? '' : value.toString();
+
+String? _menuWebUrl(Map<String, dynamic> json) {
+  final url = _menuString(json['url']);
+  if (url.isNotEmpty) return url;
+  final fallback = _menuString(json['web_url']);
+  return fallback.isEmpty ? null : fallback;
+}
 
 int _menuInt(dynamic value) {
   if (value is int) return value;

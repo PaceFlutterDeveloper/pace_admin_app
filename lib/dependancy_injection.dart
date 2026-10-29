@@ -12,6 +12,8 @@ import 'package:admin_app/staff/reports/data/reports_repository_impl.dart';
 import 'package:admin_app/staff/reports/domain/reports_repository.dart';
 import 'package:admin_app/staff/notification_settings/data/notification_settings_repository_impl.dart';
 import 'package:admin_app/staff/notification_settings/domain/notification_settings_repository.dart';
+import 'package:admin_app/staff/sessions/data/login_sessions_repository_impl.dart';
+import 'package:admin_app/staff/sessions/domain/login_sessions_repository.dart';
 import 'package:admin_app/staff/dashboard/data/dashboard_repository_impl.dart';
 import 'package:admin_app/staff/dashboard/domain/dashboard_repository.dart';
 import 'package:admin_app/staff/dashboard/presentation/dashboard_cubit.dart';
@@ -279,6 +281,9 @@ Future<void> serviceLocators() async {
   );
   locator.registerLazySingleton<NotificationSettingsRepository>(
     () => ApiNotificationSettingsRepository(apiService: locator<ApiService>()),
+  );
+  locator.registerLazySingleton<LoginSessionsRepository>(
+    () => ApiLoginSessionsRepository(apiService: locator<ApiService>()),
   );
   locator.registerLazySingleton<DashboardRepository>(
     () => ApiDashboardRepository(apiService: locator<ApiService>()),

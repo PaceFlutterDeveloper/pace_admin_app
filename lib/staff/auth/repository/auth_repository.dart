@@ -17,13 +17,17 @@ class AuthRepository {
     required String userName,
     required String password,
     required String fcmToken,
+    Map<String, String> device = const {},
   }) async {
-    // Create FormData object and add form fields
+    // Create FormData object and add form fields.
+    // [device] carries device_name, platform, and the public IP place
+    // when the phone could resolve them.
     FormData formData = FormData.fromMap({
       'username': userName,
       'password': password,
       'action': "login",
       if (fcmToken.isNotEmpty) 'fcm_token': fcmToken,
+      ...device,
     });
 
     var response = await apiService.postAPI(

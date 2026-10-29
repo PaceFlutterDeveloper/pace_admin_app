@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/staff/notification/components/notification_style.dart';
 import 'package:admin_app/staff/notification/cubit/notification_cubit.dart';
 import 'package:admin_app/staff/notification/models/notification_model.dart';
+import 'package:admin_app/staff/notification/services/notification_router.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
@@ -18,8 +21,7 @@ void openNotification(
   NotificationModel n,
 ) {
   cubit.markAsRead(n.id);
-  final appPage = n.appPage;
-  if (appPage.isEmpty) return;
+  final appPage = n.appPage.trim();
 
   final segments = appPage.split('/');
   final maybeId = segments.length > 2 ? segments.last : null;
@@ -27,11 +29,24 @@ void openNotification(
 
   if (appPage.startsWith('/manageTicketDetailPage')) {
     router.push(hasId ? appPage : Routes.manageTickets.path);
-  } else if (appPage.startsWith('/ticketDetailPage')) {
-    router.push(hasId ? appPage : Routes.tickets.path);
-  } else {
-    router.push(appPage);
+    return;
   }
+  if (appPage.startsWith('/ticketDetailPage')) {
+    router.push(hasId ? appPage : Routes.tickets.path);
+    return;
+  }
+  if (NotificationRouter.isKnownStaffPage(appPage)) {
+    router.push(appPage);
+    return;
+  }
+
+  final trying =
+      appPage.isNotEmpty ||
+      n.link.trim().isNotEmpty ||
+      n.action.trim().isNotEmpty ||
+      n.actionName.trim().isNotEmpty;
+  if (!trying) return;
+  unawaited(NotificationRouter.openInternalWebFromInbox(n));
 }
 
 /// One notification row: glass icon, title, preview, time and unread dot.

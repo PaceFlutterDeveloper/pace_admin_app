@@ -7,6 +7,7 @@ import 'package:admin_app/staff/auth/last_staff_profile.dart';
 import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/auth/repository/auth_repository.dart';
 import 'package:admin_app/staff/notification/services/staff_fcm.dart';
+import 'package:admin_app/staff/session/device_snapshot.dart';
 import 'package:admin_app/staff/session/staff_memory.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,10 +61,12 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.loading());
 
     final fcmToken = await CareersFcmService.getFcmToken();
+    final device = await DeviceInfo.capture();
     var res = await authRepository.login(
       userName: userName,
       password: password,
       fcmToken: fcmToken ?? '',
+      device: device.fields,
     );
     if (res.isLeft) {
       emit(AuthState.loginFailure(res.left.message ?? "Something went wrong"));

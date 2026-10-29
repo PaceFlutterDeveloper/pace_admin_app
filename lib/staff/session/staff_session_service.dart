@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:admin_app/core/const/db_names.dart';
 import 'package:admin_app/core/services/api_service.dart';
@@ -10,6 +9,7 @@ import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/shared/read_json.dart';
 import 'package:admin_app/careers/notification/careers_fcm_service.dart';
 import 'package:admin_app/staff/notification/services/staff_fcm.dart';
+import 'package:admin_app/staff/session/device_snapshot.dart';
 import 'package:admin_app/staff/shared/staff_post.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
@@ -44,14 +44,23 @@ class StaffSessionService {
       if (fcm.isEmpty) return;
       final key = '${auth.userId}@${auth.schoolCode}:$fcm';
       if (!force && key == _lastRegistered) return;
+      final device = await DeviceInfo.capture();
+      final version = device.appVersion.isNotEmpty
+          ? device.appVersion
+          : await _appVersion();
       await postStaffPage(
         api: apiService,
         url: ApiConstants.staffPage('registerDevice'),
         fields: {
           'fcm_token': fcm,
-          'device_id': deviceId(),
-          'platform': Platform.isIOS ? 'ios' : 'android',
-          'app_version': await _appVersion(),
+          ...device.fields,
+          'device_id': device.deviceId.isNotEmpty
+              ? device.deviceId
+              : deviceId(),
+          'platform': device.platform.isNotEmpty
+              ? device.platform
+              : (Platform.isIOS ? 'ios' : 'android'),
+          'app_version': version,
         },
       );
       _lastRegistered = key;
@@ -184,18 +193,7 @@ class StaffSessionService {
   }
 
   /// Stable id of this install, created on first use.
-  static String deviceId() {
-    final box = Hive.box('settingsBox');
-    final saved = box.get('staffDeviceId') as String?;
-    if (saved != null && saved.isNotEmpty) return saved;
-    final random = Random.secure();
-    final id = List.generate(
-      16,
-      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
-    ).join();
-    box.put('staffDeviceId', id);
-    return id;
-  }
+  static String deviceId() => staffDeviceId();
 
   static Future<String?> _firebaseToken() => CareersFcmService.getFcmToken();
 

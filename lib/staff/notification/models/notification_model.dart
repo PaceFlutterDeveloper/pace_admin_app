@@ -15,6 +15,8 @@ class NotificationModel {
   final String timeAgo;
   final String appPage;
   final String head;
+  final String action;
+  final String actionName;
   NotificationModel({
     required this.id,
     required this.notification,
@@ -28,6 +30,8 @@ class NotificationModel {
     required this.timeAgo,
     required this.appPage,
     required this.head,
+    this.action = '',
+    this.actionName = '',
   });
 
   factory NotificationModel.fromJson(String str) =>
@@ -49,6 +53,8 @@ class NotificationModel {
         timeAgo: readString(json["time_ago"]),
         appPage: readString(json['app_page']),
         head: readString(json['head']),
+        action: readString(json['action']),
+        actionName: readString(json['action_name']),
       );
 
   Map<String, dynamic> toMap() => {
@@ -76,11 +82,15 @@ class NotificationModel {
     String? timeAgo,
     String? appPage,
     String? head,
+    String? action,
+    String? actionName,
   }) {
     return NotificationModel(
       id: id ?? this.id,
       head: head ?? this.head,
       appPage: appPage ?? this.appPage,
+      action: action ?? this.action,
+      actionName: actionName ?? this.actionName,
       notification: notification ?? this.notification,
       pageId: pageId ?? this.pageId,
       link: link ?? this.link,

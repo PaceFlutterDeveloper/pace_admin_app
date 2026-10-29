@@ -204,6 +204,19 @@ void main() {
     expect(remainingOnly.leave, isNotNull);
   });
 
+  test('unread notices read top-level and nested dashboard counts', () {
+    final top = StaffDashboard.fromData({'unread_notices': 3});
+    expect(top.unreadNotices, 3);
+
+    final nested = StaffDashboard.fromData({
+      'notices': {'unread': 2},
+    });
+    expect(nested.unreadNotices, 2);
+
+    final missing = StaffDashboard.fromData({'tasks': {'due_today': 1}});
+    expect(missing.unreadNotices, isNull);
+  });
+
   test('a present month is not counted as a month of absences', () {
     final summary = buildAttendanceDashboardSummaries([
       _day('2026-10-27', 'present'),

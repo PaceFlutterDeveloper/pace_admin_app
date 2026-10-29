@@ -70,6 +70,8 @@ class StaffGlyphs {
       'M14.7 6.3a4 4 0 0 0 5 5L21 13l-8 8a2.8 2.8 0 0 1-4-4l8-8zM14.7 6.3 18 3l3 3-3.3 3.3';
   static const download =
       'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3';
+  static const phone =
+      'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2';
 }
 
 String _hex(Color c) {

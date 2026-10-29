@@ -22,6 +22,7 @@ import 'package:admin_app/staff/tickets/tickets/pages/ticket_detail_page.dart';
 import 'package:admin_app/staff/tickets/tickets/pages/ticket_listing_page.dart';
 import 'package:admin_app/staff/transport/nfc_mappy/page/page.dart';
 import 'package:admin_app/staff/home/components/sub_menu_page.dart';
+import 'package:admin_app/staff/internal_web/presentation/internal_web_page.dart';
 import 'package:admin_app/staff/home/home_page.dart';
 import 'package:admin_app/staff/home/models/menu_model.dart';
 import 'package:admin_app/staff/notification/cubit/notification_cubit.dart';
@@ -34,6 +35,7 @@ import 'package:admin_app/staff/directory/presentation/directory_page.dart';
 import 'package:admin_app/staff/timetable/presentation/timetable_page.dart';
 import 'package:admin_app/staff/reports/presentation/reports_page.dart';
 import 'package:admin_app/staff/notification_settings/presentation/notification_settings_page.dart';
+import 'package:admin_app/staff/sessions/presentation/login_sessions_page.dart';
 import 'package:admin_app/careers/application/bloc/application_bloc.dart';
 import 'package:admin_app/careers/jobs/bloc/jobs_bloc.dart';
 import 'package:admin_app/careers/jobs/pages/job_detail_page.dart';
@@ -237,6 +239,11 @@ class AppRoute {
             ),
           ),
           GoRoute(
+            path: Routes.loginSessions.path,
+            name: Routes.loginSessions.name,
+            builder: (_, __) => const LoginSessionsPage(),
+          ),
+          GoRoute(
             path: Routes.comingSoon.path,
             name: Routes.comingSoon.name,
             builder: (_, state) => StaffComingSoonPage(
@@ -263,6 +270,25 @@ class AppRoute {
               final menuModel = state.extra as MenuModel;
 
               return _staffFadePage(state, SubMenuPage(menuModel: menuModel));
+            },
+          ),
+          GoRoute(
+            path: Routes.internalWeb.path,
+            name: Routes.internalWeb.name,
+            pageBuilder: (_, state) {
+              final menu = state.extra is MenuModel
+                  ? state.extra as MenuModel
+                  : MenuModel(
+                      id: '0',
+                      menuKey: 'internalWeb',
+                      menuVal: '',
+                      menuName: '',
+                      page: null,
+                      iconUrl: '',
+                      parentId: '',
+                      subMenu: const [],
+                    );
+              return _staffFadePage(state, InternalWebPage(menu: menu));
             },
           ),
           GoRoute(
@@ -544,6 +570,7 @@ enum Routes {
   getNotifications("/getNotifications"),
   userProfile("/userProfile"),
   subMenuPage("/subMenuPage"),
+  internalWeb("/internalWeb"),
   updatePassword("/updatePassword"),
   classAttendance('/classAttendance'),
   students('/students'),
@@ -576,7 +603,8 @@ enum Routes {
   staff('/staff'),
   timetable('/timetable'),
   reports('/reports'),
-  notificationSettings('/notificationSettings');
+  notificationSettings('/notificationSettings'),
+  loginSessions('/loginSessions');
 
   final String path;
 

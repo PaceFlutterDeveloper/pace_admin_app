@@ -1,5 +1,7 @@
 import 'package:admin_app/staff/home/menu/staff_menu_catalog.dart';
 import 'package:admin_app/staff/home/models/menu_model.dart';
+import 'package:admin_app/staff/home/utils/menu_route_helper.dart';
+import 'package:admin_app/staff/widgets/staff_icons.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 MenuModel _menu(
@@ -153,6 +155,86 @@ void main() {
     ], query: 'event');
     expect(menu.single.title, isEmpty);
     expect(menu.single.items.single.label, 'Events');
+  });
+
+  test('internal web without a native page is listed and is not soon', () {
+    final item = MenuModel.fromMap({
+      'id': 4,
+      'menu_key': 'internalWeb',
+      'menu_val': 'Activity Fee',
+      'menu_name': 'Activity Fee',
+      'page': '',
+      'icon_url': 'https://example.com/fee.png',
+      'url': 'https://example.com/fee',
+      'parent_id': 0,
+      'sub_menu': [],
+    });
+
+    expect(item.isInternalWeb, isTrue);
+    expect(item.webUrl, 'https://example.com/fee');
+    expect(item.networkIconUrl, 'https://example.com/fee.png');
+
+    final entry = buildStaffMenu([item]).single.items.single;
+    expect(entry.label, 'Activity Fee');
+    expect(entry.isSoon, isFalse);
+    expect(entry.iconUrl, 'https://example.com/fee.png');
+    // Do not invent a local glyph from the name — icon comes from the API.
+    expect(entry.style.glyph, StaffGlyphs.globe);
+  });
+
+  test('internal web prefers url and falls back to web_url', () {
+    final preferred = MenuModel.fromMap({
+      'menu_key': 'internal_web',
+      'menu_val': 'A',
+      'menu_name': 'A',
+      'url': 'https://example.com/one',
+      'web_url': 'https://example.com/two',
+    });
+    final fallback = MenuModel.fromMap({
+      'menu_key': 'internal web',
+      'menu_val': 'B',
+      'menu_name': 'B',
+      'web_url': 'https://example.com/two',
+    });
+
+    expect(preferred.webUrl, 'https://example.com/one');
+    expect(preferred.isInternalWeb, isTrue);
+    expect(fallback.webUrl, 'https://example.com/two');
+    expect(fallback.isInternalWeb, isTrue);
+  });
+
+  test('internal web with no url is hidden, even with an unknown page', () {
+    final hidden = MenuModel.fromMap({
+      'menu_key': 'internalWeb',
+      'menu_val': 'Missing',
+      'menu_name': 'Missing',
+      'page': 'not-a-route',
+    });
+    expect(buildStaffMenu([hidden]), isEmpty);
+    expect(menuOpensSoon(hidden), isFalse);
+  });
+
+  test('internal web inside a group stays openable', () {
+    final menu = buildStaffMenu([
+      _menu(
+        'School',
+        subMenu: [
+          MenuModel.fromMap({
+            'menu_key': 'internalWeb',
+            'menu_val': 'Consent',
+            'menu_name': 'Consent',
+            'page': 'temporary-consent',
+            'icon_url': '',
+            'url': 'https://example.com/consent',
+          }),
+        ],
+      ),
+    ]);
+
+    final entry = menu.single.items.single;
+    expect(menu.single.title, 'School');
+    expect(entry.label, 'Consent');
+    expect(entry.isSoon, isFalse);
   });
 
   test('search can match a section title', () {

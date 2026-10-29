@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:admin_app/staff/auth/cubit/auth_cubit.dart';
 import 'package:admin_app/staff/auth/forgot_password_form.dart';
 import 'package:admin_app/staff/auth/models/startup_school.dart';
+import 'package:admin_app/staff/session/device_snapshot.dart';
 import 'package:admin_app/careers/shared/components/careers_auth_scaffold.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
@@ -34,6 +36,9 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _fetchSchools();
+    // Resolve the phone name and public IP while the form is filled in,
+    // so sign-in does not wait on that lookup.
+    unawaited(DeviceInfo.capture());
   }
 
   @override

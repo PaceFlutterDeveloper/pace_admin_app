@@ -27,7 +27,7 @@ The staff app is a phone-sized view of the desktop ERP. The desktop ERP stays th
 | 2 | Change password, forgot / reset password | **P0** |
 | 3 | Home dashboard summary (one call instead of three) | **P0** |
 | 4 | Events (Home "Today's events" and the Events tab) | **P0** |
-| 5 | Leave: balance, apply, history, cancel (Home "Leave left" card) | **P0** |
+| 5 | Leave: balance, apply, history, cancel | **P0** |
 | 6 | Tasks: list, detail, update (Home "Tasks due" card and Tasks tab) | **P0** |
 | 7 | Push notification payload contract, FCM token refresh | **P0** |
 | 8 | Notices, Approvals, Staff directory, Timetable | P1 |
@@ -109,7 +109,11 @@ Each entry shows what the app sends and reads **as implemented**, then what we *
 ```
 POST index.php?page=login        (no token)
 username, password, action=login, fcm_token
+device_id, device_name, platform, app_version
+ip, location          (omitted when the phone cannot look them up)
 ```
+
+`device_name` is the marketing name, for example `iPhone 12 Pro`, not a hardware code such as `iPhone13,3`. `platform` is `ios` or `android`. `ip` is the phone's public IP. `location` is the city and country derived from that IP, for example `Dubai, United Arab Emirates`. Sign-in still completes when `ip` and `location` are missing; in that case take the IP from the HTTP connection and resolve the place on the server.
 
 Reads: `status`, `message`, `data.token`, `data.id`, `data.name`, `data.designation`, `data.photo`, `data.sch_name`, `data.sch_logo`.
 
@@ -119,7 +123,7 @@ If the device has no push token the app sends the literal string `NO TOKEN`.
 
 - Return `401` for wrong credentials (not `200` with `status:false`), and a clear `message`.
 - Add to `data`: `role` (principal, supervisor, teacher, nanny, maintenance, admin, director, ...), `school_code`, `token_expires_at`, and a `refresh_token` if you support refresh. See 5.1.
-- Accept `device_id`, `platform` (`ios` / `android`), `app_version` so you can manage tokens per device.
+- Accept `device_id`, `device_name`, `platform` (`ios` / `android`), `app_version`, and optional `ip` and `location`, and store one session per device. The profile screen reads these from `loginSessions`.
 - Do not accept the placeholder `NO TOKEN`; treat a missing FCM token as "no push yet".
 - Rate limit and lock out repeated failures.
 
@@ -326,7 +330,10 @@ The app currently has no server-side logout, no token expiry handling and no pas
 | Action | Request | Response |
 |---|---|---|
 | `page=logout` (already named in the app, **never called**) | header `token`; `fcm_token?`, `device_id?` | `{status}`. Server **revokes the token and deletes the device's push token.** Today a logged-out phone keeps receiving pushes for the previous user. |
-| `page=registerDevice` | `fcm_token`, `device_id`, `platform`, `app_version` | `{status}`. App calls this at login and **whenever Firebase rotates the token** (the app currently only logs a rotation and never tells the server, so pushes silently stop). |
+| `page=registerDevice` | `fcm_token`, `device_id`, `platform`, `app_version`, `device_name`, `ip?`, `location?` | `{status}`. App calls this at login and **whenever Firebase rotates the token** (the app currently only logs a rotation and never tells the server, so pushes silently stop). Update the session's name, place and last-seen time for this `device_id`. |
+| `page=loginSessions` | `action=list` | `{status, data:[{id, device_id, device_name, platform, ip, location, last_seen, is_current}]}`. Profile → Where have you logged in. `last_seen` is a date-time. `is_current` is 1 for the token making the call. |
+| `page=loginSessions` | `action=revoke`, `session_id` | `{status}`. Revokes that session only. The current token stays valid. |
+| `page=loginSessions` | `action=revokeOthers` | `{status}`. Revokes every session except the one for this token. |
 | `page=refreshToken` (if you issue short-lived tokens) | `refresh_token` | `{token, token_expires_at}` |
 | `page=changePassword` | `current_password`, `new_password` | `{status, message}`. The screen exists in the app but has **no API behind it**. |
 | `page=forgotPassword` | `username`, `school_code` | Sends a reset link or OTP. Return the same message whether or not the user exists. |
@@ -357,6 +364,7 @@ POST index.php?page=dashboard      header: token
     "tasks":      { "due_today": 3, "overdue": 1 },
     "leave":      { "balance": [ { "type": "Annual", "remaining": 12.5 } ] },
     "unread_notifications": 4,
+    "unread_notices": 2,
     "events_today": 2,
     "approvals_pending": 5
   }
@@ -411,7 +419,7 @@ Decisions needed:
 
 ### 5.4 Leave (P0)
 
-Screens: Menu → Leave, Home **"Leave left"** card.
+Screens: Menu → Leave.
 
 ```
 POST index.php?page=leave
@@ -695,7 +703,7 @@ For the backend team's awareness. The mobile team will do these.
 |---|---|
 | Sign in | `login`, school list (the app reads this from the shared Careers `startup` endpoint; confirm it stays) |
 | Home hero | `dashboard` (attendance), or `userAttendance` today |
-| Home stat cards | `dashboard` (tasks, tickets, leave) |
+| Home stat cards | `dashboard` (tasks, unread_notices) |
 | Home "Today's events" | `events` / `today` |
 | Home "Quick access" | `userMenu` |
 | Home "My tasks" | `tasks` / `list` |
