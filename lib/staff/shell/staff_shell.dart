@@ -87,6 +87,9 @@ class _StaffShellState extends State<StaffShell> {
     return Scaffold(
       backgroundColor: p.background,
       extendBody: true,
+      // Keep the floating dock on the screen edge. Letting the scaffold
+      // resize would slide the dock up and sit it on top of the keyboard.
+      resizeToAvoidBottomInset: false,
       body: Stack(
         clipBehavior: Clip.none,
         children: [

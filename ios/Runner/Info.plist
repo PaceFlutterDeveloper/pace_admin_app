@@ -45,8 +45,6 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Smart PACE uses the camera to take photos for your profile and ticket attachments.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>We need access to Face ID for account security.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app needs permission to save cropped profile photos to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -1,5 +1,4 @@
 import 'package:admin_app/core/routes/app_routes.dart';
-import 'package:admin_app/core/services/authentication_service.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/auth/cubit/auth_cubit.dart';
@@ -23,7 +22,6 @@ class UsersPage extends StatefulWidget {
 }
 
 class _UsersPageState extends State<UsersPage> {
-  final AuthenticationService _auth = locator<AuthenticationService>();
   final _users = locator<Box<AuthModel>>().listenable();
   bool _busy = false;
   bool _signingOutAll = false;
@@ -44,10 +42,8 @@ class _UsersPageState extends State<UsersPage> {
     }
   }
 
-  Future<void> _addAccount() async {
+  void _addAccount() {
     if (_busy) return;
-    final ok = await _auth.authenticate();
-    if (!ok) return;
     secretAdminLoginOpen.value = true;
   }
 

@@ -67,7 +67,6 @@ import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/services/api_post_logger.dart';
 import 'package:admin_app/core/services/api_service.dart';
 import 'package:admin_app/core/update/app_update_controller.dart';
-import 'package:admin_app/core/services/authentication_service.dart';
 import 'package:admin_app/core/services/careers_session_expired_handler.dart';
 import 'package:admin_app/staff/face_attendance/data/datasources/attendance_remote_datasource.dart';
 import 'package:admin_app/staff/face_attendance/data/datasources/geofence_local_datasource.dart';
@@ -106,10 +105,6 @@ Future<void> serviceLocators() async {
     () => AppUpdateController(apiService: locator<ApiService>()),
   );
 
-  // Register authuntication Service
-  locator.registerLazySingleton<AuthenticationService>(
-    () => AuthenticationService(),
-  );
   // Register Hive Adapters
   Hive.registerAdapter(AuthModelAdapter()); // Register the LoginModel adapter
   Hive.registerAdapter(

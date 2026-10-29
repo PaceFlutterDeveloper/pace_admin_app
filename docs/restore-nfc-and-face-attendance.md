@@ -20,8 +20,9 @@ These were left in place. Do not recreate them.
 - NFC mapping API in `lib/staff/transport/nfc_mappy/repository/repository.dart`
 - Menu icon case `'nfcMapping'` in `lib/staff/home/components/menu_component.dart`
 - Attendance bloc, page, and `CaptureAndVerifyFaceUseCase` registration
-- Face ID (`NSFaceIDUsageDescription` and `local_auth`). That is account unlock, not face detection.
 - Photo library permission strings
+
+Do not restore Face ID / `local_auth`. Account unlock no longer uses device biometrics.
 
 Location permissions were removed after this note was first written. Restore them from `docs/restore-location-services.md` together with `geolocator`. The Dart checkout below from `ce36fce` also contains the old location calls, so the package and the native location keys have to come back with those files.
 
