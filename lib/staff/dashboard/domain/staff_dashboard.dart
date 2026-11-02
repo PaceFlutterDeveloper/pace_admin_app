@@ -78,7 +78,7 @@ class StaffDashboard {
     this.tasksOverdue,
     this.leave,
     this.unreadNotifications,
-    this.unreadNotices,
+    this.unreadCirculars,
     this.eventsToday,
     this.approvalsPending,
     this.attendance,
@@ -94,8 +94,8 @@ class StaffDashboard {
   final List<DashboardLeave>? leave;
   final int? unreadNotifications;
 
-  /// Unread school circulars. Null when the summary omits notices.
-  final int? unreadNotices;
+  /// Unread school circulars from `unread_circulars`. Null when omitted.
+  final int? unreadCirculars;
   final int? eventsToday;
   final int? approvalsPending;
   final DashboardAttendance? attendance;
@@ -150,7 +150,7 @@ class StaffDashboard {
       leave: _leaveRows(leave),
       taken: leave is Map ? _leaveTotal(leave) : null,
       unreadNotifications: _count(data['unread_notifications']),
-      unreadNotices: _unreadNotices(data),
+      unreadCirculars: _unreadCirculars(data),
       eventsToday: _count(data['events_today']),
       approvalsPending: _count(data['approvals_pending']),
       attendance: attendance is Map
@@ -160,21 +160,28 @@ class StaffDashboard {
   }
 }
 
-/// Unread circulars from the summary. Accepts a top-level count or
-/// `notices.unread` / `notices.unread_count`.
-int? _unreadNotices(Map<String, dynamic> data) {
+/// Unread circulars from the summary. Prefers top-level `unread_circulars`.
+int? _unreadCirculars(Map<String, dynamic> data) {
   for (final key in const [
+    'unread_circulars',
+    'circulars_unread',
     'unread_notices',
     'notices_unread',
     'notices_unread_count',
   ]) {
     if (data.containsKey(key)) return StaffDashboard._count(data[key]);
   }
-  final notices = data['notices'];
-  if (notices is Map) {
-    for (final key in const ['unread', 'unread_count', 'unread_notices']) {
-      if (notices.containsKey(key)) {
-        return StaffDashboard._count(notices[key]);
+  for (final nestKey in const ['circulars', 'notices']) {
+    final nested = data[nestKey];
+    if (nested is! Map) continue;
+    for (final key in const [
+      'unread',
+      'unread_count',
+      'unread_circulars',
+      'unread_notices',
+    ]) {
+      if (nested.containsKey(key)) {
+        return StaffDashboard._count(nested[key]);
       }
     }
   }

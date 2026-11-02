@@ -1,6 +1,6 @@
 import 'package:admin_app/staff/home/models/menu_model.dart';
 
-const staffWebSessionParams = ['token', 'admin_id', 'school_code'];
+const staffWebSessionParams = ['token', 'admin_id', 'school_code', 'theme'];
 
 /// Menu label shown on the tile and in the web page title.
 String internalWebLabel(MenuModel item) {
@@ -9,12 +9,26 @@ String internalWebLabel(MenuModel item) {
   return item.menuVal.trim();
 }
 
+/// Same URL with `token` masked so it is safe to print in debug logs.
+String redactInternalWebUrl(String url) {
+  final uri = Uri.tryParse(url.trim());
+  if (uri == null || !uri.hasQuery) return url;
+  final params = Map<String, String>.from(uri.queryParameters);
+  if (!params.containsKey('token')) return url;
+  final token = params['token'] ?? '';
+  params['token'] = token.isEmpty ? '[empty]' : '[redacted]';
+  return uri.replace(queryParameters: params).toString();
+}
+
 /// [rawUrl] plus the signed-in staff session, overwriting those names.
+///
+/// [theme] is `light` or `dark` so the backend page can match the app.
 String staffInternalWebUrl(
   String rawUrl, {
   required String token,
   required String adminId,
   required String schoolCode,
+  required String theme,
 }) {
   final uri = Uri.parse(rawUrl.trim());
   return uri
@@ -24,6 +38,7 @@ String staffInternalWebUrl(
           'token': token,
           'admin_id': adminId,
           'school_code': schoolCode,
+          'theme': theme,
         },
       )
       .toString();

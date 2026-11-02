@@ -204,17 +204,22 @@ void main() {
     expect(remainingOnly.leave, isNotNull);
   });
 
-  test('unread notices read top-level and nested dashboard counts', () {
-    final top = StaffDashboard.fromData({'unread_notices': 3});
-    expect(top.unreadNotices, 3);
+  test('unread circulars read top-level and nested dashboard counts', () {
+    final top = StaffDashboard.fromData({'unread_circulars': 3});
+    expect(top.unreadCirculars, 3);
+
+    final legacy = StaffDashboard.fromData({'unread_notices': 4});
+    expect(legacy.unreadCirculars, 4);
 
     final nested = StaffDashboard.fromData({
-      'notices': {'unread': 2},
+      'circulars': {'unread': 2},
     });
-    expect(nested.unreadNotices, 2);
+    expect(nested.unreadCirculars, 2);
 
-    final missing = StaffDashboard.fromData({'tasks': {'due_today': 1}});
-    expect(missing.unreadNotices, isNull);
+    final missing = StaffDashboard.fromData({
+      'tasks': {'due_today': 1, 'unread_circulars': 9},
+    });
+    expect(missing.unreadCirculars, isNull);
   });
 
   test('a present month is not counted as a month of absences', () {

@@ -1,7 +1,10 @@
+import 'dart:developer';
+
 import 'package:admin_app/staff/home/models/menu_model.dart';
 import 'package:admin_app/staff/home/utils/active_staff_user.dart';
 import 'package:admin_app/staff/internal_web/internal_web_url.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
+import 'package:admin_app/staff/theme/staff_theme_controller.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -29,24 +32,35 @@ class _InternalWebPageState extends State<InternalWebPage> {
     if (_url == null) {
       _loading = false;
       _error = 'This page could not be opened.';
+      log(
+        'InternalWeb: missing or invalid url for '
+        '${internalWebLabel(widget.menu)}',
+      );
       return;
     }
+    log('InternalWeb: load ${redactInternalWebUrl(_url!)}');
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (_) {
+          onPageStarted: (url) {
+            log('InternalWeb: started ${redactInternalWebUrl(url)}');
             if (!mounted) return;
             setState(() {
               _loading = true;
               _error = null;
             });
           },
-          onPageFinished: (_) {
+          onPageFinished: (url) {
+            log('InternalWeb: finished ${redactInternalWebUrl(url)}');
             if (!mounted) return;
             setState(() => _loading = false);
           },
           onWebResourceError: (error) {
+            log(
+              'InternalWeb: error ${error.description} '
+              'code=${error.errorCode}',
+            );
             if (error.isForMainFrame != true || !mounted) return;
             setState(() {
               _loading = false;
@@ -73,6 +87,7 @@ class _InternalWebPageState extends State<InternalWebPage> {
       token: user.token,
       adminId: user.userId,
       schoolCode: user.schoolCode,
+      theme: StaffThemeController.instance.isDark ? 'dark' : 'light',
     );
   }
 

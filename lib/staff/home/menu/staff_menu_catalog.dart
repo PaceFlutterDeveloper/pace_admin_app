@@ -130,6 +130,11 @@ const Map<String, StaffMenuStyle> _pageStyles = {
     glyph: StaffGlyphs.clock,
     accent: StaffAccent.violet,
   ),
+  'circulars': StaffMenuStyle(
+    section: StaffMenuSection.school,
+    glyph: StaffGlyphs.mega,
+    accent: StaffAccent.amber,
+  ),
   'notices': StaffMenuStyle(
     section: StaffMenuSection.school,
     glyph: StaffGlyphs.mega,
@@ -224,6 +229,14 @@ const List<(String, StaffMenuStyle)> _keywordStyles = [
       section: StaffMenuSection.school,
       glyph: StaffGlyphs.bus,
       accent: StaffAccent.green,
+    ),
+  ),
+  (
+    'circular',
+    StaffMenuStyle(
+      section: StaffMenuSection.school,
+      glyph: StaffGlyphs.mega,
+      accent: StaffAccent.amber,
     ),
   ),
   (

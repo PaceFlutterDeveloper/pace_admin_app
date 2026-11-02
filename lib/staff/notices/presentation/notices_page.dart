@@ -12,9 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-/// Menu > Notices: circulars from the school, pinned first.
+/// Menu > Circulars: school announcements, pinned first.
 class NoticesPage extends StatefulWidget {
-  const NoticesPage({super.key, this.title = 'Notices'});
+  const NoticesPage({super.key, this.title = 'Circulars'});
 
   final String title;
 
@@ -63,7 +63,7 @@ class _NoticesPageState extends State<NoticesPage> {
             Expanded(
               child: StaffLoadView<List<StaffNotice>>(
                 errorGlyph: StaffGlyphs.mega,
-                errorTitle: 'Could not load notices',
+                errorTitle: 'Could not load circulars',
                 builder: (context, all) {
                   final shown =
                       [
@@ -79,10 +79,11 @@ class _NoticesPageState extends State<NoticesPage> {
                   if (shown.isEmpty) {
                     return StaffEmptyList(
                       glyph: StaffGlyphs.mega,
-                      title: _filter == 1 ? 'Nothing unread' : 'No notices yet',
+                      title:
+                          _filter == 1 ? 'Nothing unread' : 'No circulars yet',
                       message: _filter == 1
-                          ? 'You have read every notice.'
-                          : 'Circulars and announcements will appear here.',
+                          ? 'You have read every circular.'
+                          : 'School circulars and announcements will appear here.',
                     );
                   }
                   return ListView.separated(

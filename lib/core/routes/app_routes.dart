@@ -208,10 +208,17 @@ class AppRoute {
                 ApprovalsPage(title: _menuTitle(state, 'Approvals')),
           ),
           GoRoute(
+            path: Routes.circulars.path,
+            name: Routes.circulars.name,
+            builder: (_, state) =>
+                NoticesPage(title: _menuTitle(state, 'Circulars')),
+          ),
+          // Legacy menu page key from older API builds.
+          GoRoute(
             path: Routes.notices.path,
             name: Routes.notices.name,
             builder: (_, state) =>
-                NoticesPage(title: _menuTitle(state, 'Notices')),
+                NoticesPage(title: _menuTitle(state, 'Circulars')),
           ),
           GoRoute(
             path: Routes.staff.path,
@@ -599,6 +606,7 @@ enum Routes {
   /// Modules the API menu lists by these page names.
   leave('/leave'),
   approvals('/approvals'),
+  circulars('/circulars'),
   notices('/notices'),
   staff('/staff'),
   timetable('/timetable'),

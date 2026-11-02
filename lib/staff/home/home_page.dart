@@ -199,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                             child: QuickStatCard(
                               glyph: StaffGlyphs.clock,
                               accent: StaffAccent.pink,
-                              label: 'Overdue',
+                              label: 'Critical',
                               value: dashboard?.tasksOverdue?.toString(),
                               onTap: () => context.push(Routes.tasks.path),
                             ),
@@ -209,11 +209,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                             child: QuickStatCard(
                               glyph: StaffGlyphs.mega,
                               accent: StaffAccent.amber,
-                              label: 'Notices',
+                              label: 'Circulars',
                               value:
-                                  (dashboard?.unreadNotices ?? 0).toString(),
+                                  (dashboard?.unreadCirculars ?? 0).toString(),
                               onTap: () =>
-                                  context.pushNamed(Routes.notices.name),
+                                  context.pushNamed(Routes.circulars.name),
                             ),
                           ),
                         ],

@@ -82,7 +82,7 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     return StaffPage(
       child: Column(
         children: [
-          StaffPageHeader(title: 'Notice'),
+          StaffPageHeader(title: 'Circular'),
           Expanded(
             child: ListView(
               physics: const BouncingScrollPhysics(),

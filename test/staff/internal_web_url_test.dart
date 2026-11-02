@@ -22,28 +22,41 @@ MenuModel _web(
 );
 
 void main() {
+  test('redactInternalWebUrl masks the token', () {
+    final uri = Uri.parse(
+      redactInternalWebUrl(
+        'https://example.com/fee?token=secret&theme=dark&admin_id=42',
+      ),
+    );
+    expect(uri.queryParameters['token'], '[redacted]');
+    expect(uri.queryParameters['theme'], 'dark');
+    expect(uri.queryParameters['admin_id'], '42');
+  });
+
   test('session query parameters overwrite the same names', () {
     final uri = Uri.parse(
       staffInternalWebUrl(
-        'https://example.com/fee?token=old&x=1&school_code=OLD',
+        'https://example.com/fee?token=old&x=1&school_code=OLD&theme=light',
         token: 'new token',
         adminId: '42',
         schoolCode: 'SCH',
+        theme: 'dark',
       ),
     );
 
     expect(uri.queryParameters['token'], 'new token');
     expect(uri.queryParameters['admin_id'], '42');
     expect(uri.queryParameters['school_code'], 'SCH');
+    expect(uri.queryParameters['theme'], 'dark');
     expect(uri.queryParameters['x'], '1');
-    expect(uri.queryParameters.length, 4);
+    expect(uri.queryParameters.length, 5);
   });
 
   test('url match ignores session params and case of scheme and host', () {
     expect(
       webUrlsMatch(
-        'https://Example.com/fee?token=a&admin_id=1',
-        'HTTPS://example.com/fee?school_code=SCH',
+        'https://Example.com/fee?token=a&admin_id=1&theme=dark',
+        'HTTPS://example.com/fee?school_code=SCH&theme=light',
       ),
       isTrue,
     );

@@ -50,7 +50,7 @@ class StaffNotice {
   factory StaffNotice.fromMap(Map<String, dynamic> map) {
     final attachments = readAttachments(map['attachments']);
     return StaffNotice(
-      id: readString(map['notice_id'] ?? map['id']),
+      id: readString(map['circular_id'] ?? map['notice_id'] ?? map['id']),
       title: readString(map['title']),
       summary: readString(map['summary']),
       body: readString(map['body'] ?? map['content'] ?? map['description']),

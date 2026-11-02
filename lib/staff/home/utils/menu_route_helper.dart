@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:admin_app/staff/home/models/menu_model.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
+import 'package:admin_app/staff/internal_web/internal_web_url.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -77,6 +80,12 @@ void pushMenuPage(
 
 /// Opens a backend-hosted page inside the app.
 void openInternalWeb(BuildContext context, MenuModel item) {
+  final label = internalWebLabel(item);
+  final url = item.webUrl?.trim() ?? '';
+  log(
+    'InternalWeb: open menu "$label" '
+    'url=${url.isEmpty ? '(empty)' : redactInternalWebUrl(url)}',
+  );
   context.pushNamed(Routes.internalWeb.name, extra: item);
 }
 
