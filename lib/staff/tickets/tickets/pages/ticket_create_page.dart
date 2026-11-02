@@ -49,10 +49,14 @@ class _TicketCreatePageState extends State<TicketCreatePage> {
     final p = context.staff;
     return Scaffold(
       backgroundColor: p.background,
+      // Shell already keeps the dock fixed; this page lifts only its own
+      // content so the submit bar sits flush on the keyboard.
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           const Positioned.fill(child: StaffBackdrop()),
           SafeArea(
+            bottom: false,
             child: Column(
               children: [
                 const StaffPageHeader(

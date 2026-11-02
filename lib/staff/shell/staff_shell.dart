@@ -84,6 +84,8 @@ class _StaffShellState extends State<StaffShell> {
     final path = GoRouterState.of(context).uri.path;
     _tab = staffTabForPath(path) ?? _tab;
 
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return Scaffold(
       backgroundColor: p.background,
       extendBody: true,
@@ -100,40 +102,43 @@ class _StaffShellState extends State<StaffShell> {
               child: widget.child,
             ),
           ),
-          Positioned(
-            left: 14,
-            right: 14,
-            bottom: staffDockBottomOffset(context),
-            child: BlocBuilder<DashboardCubit, StaffDashboard?>(
-              bloc: _dashboard,
-              builder: (context, dashboard) {
-                return BlocBuilder<TodayEventsCubit, TodayEventsState>(
-                  bloc: _events,
-                  builder: (context, eventState) {
-                    final pending = dashboard?.tasksPending ?? 0;
-                    final today = eventState is TodayEventsLoaded
-                        ? eventState.events.length
-                        : 0;
-                    return StaffDock(
-                      current: _tab,
-                      badges: {
-                        if (pending > 0) StaffTab.tasks: pending,
-                        if (today > 0) StaffTab.events: today,
-                      },
-                      onSelect: (tab) {
-                        if (tab == _tab && path == tab.path) return;
-                        goToStaffTab(context, tab);
-                      },
-                      onProfileDoubleTap: () {
-                        _switchToLastProfile();
-                      },
-                      onProfileLongPress: _openAccounts,
-                    );
-                  },
-                );
-              },
+          // Hide while typing so the dock does not peek through the keyboard
+          // and so page content can sit flush above it.
+          if (!keyboardOpen)
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: staffDockBottomOffset(context),
+              child: BlocBuilder<DashboardCubit, StaffDashboard?>(
+                bloc: _dashboard,
+                builder: (context, dashboard) {
+                  return BlocBuilder<TodayEventsCubit, TodayEventsState>(
+                    bloc: _events,
+                    builder: (context, eventState) {
+                      final pending = dashboard?.tasksPending ?? 0;
+                      final today = eventState is TodayEventsLoaded
+                          ? eventState.events.length
+                          : 0;
+                      return StaffDock(
+                        current: _tab,
+                        badges: {
+                          if (pending > 0) StaffTab.tasks: pending,
+                          if (today > 0) StaffTab.events: today,
+                        },
+                        onSelect: (tab) {
+                          if (tab == _tab && path == tab.path) return;
+                          goToStaffTab(context, tab);
+                        },
+                        onProfileDoubleTap: () {
+                          _switchToLastProfile();
+                        },
+                        onProfileLongPress: _openAccounts,
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );

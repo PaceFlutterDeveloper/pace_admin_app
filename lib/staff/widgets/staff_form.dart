@@ -271,6 +271,8 @@ Future<T?> showStaffSheet<T>(
 }
 
 /// Searchable list picker for long option sets (category, location, …).
+///
+/// Sized against the space above the keyboard so the sheet sits flush on it.
 Future<T?> showStaffSearchPicker<T>({
   required BuildContext context,
   required String title,
@@ -280,16 +282,75 @@ Future<T?> showStaffSearchPicker<T>({
   String searchHint = 'Search',
   String emptyMessage = 'Nothing matches',
 }) {
-  return showStaffSheet<T>(
-    context,
-    title: title,
-    builder: (context) => _StaffSearchPickerBody<T>(
-      items: items,
-      labelOf: labelOf,
-      selected: selected,
-      searchHint: searchHint,
-      emptyMessage: emptyMessage,
+  final theme = Theme.of(context);
+  final p = StaffPalette.of(context);
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: p.surface,
+    barrierColor: p.scrim,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
+    builder: (sheetContext) {
+      return Theme(
+        data: theme,
+        child: Builder(
+          builder: (context) {
+            final media = MediaQuery.of(context);
+            final keyboard = media.viewInsets.bottom;
+            // Fraction of the visible area above the keyboard — keeps the
+            // sheet bottom edge on the keyboard instead of a fixed % of the
+            // full screen that leaves a dead band.
+            final sheetHeight = (media.size.height - keyboard) * 0.7;
+            return Padding(
+              padding: EdgeInsets.only(bottom: keyboard),
+              child: SizedBox(
+                height: sheetHeight,
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 10, bottom: 6),
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: p.borderStrong,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 8, 22, 10),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          title,
+                          style: sora(
+                            20,
+                            weight: FontWeight.w700,
+                            color: p.text,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _StaffSearchPickerBody<T>(
+                        items: items,
+                        labelOf: labelOf,
+                        selected: selected,
+                        searchHint: searchHint,
+                        emptyMessage: emptyMessage,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    },
   );
 }
 
@@ -332,108 +393,104 @@ class _StaffSearchPickerBodyState<T> extends State<_StaffSearchPickerBody<T>> {
         : widget.items
               .where((item) => widget.labelOf(item).toLowerCase().contains(q))
               .toList();
-    final height = MediaQuery.sizeOf(context).height * 0.55;
 
-    return SizedBox(
-      height: height,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: p.surfaceRaised,
-                borderRadius: BorderRadius.circular(17),
-                border: Border.all(color: p.border),
-              ),
-              child: Row(
-                children: [
-                  StaffIcon(StaffGlyphs.search, size: 19, color: p.muted),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _query,
-                      autofocus: true,
-                      textInputAction: TextInputAction.search,
-                      cursorColor: p.amberText,
-                      style: sora(13.5, weight: FontWeight.w500, color: p.text),
-                      onChanged: (v) => setState(() => _filter = v),
-                      decoration: InputDecoration(
-                        isCollapsed: true,
-                        filled: false,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        hintText: widget.searchHint,
-                        hintStyle: sora(
-                          13.5,
-                          weight: FontWeight.w400,
-                          color: p.muted,
-                        ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: p.surfaceRaised,
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(color: p.border),
+            ),
+            child: Row(
+              children: [
+                StaffIcon(StaffGlyphs.search, size: 19, color: p.muted),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _query,
+                    autofocus: true,
+                    textInputAction: TextInputAction.search,
+                    cursorColor: p.amberText,
+                    style: sora(13.5, weight: FontWeight.w500, color: p.text),
+                    onChanged: (v) => setState(() => _filter = v),
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      filled: false,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      hintText: widget.searchHint,
+                      hintStyle: sora(
+                        13.5,
+                        weight: FontWeight.w400,
+                        color: p.muted,
                       ),
                     ),
                   ),
-                  if (_filter.isNotEmpty)
-                    GestureDetector(
-                      onTap: () {
-                        _query.clear();
-                        setState(() => _filter = '');
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: StaffIcon(
-                          StaffGlyphs.close,
-                          size: 18,
-                          color: p.muted,
-                        ),
+                ),
+                if (_filter.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      _query.clear();
+                      setState(() => _filter = '');
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: StaffIcon(
+                        StaffGlyphs.close,
+                        size: 18,
+                        color: p.muted,
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
-          Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Text(
-                      widget.items.isEmpty
-                          ? 'No options available'
-                          : widget.emptyMessage,
-                      style: sora(13, weight: FontWeight.w500, color: p.muted),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final item = filtered[index];
-                      final selected = identical(item, widget.selected) ||
-                          item == widget.selected;
-                      return ListTile(
-                        title: Text(
-                          widget.labelOf(item),
-                          style: sora(
-                            14,
-                            weight: FontWeight.w600,
-                            color: p.text,
-                          ),
-                        ),
-                        trailing: selected
-                            ? StaffIcon(
-                                StaffGlyphs.check,
-                                color: p.amberText,
-                                size: 20,
-                              )
-                            : null,
-                        onTap: () => Navigator.pop(context, item),
-                      );
-                    },
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(
+                  child: Text(
+                    widget.items.isEmpty
+                        ? 'No options available'
+                        : widget.emptyMessage,
+                    style: sora(13, weight: FontWeight.w500, color: p.muted),
                   ),
-          ),
-        ],
-      ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final item = filtered[index];
+                    final selected = identical(item, widget.selected) ||
+                        item == widget.selected;
+                    return ListTile(
+                      title: Text(
+                        widget.labelOf(item),
+                        style: sora(
+                          14,
+                          weight: FontWeight.w600,
+                          color: p.text,
+                        ),
+                      ),
+                      trailing: selected
+                          ? StaffIcon(
+                              StaffGlyphs.check,
+                              color: p.amberText,
+                              size: 20,
+                            )
+                          : null,
+                      onTap: () => Navigator.pop(context, item),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

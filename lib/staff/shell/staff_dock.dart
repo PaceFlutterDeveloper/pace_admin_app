@@ -64,7 +64,11 @@ double staffDockBottomOffset(BuildContext context) {
 }
 
 /// Vertical space page content should reserve above the dock.
+///
+/// When the keyboard is open the dock is covered, so reserve nothing — otherwise
+/// forms sit a dock-height gap above the keyboard.
 double staffDockBodyInset(BuildContext context) {
+  if (MediaQuery.viewInsetsOf(context).bottom > 0) return 0;
   return staffDockBottomOffset(context) + kStaffDockHeight + 10;
 }
 
