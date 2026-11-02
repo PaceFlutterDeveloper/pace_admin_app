@@ -84,7 +84,7 @@ class _ManageTicketListPageState extends State<ManageTicketListPage>
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
                 child: TicketSegments(
-                  labels: const ['To do', 'Done'],
+                  labels: const ['To do', 'In progress', 'Done'],
                   counts: [all, inProgress, finished],
                   selected: _currentTabIndex,
                   onChanged: (i) => _tabController.animateTo(i),

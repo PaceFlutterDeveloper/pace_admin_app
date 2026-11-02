@@ -219,14 +219,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                         ],
                       ),
                     ),
-                    if ((dashboard?.approvalsPending ?? 0) > 0)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                        child: _ApprovalsBanner(
-                          count: dashboard!.approvalsPending!,
-                          onTap: () => context.pushNamed(Routes.approvals.name),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -268,45 +260,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Shown on Home only for approvers with something waiting.
-class _ApprovalsBanner extends StatelessWidget {
-  const _ApprovalsBanner({required this.count, required this.onTap});
-
-  final int count;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.staff;
-    return StaffCard(
-      radius: 18,
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        children: [
-          const GlassIconTile(
-            glyph: StaffGlyphs.check,
-            accent: StaffAccent.amber,
-            size: 36,
-            radius: 12,
-            iconSize: 18,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              count == 1
-                  ? '1 approval waiting for you'
-                  : '$count approvals waiting for you',
-              style: sora(13, weight: FontWeight.w600, color: p.text),
-            ),
-          ),
-          StaffIcon(StaffGlyphs.chevronRight, size: 18, color: p.muted),
-        ],
       ),
     );
   }
