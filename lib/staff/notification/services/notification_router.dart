@@ -5,6 +5,8 @@ import 'package:admin_app/careers/user/services/careers_user_service.dart';
 import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:admin_app/dependancy_injection.dart';
+import 'package:admin_app/staff/auth/cubit/auth_cubit.dart';
+import 'package:admin_app/staff/auth/data_source/auth_data.dart';
 import 'package:admin_app/staff/home/models/menu_model.dart';
 import 'package:admin_app/staff/home/repository/home_repository.dart';
 import 'package:admin_app/staff/internal_web/internal_web_url.dart';
@@ -46,6 +48,9 @@ class NotificationRouter {
       return;
     }
 
+    // Tap for account A while viewing account B → switch first, then route.
+    final switched = await _ensureRecipientAccount(data);
+
     final page = _string(data, 'data_page') ?? _string(data, 'page');
     final ticketId = int.tryParse(_string(data, 'ticket_id') ?? '');
 
@@ -55,11 +60,13 @@ class NotificationRouter {
         log('NotificationRouter: internalWeb requires url in data');
         return;
       }
+      if (switched) AppRoute.router.go(Routes.home.path);
       await _openInternalWebFromPush(url, data, notificationTitle);
       return;
     }
 
     if (page == Routes.manageTicketDetailPage.path && ticketId != null) {
+      if (switched) AppRoute.router.go(Routes.home.path);
       AppRoute.router.pushNamed(
         Routes.manageTicketDetailPage.name,
         extra: {'ticketId': ticketId.toString(), 'isPushNotification': true},
@@ -68,6 +75,7 @@ class NotificationRouter {
     }
 
     if (page == Routes.ticketDetailPage.path && ticketId != null) {
+      if (switched) AppRoute.router.go(Routes.home.path);
       AppRoute.router.pushNamed(
         Routes.ticketDetailPage.name,
         extra: {'ticketId': ticketId.toString(), 'isPushNotification': true},
@@ -75,12 +83,47 @@ class NotificationRouter {
       return;
     }
 
-    if (_isCareersUserLoggedIn()) {
+    final activeStaff = await AuthData.getActiveUser();
+    if (activeStaff == null && _isCareersUserLoggedIn()) {
       AppRoute.router.goNamed(Routes.careers.name);
       return;
     }
 
-    AppRoute.router.pushNamed(Routes.getNotifications.name);
+    if (switched) {
+      AppRoute.router.goNamed(Routes.getNotifications.name);
+    } else {
+      AppRoute.router.pushNamed(Routes.getNotifications.name);
+    }
+  }
+
+  /// When the push names a saved profile that is not active, switch to it.
+  /// Uses [school_code] + [admin_id] (matches [AuthModel.userId]).
+  static Future<bool> _ensureRecipientAccount(Map<String, dynamic> data) async {
+    final school = _string(data, 'school_code');
+    final adminId = _string(data, 'admin_id');
+    if (school == null || adminId == null) return false;
+
+    final target = AuthData.findUserBySchoolAndId(
+      schoolCode: school,
+      userId: adminId,
+    );
+    if (target == null || target.isActive) return false;
+
+    try {
+      await locator<AuthCubit>().switchUser(
+        userName: target.userName,
+        schoolCode: target.schoolCode,
+        userId: target.userId,
+      );
+      log(
+        'NotificationRouter: switched to ${target.userName} '
+        '(${target.userId}) @ ${target.schoolCode}',
+      );
+      return true;
+    } catch (e) {
+      log('NotificationRouter: account switch failed: $e');
+      return false;
+    }
   }
 
   /// Inbox tap that is not a native screen. Reloads the role menu and opens
@@ -177,7 +220,9 @@ class NotificationRouter {
   }
 
   static void _unableToOpen() {
-    final context = AppRoute.router.routerDelegate.navigatorKey.currentContext;
+    final navigator =
+        AppRoute.router.routerDelegate.navigatorKey.currentState;
+    final context = navigator?.overlay?.context ?? navigator?.context;
     if (context == null) {
       log('NotificationRouter: Unable to open this menu');
       return;

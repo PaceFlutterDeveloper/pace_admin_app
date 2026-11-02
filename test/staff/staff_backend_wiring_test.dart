@@ -1,6 +1,7 @@
 import 'package:admin_app/core/services/staff_session_expired_handler.dart';
 import 'package:admin_app/staff/account/components/update_password_page.dart';
 import 'package:admin_app/staff/leave/domain/leave_models.dart';
+import 'package:admin_app/staff/leave/presentation/leave_format.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -165,6 +166,45 @@ void main() {
       expect(LeaveStatus.parse('declined'), LeaveStatus.rejected);
       expect(LeaveStatus.parse('canceled'), LeaveStatus.cancelled);
       expect(LeaveStatus.parse('whatever'), LeaveStatus.other);
+    });
+
+    test('LeaveRequest reads the list payload fields', () {
+      final r = LeaveRequest.fromMap({
+        'request_id': 801,
+        'type': 'Unpaid Leave',
+        'leave_type_id': 4,
+        'from_date': '2025-12-19',
+        'to_date': '2025-12-20',
+        'days': 0,
+        'half_day': null,
+        'status': 'approved',
+        'reason': 'LOP',
+        'approver_name': 'ADMIN MANAGER',
+        'approver_comment': 'ADMIN MANAGER',
+        'applied_at': '2025-12-19T00:00:00+04:00',
+      });
+      expect(r.id, '801');
+      expect(r.type, 'Unpaid Leave');
+      expect(r.typeId, 4);
+      expect(r.days, 0);
+      expect(r.halfDay, '');
+      expect(r.status, LeaveStatus.approved);
+      expect(r.reason, 'LOP');
+      expect(r.approverName, 'ADMIN MANAGER');
+      expect(r.approverComment, 'ADMIN MANAGER');
+      expect(r.from, DateTime(2025, 12, 19));
+      expect(r.to, DateTime(2025, 12, 20));
+      expect(r.appliedAt, isNotNull);
+    });
+
+    test('leaveLengthLabel skips a zero day count', () {
+      expect(leaveLengthLabel(days: 0, halfDay: ''), '');
+      expect(leaveLengthLabel(days: 0, halfDay: 'am'), 'Morning half');
+      expect(leaveLengthLabel(days: 2, halfDay: ''), '2 days');
+      expect(
+        leaveLengthLabel(days: 0.5, halfDay: 'pm'),
+        'Afternoon half · 0.5 days',
+      );
     });
   });
 }

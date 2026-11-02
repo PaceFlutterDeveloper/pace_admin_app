@@ -93,7 +93,7 @@ class _DetailState extends State<_Detail> {
   Widget build(BuildContext context) {
     final p = context.staff;
     final r = _request;
-    final half = leaveHalfLabel(r.halfDay);
+    final length = leaveLengthLabel(days: r.days, halfDay: r.halfDay);
     final steps = [
       for (final s in r.trail)
         if (s.action.isNotEmpty) s,
@@ -109,11 +109,9 @@ class _DetailState extends State<_Detail> {
             child: LeaveStatusPill(r.status),
           ),
           const SizedBox(height: 14),
-          _Line('Dates', leaveRange(r.from, r.to)),
-          _Line(
-            'Length',
-            half.isEmpty ? leaveDays(r.days) : '$half · ${leaveDays(r.days)}',
-          ),
+          if (leaveRange(r.from, r.to).isNotEmpty)
+            _Line('Dates', leaveRange(r.from, r.to)),
+          if (length.isNotEmpty) _Line('Length', length),
           if (r.appliedAt != null)
             _Line('Applied', DateFormat('d MMM yyyy').format(r.appliedAt!)),
           if (r.reason.isNotEmpty) _Line('Reason', r.reason),

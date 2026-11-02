@@ -26,7 +26,8 @@ class AppToast {
   }) {
     dismiss();
 
-    final overlay = Overlay.of(context);
+    final overlay = _overlayFor(context);
+    if (overlay == null) return;
 
     _currentEntry = OverlayEntry(
       builder: (context) => _ToastWidget(
@@ -40,6 +41,21 @@ class AppToast {
     overlay.insert(_currentEntry!);
 
     _dismissTimer = Timer(duration, dismiss);
+  }
+
+  /// Resolves an [OverlayState] even when [context] is the [Navigator] itself
+  /// (e.g. `navigatorKey.currentContext`), which has no Overlay ancestor.
+  static OverlayState? _overlayFor(BuildContext context) {
+    final fromTree = Overlay.maybeOf(context);
+    if (fromTree != null) return fromTree;
+
+    final fromAncestorNavigator = Navigator.maybeOf(context)?.overlay;
+    if (fromAncestorNavigator != null) return fromAncestorNavigator;
+
+    if (context is StatefulElement && context.state is NavigatorState) {
+      return (context.state as NavigatorState).overlay;
+    }
+    return null;
   }
 
   static void success(BuildContext context, String message) {

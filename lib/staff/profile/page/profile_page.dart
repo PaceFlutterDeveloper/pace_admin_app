@@ -194,15 +194,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   'PREFERENCES',
                   padding: const EdgeInsets.fromLTRB(22, 16, 22, 8),
                 ),
-                _Group(
+                const _Group(
                   children: [
+                    // Login sessions ("Where have you logged in") is built but
+                    // not published yet — keep the route/page, hide the entry.
                     _SettingsRow(
-                      glyph: StaffGlyphs.phone,
-                      accent: StaffAccent.blue,
-                      label: 'Where have you logged in',
-                      onTap: () => context.pushNamed(Routes.loginSessions.name),
-                    ),
-                    const _SettingsRow(
                       glyph: StaffGlyphs.moon,
                       accent: StaffAccent.pink,
                       label: 'Appearance',

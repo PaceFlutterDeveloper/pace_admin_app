@@ -32,6 +32,21 @@ String leaveHalfLabel(String halfDay) {
   };
 }
 
+/// Half-day label and/or day count. Skips a useless "0 days".
+String leaveLengthLabel({required double days, required String halfDay}) {
+  final half = leaveHalfLabel(halfDay);
+  if (half.isNotEmpty) {
+    return days > 0 ? '$half · ${leaveDays(days)}' : half;
+  }
+  if (days > 0) return leaveDays(days);
+  return '';
+}
+
+String leaveAppliedLabel(DateTime? appliedAt) {
+  if (appliedAt == null) return '';
+  return 'Applied ${DateFormat('d MMM yyyy').format(appliedAt)}';
+}
+
 /// Colours for a leave status pill.
 ({Color background, Color foreground}) leaveStatusColors(
   StaffPalette p,

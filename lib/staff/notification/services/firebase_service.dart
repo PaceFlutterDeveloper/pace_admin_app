@@ -34,8 +34,10 @@ class FirebaseService {
     CareersFcmService.logMessage(
       'App launched from terminated state by notification',
     );
-    await _onStaffPush(message);
+    // Switch to the recipient profile before badge refresh so counts land
+    // on the account named in the payload.
     await NotificationRouter.handleMessage(message);
+    await _onStaffPush(message);
   }
 
   /// Subscribe to get-profile topics once a session exists. Must not run
@@ -103,8 +105,12 @@ class FirebaseService {
       CareersFcmService.logMessage(
         'App opened from background by notification',
       );
-      unawaited(_onStaffPush(message));
-      NotificationRouter.handleMessage(message);
+      unawaited(() async {
+        // Route first so multi-account switch runs before badge refresh,
+        // which is scoped to the active profile after the switch.
+        await NotificationRouter.handleMessage(message);
+        await _onStaffPush(message);
+      }());
     });
   }
 

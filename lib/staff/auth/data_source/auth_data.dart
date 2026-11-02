@@ -134,6 +134,21 @@ class AuthData {
     }
   }
 
+  /// Saved profile matching push [school_code] + [admin_id] ([userId]).
+  static AuthModel? findUserBySchoolAndId({
+    required String schoolCode,
+    required String userId,
+  }) {
+    final box = locator<Box<AuthModel>>();
+    try {
+      return box.values.firstWhere(
+        (user) => user.schoolCode == schoolCode && user.userId == userId,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Logs out the current active user by deleting their entry from the Hive box.
   static Future<void> logoutCurrentUser() async {
     final box = locator<Box<AuthModel>>();

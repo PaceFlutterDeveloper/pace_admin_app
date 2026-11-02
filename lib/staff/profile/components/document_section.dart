@@ -1,3 +1,4 @@
+import 'package:admin_app/staff/profile/components/document_viewer_page.dart';
 import 'package:admin_app/staff/profile/document_share.dart';
 import 'package:admin_app/staff/profile/model/doc_model.dart';
 import 'package:admin_app/staff/profile/personal_details.dart';
@@ -5,6 +6,7 @@ import 'package:admin_app/staff/theme/staff_palette.dart';
 import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 
 enum DocumentHealth { ok, expiring, expired, noExpiry }
 
@@ -22,19 +24,23 @@ DocumentHealth documentHealth(DocModel doc, {DateTime? now}) {
   return DocumentHealth.ok;
 }
 
-/// Staff documents with expiry status and a download action.
+/// Staff documents with expiry status, view, and download actions.
 class DocumentSection extends StatefulWidget {
   final int documentStatus;
   final List<DocModel> documents;
 
-  /// Replaces the real download in tests.
+  /// Replaces the real download/share in tests.
   final Future<void> Function(DocModel doc, {Rect? origin})? shareDocument;
+
+  /// Replaces the real preview open in tests.
+  final Future<void> Function(BuildContext context, DocModel doc)? viewDocument;
 
   const DocumentSection({
     super.key,
     required this.documents,
     required this.documentStatus,
     this.shareDocument,
+    this.viewDocument,
   });
 
   @override
@@ -46,7 +52,10 @@ class _DocumentSectionState extends State<DocumentSection> {
   String? _errorFor;
   String? _error;
 
-  Future<void> _share(DocModel doc, Rect? origin) async {
+  Future<void> _run(
+    DocModel doc,
+    Future<void> Function() action,
+  ) async {
     if (_busyId != null) return;
     setState(() {
       _busyId = doc.id;
@@ -54,14 +63,64 @@ class _DocumentSectionState extends State<DocumentSection> {
       _error = null;
     });
     try {
-      await (widget.shareDocument ?? shareStaffDocument)(doc, origin: origin);
+      await action();
     } on DocumentShareException catch (error) {
       _fail(doc.id, error.message);
     } catch (_) {
-      _fail(doc.id, 'Could not download this document.');
+      _fail(doc.id, 'Could not open this document.');
     } finally {
       if (mounted) setState(() => _busyId = null);
     }
+  }
+
+  Future<void> _share(DocModel doc, Rect? origin) {
+    return _run(
+      doc,
+      () => (widget.shareDocument ?? shareStaffDocument)(doc, origin: origin),
+    );
+  }
+
+  Future<void> _view(DocModel doc) {
+    return _run(doc, () async {
+      if (widget.viewDocument != null) {
+        await widget.viewDocument!(context, doc);
+        return;
+      }
+      final downloaded = await downloadStaffDocument(doc);
+      if (!downloaded.canPreview) {
+        throw const DocumentShareException(
+          'This file type cannot be previewed in the app. Use Download instead.',
+        );
+      }
+      if (!mounted) return;
+
+      // PDFs use the system viewer — avoids a native PDFium dependency that
+      // crashed the screen when the library was not linked after hot restart.
+      if (downloaded.isPdf) {
+        final result = await OpenFilex.open(
+          downloaded.file.path,
+          type: 'application/pdf',
+          uti: 'com.adobe.pdf',
+        );
+        if (result.type != ResultType.done) {
+          throw DocumentShareException(
+            result.message.trim().isEmpty
+                ? 'Could not open this PDF.'
+                : result.message.trim(),
+          );
+        }
+        return;
+      }
+
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => DocumentViewerPage(
+            title: doc.doc,
+            document: downloaded,
+          ),
+        ),
+      );
+    });
   }
 
   void _fail(String id, String message) {
@@ -86,16 +145,14 @@ class _DocumentSectionState extends State<DocumentSection> {
       );
     }
 
-    final canDownload = documents.any(
-      (doc) => doc.downloadUrl.trim().isNotEmpty,
-    );
+    final canOpen = documents.any((doc) => doc.downloadUrl.trim().isNotEmpty);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (canDownload) ...[
+        if (canOpen) ...[
           Text(
-            'Download opens the share sheet so you can save the file or send it to another app.',
+            'View opens the file for preview. Download opens the share sheet so you can save it or send it elsewhere.',
             style: sora(
               12,
               weight: FontWeight.w500,
@@ -138,6 +195,7 @@ class _DocumentSectionState extends State<DocumentSection> {
             busy: _busyId == doc.id,
             enabled: _busyId == null,
             error: _errorFor == doc.id ? _error : null,
+            onView: _view,
             onDownload: _share,
           ),
       ],
@@ -151,6 +209,7 @@ class _DocumentTile extends StatelessWidget {
     required this.busy,
     required this.enabled,
     required this.error,
+    required this.onView,
     required this.onDownload,
   });
 
@@ -158,6 +217,7 @@ class _DocumentTile extends StatelessWidget {
   final bool busy;
   final bool enabled;
   final String? error;
+  final Future<void> Function(DocModel doc) onView;
   final Future<void> Function(DocModel doc, Rect? origin) onDownload;
 
   @override
@@ -170,7 +230,7 @@ class _DocumentTile extends StatelessWidget {
       DocumentHealth.ok => ('Valid', const Color(0xFF34D399)),
       DocumentHealth.noExpiry => ('No expiry', p.muted),
     };
-    final canDownload = doc.downloadUrl.trim().isNotEmpty;
+    final canOpen = doc.downloadUrl.trim().isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -250,32 +310,51 @@ class _DocumentTile extends StatelessWidget {
               ),
             ],
           ),
-          if (canDownload) ...[
+          if (canOpen) ...[
             const SizedBox(height: 12),
-            Builder(
-              builder: (buttonContext) {
-                return Semantics(
-                  button: true,
-                  label: 'Download ${doc.doc}',
+            Row(
+              children: [
+                Expanded(
                   child: AmberButton(
-                    label: 'Download',
-                    glyph: StaffGlyphs.download,
+                    label: 'View',
+                    glyph: StaffGlyphs.eye,
                     height: 40,
                     soft: true,
                     loading: busy,
-                    onPressed: !enabled
-                        ? null
-                        : () {
-                            final box =
-                                buttonContext.findRenderObject() as RenderBox?;
-                            final origin = box != null && box.hasSize
-                                ? box.localToGlobal(Offset.zero) & box.size
-                                : null;
-                            onDownload(doc, origin);
-                          },
+                    onPressed: !enabled ? null : () => onView(doc),
                   ),
-                );
-              },
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Builder(
+                    builder: (buttonContext) {
+                      return Semantics(
+                        button: true,
+                        label: 'Download ${doc.doc}',
+                        child: AmberButton(
+                          label: 'Download',
+                          glyph: StaffGlyphs.download,
+                          height: 40,
+                          soft: true,
+                          loading: busy,
+                          onPressed: !enabled
+                              ? null
+                              : () {
+                                  final box =
+                                      buttonContext.findRenderObject()
+                                          as RenderBox?;
+                                  final origin = box != null && box.hasSize
+                                      ? box.localToGlobal(Offset.zero) &
+                                            box.size
+                                      : null;
+                                  onDownload(doc, origin);
+                                },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
           if (error != null) ...[

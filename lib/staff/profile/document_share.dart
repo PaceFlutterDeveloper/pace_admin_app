@@ -15,6 +15,38 @@ class DocumentShareException implements Exception {
   final String message;
 }
 
+/// Local copy of a staff document fetched from its signed download URL.
+class StaffDocumentFile {
+  const StaffDocumentFile({
+    required this.file,
+    required this.name,
+    this.mimeType,
+  });
+
+  final File file;
+  final String name;
+  final String? mimeType;
+
+  bool get isPdf {
+    final mime = mimeType?.toLowerCase();
+    if (mime == 'application/pdf') return true;
+    return name.toLowerCase().endsWith('.pdf');
+  }
+
+  bool get isImage {
+    final mime = mimeType?.toLowerCase() ?? '';
+    if (mime.startsWith('image/')) return true;
+    final lower = name.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.gif');
+  }
+
+  bool get canPreview => isPdf || isImage;
+}
+
 /// File name used when the document is saved or shared.
 String documentFileName(DocModel doc, {String? contentType}) {
   final title = _token(doc.doc.trim().isEmpty ? 'Document' : doc.doc.trim());
@@ -60,9 +92,8 @@ String? staffDocumentBodyError({
   return null;
 }
 
-/// Downloads the signed document, then opens the share sheet so it can be
-/// saved to Files or sent to another app.
-Future<void> shareStaffDocument(DocModel doc, {Rect? origin}) async {
+/// Downloads the signed document to a temp file for preview or share.
+Future<StaffDocumentFile> downloadStaffDocument(DocModel doc) async {
   final url = doc.downloadUrl.trim();
   final uri = Uri.tryParse(url);
   if (uri == null || !(uri.isScheme('https') || uri.isScheme('http'))) {
@@ -103,15 +134,10 @@ Future<void> shareStaffDocument(DocModel doc, {Rect? origin}) async {
     await folder.create(recursive: true);
     final file = File('${folder.path}/$name');
     await file.writeAsBytes(bytes, flush: true);
-
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [
-          XFile(file.path, mimeType: _mimeFor(name, contentType), name: name),
-        ],
-        subject: doc.doc.trim().isEmpty ? name : doc.doc.trim(),
-        sharePositionOrigin: origin,
-      ),
+    return StaffDocumentFile(
+      file: file,
+      name: name,
+      mimeType: _mimeFor(name, contentType),
     );
   } on DocumentShareException {
     rethrow;
@@ -122,6 +148,25 @@ Future<void> shareStaffDocument(DocModel doc, {Rect? origin}) async {
       'Could not save this document on the phone.',
     );
   }
+}
+
+/// Downloads the signed document, then opens the share sheet so it can be
+/// saved to Files or sent to another app.
+Future<void> shareStaffDocument(DocModel doc, {Rect? origin}) async {
+  final downloaded = await downloadStaffDocument(doc);
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [
+        XFile(
+          downloaded.file.path,
+          mimeType: downloaded.mimeType,
+          name: downloaded.name,
+        ),
+      ],
+      subject: doc.doc.trim().isEmpty ? downloaded.name : doc.doc.trim(),
+      sharePositionOrigin: origin,
+    ),
+  );
 }
 
 String _token(String raw) {

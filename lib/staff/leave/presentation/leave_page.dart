@@ -188,13 +188,6 @@ class _BalanceCard extends StatelessWidget {
                 letterSpacing: -0.6,
               ),
             ),
-            Text(
-              'left of ${leaveNumber(balance.entitled)}'
-              '${balance.pending > 0 ? ' · ${leaveNumber(balance.pending)} pending' : ''}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: sora(10.5, weight: FontWeight.w400, color: p.muted),
-            ),
           ],
         ),
       ),
@@ -211,7 +204,14 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.staff;
-    final half = leaveHalfLabel(request.halfDay);
+    final when = [
+      leaveRange(request.from, request.to),
+      leaveLengthLabel(days: request.days, halfDay: request.halfDay),
+    ].where((e) => e.isNotEmpty).join(' · ');
+    final meta = [
+      if (request.approverName.isNotEmpty) request.approverName,
+      leaveAppliedLabel(request.appliedAt),
+    ].where((e) => e.isNotEmpty).join(' · ');
     return StaffCard(
       radius: 20,
       onTap: onTap,
@@ -233,14 +233,13 @@ class _RequestCard extends StatelessWidget {
               LeaveStatusPill(request.status),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            [
-              leaveRange(request.from, request.to),
-              half.isEmpty ? leaveDays(request.days) : half,
-            ].where((e) => e.isNotEmpty).join(' · '),
-            style: sora(12.5, weight: FontWeight.w500, color: p.muted),
-          ),
+          if (when.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              when,
+              style: sora(12.5, weight: FontWeight.w500, color: p.muted),
+            ),
+          ],
           if (request.reason.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
@@ -248,6 +247,15 @@ class _RequestCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: sora(12, weight: FontWeight.w400, color: p.muted),
+            ),
+          ],
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sora(11.5, weight: FontWeight.w500, color: p.muted),
             ),
           ],
         ],

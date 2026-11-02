@@ -120,24 +120,32 @@ void main() {
     );
   });
 
-  testWidgets('download shares the document and reports a failure', (
-    tester,
-  ) async {
+  testWidgets('view and download use the document actions', (tester) async {
+    DocModel? viewed;
     DocModel? shared;
     await tester.pumpWidget(
       _app(
         DocumentSection(
           documentStatus: 0,
           documents: [_passport(url: 'https://files.example/passport.pdf')],
+          viewDocument: (_, doc) async => viewed = doc,
           shareDocument: (doc, {origin}) async => shared = doc,
         ),
       ),
     );
+    expect(find.text('View'), findsOneWidget);
     expect(find.text('Download'), findsOneWidget);
+
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    expect(viewed?.id, '20176');
+
     await tester.tap(find.text('Download'));
     await tester.pumpAndSettle();
     expect(shared?.id, '20176');
+  });
 
+  testWidgets('download reports a failure', (tester) async {
     await tester.pumpWidget(
       _app(
         DocumentSection(
@@ -154,12 +162,13 @@ void main() {
     expect(find.text('Link expired'), findsOneWidget);
   });
 
-  testWidgets('hides download when the document has no file link', (
+  testWidgets('hides actions when the document has no file link', (
     tester,
   ) async {
     await tester.pumpWidget(
       _app(DocumentSection(documentStatus: 0, documents: [_passport(url: '')])),
     );
+    expect(find.text('View'), findsNothing);
     expect(find.text('Download'), findsNothing);
     expect(find.text('Issued 13 May 2022'), findsOneWidget);
     expect(find.text('Expires 12 May 2032'), findsOneWidget);
