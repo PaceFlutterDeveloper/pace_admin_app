@@ -53,6 +53,7 @@ import 'package:admin_app/core/update/app_update_controller.dart';
 import 'package:admin_app/core/utils/go_router_refresh_stream.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/face_attendance/presentation/pages/attendance_page.dart';
+import 'package:admin_app/staff/session/must_change_password.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -159,7 +160,10 @@ class AppRoute {
     initialLocation: _resumeLocation(),
     observers: [DismissKeyboardNavigatorObserver()],
     debugLogDiagnostics: kDebugMode,
-    refreshListenable: GoRouterRefreshStream(context.watch<AuthCubit>().stream),
+    refreshListenable: GoRouterRefreshStream(
+      context.watch<AuthCubit>().stream,
+      listenables: [mustChangePasswordGate],
+    ),
     routes: [
       GoRoute(
         path: Routes.root.path,
@@ -549,6 +553,14 @@ class AppRoute {
       if (!hasActiveUser) {
         log("No active user found. Redirecting to careers.");
         return Routes.careers.path;
+      }
+
+      // A temporary or expired password keeps every staff screen closed
+      // until the new one is saved. Careers routes returned above.
+      if (mustChangePasswordGate.required &&
+          state.matchedLocation != Routes.updatePassword.path) {
+        log("Password change required. Opening the password screen.");
+        return Routes.updatePassword.path;
       }
 
       // Case 3: Root resumes the signed-in staff home, otherwise careers.

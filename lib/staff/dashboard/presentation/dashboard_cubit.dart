@@ -1,6 +1,7 @@
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/dashboard/domain/dashboard_repository.dart';
 import 'package:admin_app/staff/dashboard/domain/staff_dashboard.dart';
+import 'package:admin_app/staff/session/must_change_password.dart';
 import 'package:admin_app/staff/utils/load_marker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,6 +34,8 @@ class DashboardCubit extends Cubit<StaffDashboard?> {
       if (isClosed || !_scope.current(stamp)) return;
       _loaded.mark();
       emit(data);
+      final mustChange = data.mustChangePassword;
+      if (mustChange != null) mustChangePasswordGate.apply(mustChange);
     } catch (_) {
       // Counters are a convenience; the screens behind them show the errors.
     }

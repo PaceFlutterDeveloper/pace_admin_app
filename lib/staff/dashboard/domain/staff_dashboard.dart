@@ -83,6 +83,7 @@ class StaffDashboard {
     this.approvalsPending,
     this.attendance,
     this.taken,
+    this.mustChangePassword,
   });
 
   final int? openTickets;
@@ -102,6 +103,10 @@ class StaffDashboard {
 
   /// Total leave already taken, when the summary sends one number.
   final double? taken;
+
+  /// `must_change_password` from the summary. Null when that key is absent,
+  /// so an older payload does not clear a requirement login already stored.
+  final bool? mustChangePassword;
 
   /// Days left across every leave type, or null when the summary has no balance.
   double? get leaveLeft {
@@ -155,6 +160,9 @@ class StaffDashboard {
       approvalsPending: _count(data['approvals_pending']),
       attendance: attendance is Map
           ? DashboardAttendance.fromMap(attendance)
+          : null,
+      mustChangePassword: data.containsKey('must_change_password')
+          ? readBool(data['must_change_password'])
           : null,
     );
   }

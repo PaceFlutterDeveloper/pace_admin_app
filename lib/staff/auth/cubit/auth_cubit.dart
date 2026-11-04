@@ -8,8 +8,10 @@ import 'package:admin_app/staff/auth/models/auth_model.dart';
 import 'package:admin_app/staff/auth/repository/auth_repository.dart';
 import 'package:admin_app/staff/notification/services/staff_fcm.dart';
 import 'package:admin_app/staff/session/device_snapshot.dart';
+import 'package:admin_app/staff/session/must_change_password.dart';
 import 'package:admin_app/staff/session/staff_memory.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
+import 'package:admin_app/staff/shared/read_json.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hive/hive.dart';
@@ -95,6 +97,9 @@ class AuthCubit extends Cubit<AuthState> {
         );
 
         Hive.box('settingsBox').put('signedInSurface', 'staff');
+        mustChangePasswordGate.apply(
+          readBool(data is Map ? data['must_change_password'] : null),
+        );
         emit(const AuthState.loginSuccess());
         unawaited(session?.registerDevice(force: true));
         unawaited(StaffFcm.subscribeIfPresent(res.right));
@@ -113,6 +118,10 @@ class AuthCubit extends Cubit<AuthState> {
     _switching = true;
     try {
       emit(const AuthState.loading());
+      // Drop the summary already in flight so it cannot re-apply the
+      // previous account's password requirement after this clear.
+      clearStaffSessionMemory();
+      mustChangePasswordGate.apply(false);
       await _rememberProfileBeingLeft(
         userId: userId,
         schoolCode: schoolCode,
@@ -124,9 +133,6 @@ class AuthCubit extends Cubit<AuthState> {
       final settings = Hive.box('settingsBox');
       settings.put('schoolCode', schoolCode);
       settings.put('signedInSurface', 'staff');
-      // Drop the previous account before Hive points at the next one, so a
-      // screen that is still mounted cannot paint that account's rows.
-      clearStaffSessionMemory();
       await AuthData.deactivateAllUsersExcept(userName, schoolCode, userId);
       emit(const AuthState.userSwitch());
       unawaited(StaffFcm.clearTopics());
@@ -186,6 +192,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void _finishLocalSignOut({required bool othersRemain}) {
+    mustChangePasswordGate.apply(false);
     clearStaffSessionMemory();
     if (!othersRemain) {
       Hive.box('settingsBox').delete('signedInSurface');

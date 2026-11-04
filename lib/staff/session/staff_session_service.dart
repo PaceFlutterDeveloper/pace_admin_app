@@ -133,9 +133,11 @@ class StaffSessionService {
     return token.isEmpty ? null : token;
   }
 
-  /// The server answers the same way whether or not the user exists.
+  /// Sends a reset code to the email on the account. An account with no
+  /// email or contact details fails with the server's own message.
   Future<String> forgotPassword({
     required String username,
+    required String email,
     required String schoolCode,
   }) async {
     final body = await _onSchool(
@@ -144,7 +146,11 @@ class StaffSessionService {
         api: apiService,
         url: ApiConstants.staffPage('forgotPassword'),
         authenticated: false,
-        fields: {'username': username, 'school_code': schoolCode},
+        fields: {
+          'username': username,
+          'email': email,
+          'school_code': schoolCode,
+        },
       ),
     );
     final message = readString(body['message']);

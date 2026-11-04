@@ -222,6 +222,24 @@ void main() {
     expect(missing.unreadCirculars, isNull);
   });
 
+  test('must_change_password is read only when the summary sends it', () {
+    expect(
+      StaffDashboard.fromData({'must_change_password': 1}).mustChangePassword,
+      isTrue,
+    );
+    expect(
+      StaffDashboard.fromData({'must_change_password': 0}).mustChangePassword,
+      isFalse,
+    );
+    expect(
+      StaffDashboard.fromData({
+        'must_change_password': true,
+      }).mustChangePassword,
+      isTrue,
+    );
+    expect(StaffDashboard.fromData({}).mustChangePassword, isNull);
+  });
+
   test('a present month is not counted as a month of absences', () {
     final summary = buildAttendanceDashboardSummaries([
       _day('2026-10-27', 'present'),

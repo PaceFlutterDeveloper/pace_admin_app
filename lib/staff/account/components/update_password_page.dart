@@ -1,6 +1,9 @@
+import 'package:admin_app/core/routes/app_routes.dart';
 import 'package:admin_app/core/widgets/app_toast.dart';
 import 'package:admin_app/dependancy_injection.dart';
 import 'package:admin_app/staff/auth/data_source/auth_data.dart';
+import 'package:admin_app/staff/dashboard/presentation/dashboard_cubit.dart';
+import 'package:admin_app/staff/session/must_change_password.dart';
 import 'package:admin_app/staff/session/staff_session_service.dart';
 import 'package:admin_app/staff/shared/read_json.dart';
 import 'package:admin_app/staff/theme/staff_palette.dart';
@@ -8,6 +11,7 @@ import 'package:admin_app/staff/theme/staff_theme.dart';
 import 'package:admin_app/staff/widgets/staff_form.dart';
 import 'package:admin_app/staff/widgets/staff_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// Lowest password length the form accepts before asking the server.
 const int staffMinPasswordLength = 8;
@@ -63,6 +67,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       _saving = true;
       _error = null;
     });
+    final locked = mustChangePasswordGate.required;
     try {
       final token = await locator<StaffSessionService>().changePassword(
         current: _current.text,
@@ -72,9 +77,19 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
         password: _next.text,
         token: token,
       );
+      // A summary that started before this save can still say the password
+      // must change. Drop it so it cannot send the person straight back.
+      if (locked || mustChangePasswordGate.required) {
+        locator<DashboardCubit>().dropSession();
+        mustChangePasswordGate.apply(false);
+      }
       if (!mounted) return;
       AppToast.success(context, 'Password updated');
-      Navigator.of(context).maybePop();
+      if (locked) {
+        context.go(Routes.home.path);
+      } else {
+        Navigator.of(context).maybePop();
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -87,62 +102,75 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.staff;
-    return StaffPage(
-      child: Column(
-        children: [
-          const StaffPageHeader(
-            title: 'Change password',
-            subtitle: 'Keep your account secure',
-          ),
-          Expanded(
-            child: ListView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+    return ListenableBuilder(
+      listenable: mustChangePasswordGate,
+      builder: (context, _) {
+        final locked = mustChangePasswordGate.required;
+        return PopScope(
+          canPop: !locked,
+          child: StaffPage(
+            child: Column(
               children: [
-                StaffField(
-                  label: 'Current password',
-                  controller: _current,
-                  obscure: true,
-                  textInputAction: TextInputAction.next,
+                StaffPageHeader(
+                  title: locked ? 'Reset password' : 'Change password',
+                  subtitle: locked
+                      ? 'Your school requires a new password before you continue'
+                      : 'Keep your account secure',
+                  showBack: !locked,
                 ),
-                const SizedBox(height: 14),
-                StaffField(
-                  label: 'New password',
-                  hint: 'At least $staffMinPasswordLength characters',
-                  controller: _next,
-                  obscure: true,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 14),
-                StaffField(
-                  label: 'Repeat new password',
-                  controller: _confirm,
-                  obscure: true,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _saving ? null : _save(),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 14),
-                  Text(
-                    _error!,
-                    style: sora(
-                      12.5,
-                      weight: FontWeight.w500,
-                      color: p.dangerText,
-                    ),
+                Expanded(
+                  child: ListView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                    children: [
+                      StaffField(
+                        label: 'Current password',
+                        controller: _current,
+                        obscure: true,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 14),
+                      StaffField(
+                        label: 'New password',
+                        hint: 'At least $staffMinPasswordLength characters',
+                        controller: _next,
+                        obscure: true,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 14),
+                      StaffField(
+                        label: 'Repeat new password',
+                        controller: _confirm,
+                        obscure: true,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _saving ? null : _save(),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 14),
+                        Text(
+                          _error!,
+                          style: sora(
+                            12.5,
+                            weight: FontWeight.w500,
+                            color: p.dangerText,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 22),
+                      AmberButton(
+                        label: locked ? 'Save password' : 'Update password',
+                        loading: _saving,
+                        onPressed: _saving ? null : _save,
+                      ),
+                    ],
                   ),
-                ],
-                const SizedBox(height: 22),
-                AmberButton(
-                  label: 'Update password',
-                  loading: _saving,
-                  onPressed: _saving ? null : _save,
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

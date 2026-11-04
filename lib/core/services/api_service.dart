@@ -310,6 +310,7 @@ class ApiService {
   // Error handling method
   MyError _handleError(DioException error) {
     String? rawErrorMessage;
+    String? responseCode;
     AppError errorKey = AppError.unknown;
 
     // ✅ Extract readable message from response
@@ -317,6 +318,7 @@ class ApiService {
     if (responseData != null) {
       try {
         if (responseData is Map<String, dynamic>) {
+          responseCode = responseData['code']?.toString();
           rawErrorMessage =
               responseData['message'] ??
               responseData['error'] ??
@@ -332,6 +334,7 @@ class ApiService {
             try {
               final decoded = jsonDecode(jsonPayload);
               if (decoded is Map<String, dynamic>) {
+                responseCode = decoded['code']?.toString();
                 rawErrorMessage =
                     decoded['message'] ??
                     decoded['error'] ??
@@ -391,6 +394,19 @@ class ApiService {
             break;
           default:
             errorKey = AppError.unknown;
+        }
+        if (responseCode == 'NO_EMAIL') {
+          final serverMessage = rawErrorMessage?.trim() ?? '';
+          final usable =
+              serverMessage.isNotEmpty &&
+              !serverMessage.contains('Exception') &&
+              !serverMessage.contains('status code');
+          return MyError(
+            key: AppError.badRequest,
+            message: usable
+                ? serverMessage
+                : 'This account has no email address, so the reset instructions could not be sent. Please contact the IT Department.',
+          );
         }
         final userFriendlyMessage = _getUserFriendlyMessage(
           errorKey,

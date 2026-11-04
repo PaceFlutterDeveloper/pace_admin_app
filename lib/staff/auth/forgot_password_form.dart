@@ -8,8 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// Two steps on the sign-in screen: ask for a reset code, then set the new
-/// password with that code. The server answers the first step the same way
-/// whether or not the account exists.
+/// password with that code.
 class ForgotPasswordForm extends StatefulWidget {
   const ForgotPasswordForm({
     super.key,
@@ -32,6 +31,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   late final TextEditingController _username = TextEditingController(
     text: widget.initialUsername,
   );
+  final _email = TextEditingController();
   final _code = TextEditingController();
   final _password = TextEditingController();
   bool _codeSent = false;
@@ -42,15 +42,25 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   @override
   void dispose() {
     _username.dispose();
+    _email.dispose();
     _code.dispose();
     _password.dispose();
     super.dispose();
   }
 
+  bool _looksLikeEmail(String value) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
+  }
+
   Future<void> _sendCode() async {
     final username = _username.text.trim();
+    final email = _email.text.trim();
     if (username.isEmpty) {
       setState(() => _error = 'Enter your username.');
+      return;
+    }
+    if (!_looksLikeEmail(email)) {
+      setState(() => _error = 'Enter the email address on your account.');
       return;
     }
     setState(() {
@@ -60,6 +70,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
     try {
       final message = await locator<StaffSessionService>().forgotPassword(
         username: username,
+        email: email,
         schoolCode: widget.schoolCode,
       );
       if (!mounted) return;
@@ -126,6 +137,19 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
           icon: CupertinoIcons.person,
           textInputAction: TextInputAction.next,
         ),
+        if (!_codeSent) ...[
+          const SizedBox(height: 16),
+          CareersAuthField(
+            label: 'Email',
+            hint: 'Email on your account',
+            controller: _email,
+            icon: CupertinoIcons.mail,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.email],
+            onSubmitted: (_) => _busy ? null : _sendCode(),
+          ),
+        ],
         if (_codeSent) ...[
           const SizedBox(height: 16),
           if (_notice != null)
